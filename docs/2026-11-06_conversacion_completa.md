@@ -1,6 +1,6 @@
 # Registro de conversación con Claude Code · 2026-11-06
 
-_Actualizado: 2026-11-06 14:09_
+_Actualizado: 2026-11-06 14:16_
 
 
 ---
@@ -911,3 +911,62 @@ modifica y adapta la skill github-flow para que use el mcp de github que usa est
 ### 🤖 **Claude** · 2026-11-06 14:09:32
 
 > 🔧 **Edit**: `{"replace_all": false, "file_path": "D:\\Desarrollo\\hardwaremission.bricomission\\CLAUDE.md", "old_string": "The harness skills are not installed yet; they come from the course repository `ai-expert-project`.", "new_string": "Harness skills live in `.claude/skills/` (from `devexpert-io/ai-expert-pr`
+
+
+### 🤖 **Claude** · 2026-11-06 14:09:42
+
+He adaptado la skill `github-flow` para que use el MCP de GitHub y sesiones de Claude Code en lugar de `gh` y opencode. Claude Code ya la carga con la nueva descripción. No la he ejecutado todavía, así que está sin probar.
+
+**Cambios en `.claude/skills/github-flow/SKILL.md`:**
+- **Issues y PRs por MCP:** todas las operaciones con `gh` pasan al servidor `github` de `.mcp.json`. La skill incluye una tabla que asigna a cada necesidad su herramienta (por ejemplo `search_issues` para buscar issues, `create_pull_request` para crear PRs) y obliga a llamar a `get_me` primero. Si el repo tiene plantilla de PR, se usa.
+- **Herramientas prohibidas:** `merge_pull_request`, `push_files`, `create_or_update_file` y los borrados. Los commits viajan solo por git local.
+- **Git:** `git fetch` y `git push` usan el credential helper local con `BRICOMISSION_GITHUB_PAT` y `GIT_TERMINAL_PROMPT=0`, sin credenciales globales.
+- **Comprobación de permisos:** en vez de `gh auth status`, la skill exige que `get_me` responda, que el repo dé `permissions.push: true`, que el token exista (solo se mira su longitud) y que tú des permiso de push explícito en cada ejecución.
+- **Sesiones:** `opencode run --dir` pasa a ser `claude -p "Use feature-flow for <id> only, until accepted."`, lanzado desde la carpeta del worktree con `--permission-mode auto`. Además lleva `disableAllHooks` para que el hook de transcripción no escriba logs dentro de las ramas de feature, que darían conflictos al hacer merge.
+- **Windows:** `./init.sh` pasa a `./init.ps1`, y el log diario de conversación se informa pero no bloquea la comprobación de que la rama base esté limpia.
+- **Reglas que se mantienen:** el modo `plan` sigue siendo de solo lectura (sin herramientas MCP de escritura), nunca se hace merge, nunca se duplica nada y cada sesión lleva una sola feature.
+
+**Otros cambios:**
+- `references/evals.md`: las lecturas permitidas pasan a ser herramientas MCP de lectura y la sesión prevista pasa a `claude -p`.
+- `CLAUDE.md`: he quitado la frase obsoleta "harness skills are not installed yet".
+
+Una cosa a vigilar: con `--permission-mode auto`, una sesión sin supervisión puede ver bloqueadas algunas acciones. Lo comprobaremos al ejecutar la primera feature.
+
+Estos cambios no están en ningún commit. ¿Hago commit y push?
+
+
+### 🧑 **Juan Miguel** · 2026-11-06 14:15:25
+
+actualiza CLAUDE.md analizando de nuevo el proyecto en el estado actual, luego haz commit y push
+
+
+### 🤖 **Claude** · 2026-11-06 14:15:28
+
+> 🔧 **Bash**: `{"command": "cd /d/Desarrollo/hardwaremission.bricomission\ngit ls-files | grep -v '^.claude/skills/' ; echo \"---\"; git status --short\ngrep -n -iE \"init.sh|init.ps1|AGENTS.md|PROGRESS|feature_list\" .claude/skills/harness-starter/SKILL.md | head -15", "description": "Review current repo state an`
+
+
+### 🤖 **Claude** · 2026-11-06 14:15:50
+
+> 🔧 **Write**: `{"file_path": "D:\\Desarrollo\\hardwaremission.bricomission\\CLAUDE.md", "content": "# CLAUDE.md\n\nThis file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.\n\n## Project status\n\nPre-code, end of Phase 0. The repository holds the product definition, ag`
+
+
+### 🤖 **Claude** · 2026-11-06 14:15:53
+
+> 🔧 **Bash**: `{"command": "cd /d/Desarrollo/hardwaremission.bricomission\ngit add -A\ngrep -rlE \"github_pat_[A-Za-z0-9_]{40,}\" . --exclude-dir=.git && echo \"SECRET FOUND\" || echo \"no tokens\"\ngit commit -q -F - <<'EOF'\nchore: adapt github-flow to GitHub MCP and refresh CLAUDE.md\n\n- github-flow: replace g`
+
+
+### 🤖 **Claude** · 2026-11-06 14:16:03
+
+He actualizado `CLAUDE.md` con el estado actual del proyecto y he hecho commit y push: `3ce5fe5` ya está en `main`. Antes del commit comprobé que no había ningún token en los archivos.
+
+**Cambios en `CLAUDE.md`:**
+- **Estado:** el proyecto ha cerrado la Fase 0 y no hay código. Aviso de que `harness-starter` solo genera `init.sh`, así que hay que pedirle también `init.ps1`.
+- **Flujo de trabajo:** marca `/build-brief` como siguiente paso. Detalla los permisos de cada subagente (planner, implementer, validator), quién marca `accepted` y quién hace commit, y cómo queda `github-flow` adaptado (MCP de GitHub, `claude -p`, push solo con permiso explícito).
+- **Reglas de git y MCP:** identidad local, token limitado a este repo, `GIT_TERMINAL_PROMPT=0` en `fetch`/`push`, y herramientas del MCP prohibidas (las que escriben commits y la de merge).
+- **Preguntas abiertas:** recoge las del análisis inicial, para resolverlas en `/build-brief`.
+- **Entorno del equipo:** lo instalado (git, Node 24, Python 3.14, Ollama) y lo que falta en el PATH (PostgreSQL, JDK 21 para Keycloak, MinIO).
+- **Herramientas del repo:** `.mcp.json` (tras cambiar la variable del token hay que reiniciar la terminal por completo) y el hook de transcripción. Como el hook reescribe el log del día en cada respuesta, siempre aparece modificado y debe entrar en cada commit.
+
+El mismo commit incluye la adaptación de `github-flow` y el log del día.
+
+Lo siguiente es la Fase 1: lanza `/build-brief` cuando quieras.
