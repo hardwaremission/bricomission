@@ -1,6 +1,6 @@
 # Registro de conversación con Claude Code · 2026-11-12
 
-_Actualizado: 2026-11-12 22:00_
+_Actualizado: 2026-11-12 22:34_
 
 
 ---
@@ -652,3 +652,317 @@ Todos los cambios de antes (renombrado, documento, PRD, hook) siguen sin commit.
 ### 🧑 **Juan Miguel** · 2026-11-12 21:59:50
 
 <local-command-stdout>See ya!</local-command-stdout>
+
+
+### 🧑 **Juan Miguel** · 2026-11-12 22:00:39
+
+haz commit y push
+
+
+### 🤖 **Claude** · 2026-11-12 22:00:42
+
+> 🔧 **Bash**: `{"command": "git status --short && head -3 docs/2026-11-12_conversacion_completa.md && git branch --show-current && git remote -v && echo \"PAT len: ${#BRICOMISSION_GITHUB_PAT}\"", "description": "Check working tree, log freshness, branch, remote, token presence"}`
+
+
+### 🤖 **Claude** · 2026-11-12 22:00:46
+
+> 🔧 **Bash**: `{"command": "git config --local --get-regexp 'credential|user' ; grep -c BRICOMISSION_GITHUB_PAT .env 2>/dev/null", "description": "Show repo-local credential/user config and check .env defines token"}`
+
+
+### 🤖 **Claude** · 2026-11-12 22:00:53
+
+> 🔧 **Bash**: `{"command": "git log -3 --format='%an <%ae> | %cn <%ce>'; cat .git/config", "description": "Show previous commit identities and repo-local git config"}`
+
+
+### 🤖 **Claude** · 2026-11-12 22:00:55
+
+Repo-local config falta identidad y credential helper (clon nuevo en Linux). Configuro ambos solo a nivel `--local`, con la misma identidad de los commits anteriores.
+
+
+### 🤖 **Claude** · 2026-11-12 22:00:57
+
+> 🔧 **Bash**: `{"command": "git config --local user.name \"HardwareMission\" && git config --local user.email \"310600579+hardwaremission@users.noreply.github.com\" && git config --local credential.helper '' && git config --local --add credential.helper '!f() { test \"$1\" = get && echo username=x-access-token && `
+
+
+### 🤖 **Claude** · 2026-11-12 22:01:03
+
+> 🔧 **Bash**: `{"command": "git add -A && git status --short && git commit -q -F - <<'EOF'\ndocs: move to Linux and Docker, add hardware limits and video pipeline\n\n- Rename project definition to \"Documentación del Proyecto_BricoMission.md\"\n  (versioned, no date prefix).\n- Dev host is now Linux CachyOS; scrip`
+
+
+### 🤖 **Claude** · 2026-11-12 22:01:06
+
+> 🔧 **Bash**: `{"command": "set -a && . ./.env && set +a && echo \"PAT len: ${#BRICOMISSION_GITHUB_PAT}\" && GIT_TERMINAL_PROMPT=0 git push origin main 2>&1 | tail -3", "description": "Load token from .env and push main to origin"}`
+
+
+### 🤖 **Claude** · 2026-11-12 22:01:15
+
+Commit `3c026b0` está subido a `origin/main` (`5f3f610..3c026b0`).
+
+- **Log de conversación:** el hook arreglado funciona, porque el log se actualizó a las 22:00. Lo he incluido en el commit.
+- **Config git local:** el clon de Linux no tenía identidad ni credential helper. He puesto, solo con `--local`, la identidad `HardwareMission <310600579+hardwaremission@users.noreply.github.com>`, la misma de los commits anteriores. También un credential helper que lee `BRICOMISSION_GITHUB_PAT`. No he tocado la config global.
+- **MCP de GitHub:** sigue sin conectar (`Authorization header is badly formatted`). La variable `BRICOMISSION_GITHUB_PAT` solo está en `.env` y no en el entorno de la shell. Para el push la he cargado yo a mano desde `.env`. Para que el MCP conecte, expórtala en la config de fish (`set -gx BRICOMISSION_GITHUB_PAT ...` en `~/.config/fish/config.fish`) y reinicia la terminal.
+
+¿Quieres que configure el indicador `[CAVEMAN]` en la barra de estado de Claude Code? Habría que añadir `statusLine` a tu `~/.claude/settings.json` de usuario.
+
+
+### 🧑 **Juan Miguel** · 2026-11-12 22:04:29
+
+sí, configura el statusline de caveman
+
+
+### 🤖 **Claude** · 2026-11-12 22:04:30
+
+> 🔧 **Bash**: `{"command": "cat ~/.claude/settings.json 2>/dev/null || echo \"NO FILE\"; ls -la ~/.claude/hooks/caveman-statusline.sh 2>&1", "description": "Read user settings and check statusline script exists"}`
+
+
+### 🤖 **Claude** · 2026-11-12 22:04:34
+
+> 🔧 **Bash**: `{"command": "grep -n -E \"curl|wget|nc |rm |eval|https?://\" ~/.claude/hooks/caveman-statusline.sh; bash ~/.claude/hooks/caveman-statusline.sh </dev/null; echo \" exit=$?\"", "description": "Check statusline script for risky commands and test it"}`
+
+
+### 🤖 **Claude** · 2026-11-12 22:04:36
+
+> 🔧 **Read**: `{"file_path": "/home/juanmi/.claude/settings.json"}`
+
+
+### 🤖 **Claude** · 2026-11-12 22:04:37
+
+> 🔧 **Edit**: `{"replace_all": false, "file_path": "/home/juanmi/.claude/settings.json", "old_string": "  \"theme\": \"dark\",", "new_string": "  \"theme\": \"dark\",\n  \"statusLine\": {\n    \"type\": \"command\",\n    \"command\": \"\\\"bash\\\" \\\"/home/juanmi/.claude/hooks/caveman-statusline.sh\\\"\"\n  },"}`
+
+
+### 🤖 **Claude** · 2026-11-12 22:05:40
+
+Statusline de caveman configurado en `~/.claude/settings.json` (`statusLine` → `caveman-statusline.sh`). Lo he probado y el script pinta `[CAVEMAN]` sin errores. El badge debería aparecer en el siguiente refresco; si no sale, reinicia Claude Code.
+
+
+### 🧑 **Juan Miguel** · 2026-11-12 22:08:11
+
+Continuemos entonces con el flujo de trabajo definido en el punto 4. Estamos en el apartado 4.2 y ya hemos terminado y está funcionando la Fase 0. Márcarlo con estado finalizado y pasamos a la siguiente fase
+
+
+### 🤖 **Claude** · 2026-11-12 22:08:17
+
+> 🔧 **Edit**: `{"replace_all": false, "file_path": "/home/juanmi/Proyectos/hardwaremission.bricomission/Documentación del Proyecto_BricoMission.md", "old_string": "para automatizar ramas, PRs e issues.  \n   * **Estado:** *(Pendiente de ejecución)*  ", "new_string": "para automatizar ramas, PRs e issues.  \n   * *`
+
+
+### 🤖 **Claude** · 2026-11-12 22:08:21
+
+> 🔧 **Skill**: `{"skill": "build-brief", "args": "Source: \"Documentación del Proyecto_BricoMission.md\" in repo root — section 3 is the English PRD (primary input), section 1 has Spanish decisions, section 1.4 has measured hardware/VRAM limits, section 5 the demo video pipeline. Conversation with developer in Span`
+
+
+### 🤖 **Claude** · 2026-11-12 22:08:24
+
+> 🔧 **Bash**: `{"command": "cd /home/juanmi/Proyectos/hardwaremission.bricomission/.claude/skills/build-brief/references && wc -l *; cat teaching-notes.md", "description": "Read build-brief teaching notes"}`
+
+
+### 🤖 **Claude** · 2026-11-12 22:08:30
+
+> 🔧 **AskUserQuestion**: `{"questions": [{"question": "¿En qué idioma quieres que se redacten los documentos de descubrimiento (CONTEXT.md, docs/build-brief.md, docs/domain-model.md, docs/risks-and-open-questions.md, DESIGN.md)?", "header": "Idioma docs", "multiSelect": false, "options": [{"label": "Inglés (Recomendado)", "d`
+
+
+### 🤖 **Claude** · 2026-11-12 22:09:09
+
+> 🔧 **AskUserQuestion**: `{"questions": [{"question": "Con 10 días de plazo, ¿qué flujo debe funcionar de verdad de principio a fin (sin datos simulados) para el vídeo?", "header": "Slice MVP", "multiSelect": false, "options": [{"label": "B2C completo + B2B mínimo (Recomendado)", "description": "Real: fotos+medidas → imagen `
+
+
+### 🤖 **Claude** · 2026-11-12 22:10:04
+
+> 🔧 **AskUserQuestion**: `{"questions": [{"question": "NotebookLM no tiene API en tiempo de ejecución. ¿Cómo obtiene la app los precios exactos de los catálogos (IKEA, Leroy Merlin, BricoDepot)?", "header": "Precios", "multiSelect": false, "options": [{"label": "NotebookLM cura, BD local sirve (Recomendado)", "description": `
+
+
+### 🤖 **Claude** · 2026-11-12 22:11:58
+
+> 🔧 **AskUserQuestion**: `{"questions": [{"question": "Con RAG local, ¿quién calcula los importes del presupuesto (cantidades × precio, totales de los 4 niveles, penalizaciones del contrato)?", "header": "Cálculo", "multiSelect": false, "options": [{"label": "LLM extrae, código calcula (Recomendado)", "description": "El LLM,`
+
+
+### 🤖 **Claude** · 2026-11-12 22:12:29
+
+> 🔧 **AskUserQuestion**: `{"questions": [{"question": "Para la grabación del vídeo, ¿la máquina tendrá internet o debe funcionar sin red?", "header": "Offline", "multiSelect": false, "options": [{"label": "Online, con modo offline (Recomendado)", "description": "Con red: Google SSO y PayPal Sandbox reales. Sin red, todo sigu`
+
+
+### 🤖 **Claude** · 2026-11-12 22:12:58
+
+> 🔧 **AskUserQuestion**: `{"questions": [{"question": "¿Qué combinación de modelos locales prefieres como objetivo del MVP (a validar con una prueba técnica el primer día)?", "header": "Modelos", "multiSelect": false, "options": [{"label": "LLM 8B + SDXL, alternando (Recomendado)", "description": "LLM ~8B Q4 (p.ej. Qwen3 8B)`
+
+
+### 🤖 **Claude** · 2026-11-12 22:17:00
+
+> 🔧 **WebFetch**: `{"url": "https://github.com/freriadoc/Avalon", "prompt": "What is Avalon? Supported backends/GPUs (AMD ROCm/Vulkan? RDNA4?), OS, MoE expert offloading to system RAM, model formats, OpenAI-compatible API, Docker support, license, maturity (stars, last commit, releases). Quote install commands and any`
+
+
+### 🤖 **Claude** · 2026-11-12 22:17:26
+
+> 🔧 **AskUserQuestion**: `{"questions": [{"question": "¿Qué servidor LLM y estrategia MoE fijamos como objetivo del MVP (validado con una prueba técnica el primer día)?", "header": "LLM MoE", "multiSelect": false, "options": [{"label": "llama.cpp + MoE en RAM (Recomendado)", "description": "llama-server en Docker (Vulkan o R`
+
+
+### 🤖 **Claude** · 2026-11-12 22:19:00
+
+> 🔧 **AskUserQuestion**: `{"questions": [{"question": "¿Cómo estructuramos frontend y backend?", "header": "Stack", "multiSelect": false, "options": [{"label": "Next.js PWA + API NestJS (Recomendado)", "description": "Monorepo TypeScript (pnpm workspaces): apps/web (Next.js + Tailwind, solo cliente) y apps/api (NestJS REST +`
+
+
+### 🤖 **Claude** · 2026-11-12 22:19:34
+
+> 🔧 **AskUserQuestion**: `{"questions": [{"question": "Cuando un usuario publica un dossier en el marketplace, ¿qué profesionales lo reciben?", "header": "Dossiers", "multiSelect": false, "options": [{"label": "Todas las empresas validadas (Recomendado)", "description": "Cualquier empresa con estado 'validada' ve el dossier.`
+
+
+### 🤖 **Claude** · 2026-11-12 22:19:54
+
+> 🔧 **AskUserQuestion**: `{"questions": [{"question": "¿Cómo funciona la ventana de 15 días de pujas?", "header": "Pujas", "multiSelect": false, "options": [{"label": "Editable y aceptable en todo momento (Recomendado)", "description": "La empresa puede modificar su puja (precio, fecha) mientras el dossier esté abierto; el u`
+
+
+### 🤖 **Claude** · 2026-11-12 22:20:26
+
+> 🔧 **AskUserQuestion**: `{"questions": [{"question": "¿Tienes algún recurso visual previo para BricoMission (logo, colores, tipografía, referencias de apps), o defino yo una dirección inicial en DESIGN.md?", "header": "Diseño", "multiSelect": false, "options": [{"label": "Definíela tú (Recomendado)", "description": "Propong`
+
+
+### 🤖 **Claude** · 2026-11-12 22:21:11
+
+> 🔧 **AskUserQuestion**: `{"questions": [{"question": "¿Cómo se da de alta un autónomo (sin CIF) como profesional?", "header": "Autónomos", "multiSelect": false, "options": [{"label": "Empresa de un miembro con NIF (Recomendado)", "description": "Todo profesional pertenece a una Company. El campo es 'identificador fiscal' (C`
+
+
+### 🤖 **Claude** · 2026-11-12 22:21:26
+
+> 🔧 **AskUserQuestion**: `{"questions": [{"question": "El PRD dice que el contrato PDF lo 'firman digitalmente ambas partes'. ¿Qué tipo de firma usamos en el MVP?", "header": "Firma", "multiSelect": false, "options": [{"label": "Aceptación electrónica registrada (Recomendado)", "description": "Cada parte acepta en la app tra`
+
+
+### 🤖 **Claude** · 2026-11-12 22:21:52
+
+> 🔧 **Read**: `{"file_path": "/home/juanmi/Proyectos/hardwaremission.bricomission/.claude/skills/build-brief/references/output-documents.md"}`
+
+
+### 🤖 **Claude** · 2026-11-12 22:22:13
+
+> 🔧 **Write**: `{"file_path": "/home/juanmi/Proyectos/hardwaremission.bricomission/CONTEXT.md", "content": "# Context\n\nShared vocabulary for BricoMission. Definitions only: decisions live in `docs/`, rules in `docs/domain-model.md`.\n\n## Glossary\n\n### Homeowner\nA person who plans a kitchen renovation in the a`
+
+
+### 🤖 **Claude** · 2026-11-12 22:22:33
+
+> 🔧 **Write**: `{"file_path": "/home/juanmi/Proyectos/hardwaremission.bricomission/docs/build-brief.md", "content": "# Build Brief\n\nSource of truth for product intent: `Documentación del Proyecto_BricoMission.md` (PRD in section 3). This brief records the decisions taken in discovery on 2026-11-12.\n\n## Problem\`
+
+
+### 🤖 **Claude** · 2026-11-12 22:22:51
+
+> 🔧 **Write**: `{"file_path": "/home/juanmi/Proyectos/hardwaremission.bricomission/docs/domain-model.md", "content": "# Domain Model\n\nTerms as defined in `CONTEXT.md`.\n\n## Core Concepts\n\n- **Account**: identity in Keycloak (role: User, Professional, or Administrator), plus a local profile with preferred local`
+
+
+### 🤖 **Claude** · 2026-11-12 22:23:03
+
+> 🔧 **Write**: `{"file_path": "/home/juanmi/Proyectos/hardwaremission.bricomission/docs/user-and-access-model.md", "content": "# User and Access Model\n\nIdentity, roles, and sessions are owned by Keycloak (realm `BricoMission`). The API enforces resource-level rules below.\n\n## User Types\n\n| Type | Keycloak rol`
+
+
+### 🤖 **Claude** · 2026-11-12 22:23:20
+
+> 🔧 **Write**: `{"file_path": "/home/juanmi/Proyectos/hardwaremission.bricomission/docs/technical-discovery.md", "content": "# Technical Discovery\n\nHost hardware and VRAM limits: doc section 1.4 of `Documentación del Proyecto_BricoMission.md`.\n\n## Product Surface\n\nMobile-first PWA for Homeowners; the same PWA`
+
+
+### 🤖 **Claude** · 2026-11-12 22:23:32
+
+> 🔧 **Write**: `{"file_path": "/home/juanmi/Proyectos/hardwaremission.bricomission/docs/risks-and-open-questions.md", "content": "# Risks and Open Questions\n\n## Blocking Next Phase\n\nNone. Discovery is sufficient to derive the harness (`/harness-starter`).\n\n## Implementation-Time Questions\n\n- Exact MoE model`
+
+
+### 🤖 **Claude** · 2026-11-12 22:23:35
+
+Ahora `DESIGN.md` y los 3 ADR.
+
+
+### 🤖 **Claude** · 2026-11-12 22:23:59
+
+> 🔧 **Write**: `{"file_path": "/home/juanmi/Proyectos/hardwaremission.bricomission/DESIGN.md", "content": "---\nname: BricoMission\ndescription: Calm, airy, photo-first renovation planner. Apple-like restraint, IKEA-like warmth and clarity.\ndesignAssets:\n  sourceOfTruth:\n    - design/openpencil/bricomission_B2C_`
+
+
+### 🤖 **Claude** · 2026-11-12 22:24:05
+
+> 🔧 **Write**: `{"file_path": "/home/juanmi/Proyectos/hardwaremission.bricomission/docs/adr/0001-local-llm-moe-llama-cpp.md", "content": "# ADR 0001: Local LLM served by llama.cpp with MoE experts in system RAM\n\n## Status\nAccepted (2026-11-12), pending validation by the Day-1 spike.\n\n## Context\n\nThe dev mach`
+
+
+### 🤖 **Claude** · 2026-11-12 22:24:10
+
+> 🔧 **Write**: `{"file_path": "/home/juanmi/Proyectos/hardwaremission.bricomission/docs/adr/0002-llm-extracts-code-computes-budget.md", "content": "# ADR 0002: LLM extracts priced Line Items, code computes all amounts\n\n## Status\nAccepted (2026-11-12).\n\n## Context\n\nPrices must never be invented. NotebookLM ha`
+
+
+### 🤖 **Claude** · 2026-11-12 22:24:15
+
+> 🔧 **Write**: `{"file_path": "/home/juanmi/Proyectos/hardwaremission.bricomission/docs/adr/0003-typescript-monorepo-nextjs-nestjs.md", "content": "# ADR 0003: TypeScript monorepo with Next.js PWA and NestJS REST API\n\n## Status\nAccepted (2026-11-12).\n\n## Context\n\nThe PRD requires a mobile-first PWA now and a`
+
+
+### 🤖 **Claude** · 2026-11-12 22:24:17
+
+Actualizo el estado de la Fase 1 y el de CLAUDE.md:
+
+
+### 🤖 **Claude** · 2026-11-12 22:24:20
+
+> 🔧 **Edit**: `{"replace_all": false, "file_path": "/home/juanmi/Proyectos/hardwaremission.bricomission/Documentación del Proyecto_BricoMission.md", "old_string": "docs/risks-and-open-questions.md, DESIGN.md.  \n   * **Estado:** *(Pendiente de ejecución)*", "new_string": "docs/risks-and-open-questions.md, DESIGN.m`
+
+
+### 🤖 **Claude** · 2026-11-12 22:24:22
+
+> 🔧 **Edit**: `{"replace_all": false, "file_path": "/home/juanmi/Proyectos/hardwaremission.bricomission/CLAUDE.md", "old_string": "1. `/build-brief` — next. Discovery interview, one question at a time; produces `CONTEXT.md`, `docs/build-brief.md`, `docs/domain-model.md`, `docs/risks-and-open-questions.md`, `DESIGN`
+
+
+### 🤖 **Claude** · 2026-11-12 22:24:29
+
+> 🔧 **Edit**: `{"replace_all": false, "file_path": "/home/juanmi/Proyectos/hardwaremission.bricomission/CLAUDE.md", "old_string": "- AI abstraction layer with hot-swappable endpoints (Ollama / lemonade-server locally on an AMD Radeon 9070 XT 16 GB via ROCm containers, Vulkan fallback, cloud fallback). Image genera`
+
+
+### 🤖 **Claude** · 2026-11-12 22:24:31
+
+> 🔧 **Edit**: `{"replace_all": false, "file_path": "/home/juanmi/Proyectos/hardwaremission.bricomission/CLAUDE.md", "old_string": "Known open questions to settle in `/build-brief` (offline demo vs SSO/PayPal/NotebookLM, NotebookLM has no runtime query API, deterministic budget math, ControlNet/ROCm on RDNA4 (gfx12`
+
+
+### 🤖 **Claude** · 2026-11-12 22:24:41
+
+La Fase 0 está marcada como finalizada y la Fase 1 (`/build-brief`) ha terminado. No hay commit todavía.
+
+**Documentos creados (en inglés):**
+
+| Archivo | Para qué sirve |
+| --- | --- |
+| `CONTEXT.md` | Glosario: Kitchen Project, Dossier, Bid, Budget, Line Item, Tax ID… y términos que conviene evitar ("presupuesto" para una puja, "CIF" como nombre de campo) |
+| `docs/build-brief.md` | Problema, objetivos, lo que queda fuera, alcance ordenado por el recorrido de la demo y criterios de éxito |
+| `docs/domain-model.md` | Entidades, relaciones y ciclos de vida de Company, Dossier, Bid y Contract, más casos límite |
+| `docs/user-and-access-model.md` | Tabla de permisos por rol, anonimato de las pujas, revocación de accesos |
+| `docs/technical-discovery.md` | Tecnologías elegidas, servicios de Compose, integraciones con su plan B sin red, reparto de la GPU, pruebas |
+| `docs/risks-and-open-questions.md` | Nada bloqueante; riesgos con su mitigación; prueba técnica de GPU el primer día |
+| `DESIGN.md` | Tokens de diseño y dirección visual minimalista estilo Apple/IKEA |
+| `docs/adr/0001-0003` | LLM MoE con llama.cpp, cálculo determinista del presupuesto, monorepo Next.js + NestJS |
+
+**Decisiones clave:**
+- **Alcance:** el PRD completo, priorizado según el recorrido de la demo.
+- **Precios:** RAG local sobre catálogos en PDF. El LLM cita cada precio y el código verifica y hace todas las cuentas.
+- **Red:** funciona online con plan B offline (Google SSO y PayPal Sandbox con red; usuario/contraseña, OTP por Mailpit y pago simulado sin red).
+- **IA local:** llama.cpp con un modelo MoE y los expertos en RAM, más SDXL + ControlNet en ComfyUI.
+- **Marketplace:** el dossier lo ven todas las empresas validadas; una puja por empresa, editable mientras el dossier esté abierto; ventana de pujas configurable.
+- **Autónomos:** se registran como empresa de un solo miembro con NIF.
+- **Contrato:** aceptación electrónica con reautenticación y huella SHA-256 del PDF.
+
+También he actualizado `CLAUDE.md` y el estado de la Fase 1 en el documento del proyecto.
+
+**Aviso de plazo:** con el PRD completo y 10 días, el riesgo principal es no llegar. `/harness-starter` tiene que ordenar las features para que el recorrido de la demo esté terminado antes que el resto (11 idiomas, Google SSO, pulido).
+
+¿Hago commit y push de la Fase 1 y paso a la Fase 2 (`/harness-starter`)?
+
+
+### 🧑 **Juan Miguel** · 2026-11-12 22:29:39
+
+actualiza en Documentación del Proyecto_BricoMission.md un resumen con las decisiones que se tomaron en el cuestionario de build-brief
+
+
+### 🤖 **Claude** · 2026-11-12 22:29:58
+
+> 🔧 **Edit**: `{"replace_all": false, "file_path": "/home/juanmi/Proyectos/hardwaremission.bricomission/Documentación del Proyecto_BricoMission.md", "old_string": "## **5\\. Creación de la Presentación (Vídeo Demo de 15 minutos)**", "new_string": "### **4.3. Decisiones del Cuestionario de Descubrimiento (build-bri`
+
+
+### 🤖 **Claude** · 2026-11-12 22:30:00
+
+> 🔧 **Edit**: `{"replace_all": false, "file_path": "/home/juanmi/Proyectos/hardwaremission.bricomission/Documentación del Proyecto_BricoMission.md", "old_string": "   * 4.2. [Flujo de Trabajo del Harness Avanzado y Registro de Estado](#bookmark=id.5qm4m2qbyaxb)  ", "new_string": "   * 4.2. [Flujo de Trabajo del Ha`
+
+
+### 🤖 **Claude** · 2026-11-12 22:30:04
+
+He añadido al documento la sección **4.3, "Decisiones del Cuestionario de Descubrimiento (build-brief, 2026-11-12)"**, y su entrada en el índice. Contiene:
+- **Tabla de 12 filas:** cada pregunta con la decisión tomada y su motivo o consecuencia, enlazando al ADR que corresponda (0001-0003).
+- **Supuestos sin pregunta explícita:** comisión del 5 %, penalización mínima de 50 €/día, ventana de 15 días, 11 idiomas, borradores anónimos que caducan a los 7 días y valoraciones de demo.
+- **Primera tarea técnica:** la prueba de GPU del primer día.
+
+Todavía no hay commit.

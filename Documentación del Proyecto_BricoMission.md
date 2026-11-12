@@ -26,6 +26,7 @@
 > 4. [4\. Ejecución de Skills del Harness (Registro de Progreso)](#bookmark=id.o9lxd56d7nx9)  
    * 4.1. [Pasos para Invocar las Skills en la Terminal](#bookmark=id.jt4vnv8odkhi)  
    * 4.2. [Flujo de Trabajo del Harness Avanzado y Registro de Estado](#bookmark=id.5qm4m2qbyaxb)  
+   * 4.3. Decisiones del Cuestionario de Descubrimiento (build-brief)  
 > 5. [5\. Creación de la Presentación (Vídeo Demo de 15 minutos)](#5-creación-de-la-presentación-vídeo-demo-de-15-minutos)  
    * 5.1. Guion  
    * 5.2. Narración con voz propia  
@@ -405,12 +406,12 @@ El desarrollo se organiza en 6 grandes etapas secuenciales (Fases 0 a 5) según 
    * **Responsabilidad del Agente:**  
      1. Guiar al desarrollador en la inicialización de Git con configuración estrictamente local (local config), protegiendo las credenciales globales de la máquina.  
      2. Conectar e inicializar el servidor GitHub MCP (github-mcp-server) para automatizar ramas, PRs e issues.  
-   * **Estado:** *(Pendiente de ejecución)*  
+   * **Estado:** ✅ *Finalizada (2026-11-12).* Git con identidad y *credential helper* locales (token desde `BRICOMISSION_GITHUB_PAT`), servidor GitHub MCP configurado en `.mcp.json`, push verificado.  
 > 1. **Fase 1: Descubrimiento de Producto (build-brief)**  
    * **Objetivo:** Pasar el PRD (Sección 3\) al agente para que realice la entrevista interactiva y consolide los artefactos de descubrimiento.  
    * **Comando:** /build-brief (o el equivalente del agente).  
    * **Artefactos generados:** CONTEXT.md, docs/build-brief.md, docs/domain-model.md, docs/risks-and-open-questions.md, DESIGN.md.  
-   * **Estado:** *(Pendiente de ejecución)*  
+   * **Estado:** ✅ *Finalizada (2026-11-12).* Generados además docs/user-and-access-model.md, docs/technical-discovery.md y 3 ADR en docs/adr/ (LLM MoE con llama.cpp, cálculo determinista del presupuesto, monorepo Next.js + NestJS). Alcance: PRD completo, priorizado por el recorrido de la demo.  
 > 2. **Fase 2: Preparación e Inicialización del Repositorio (harness-starter)**  
    * **Objetivo:** Convertir los documentos de descubrimiento en la matriz de funcionalidades acotadas y la infraestructura para los agentes de codificación.  
    * **Comando:** /harness-starter.  
@@ -439,6 +440,35 @@ El desarrollo se organiza en 6 grandes etapas secuenciales (Fases 0 a 5) según 
    * **Objetivo:** Producir el vídeo demo de 15 minutos siguiendo el proceso de la sección 5: guion, narración con voz propia, transcripción con marcas de tiempo, capturas con el MCP del navegador, montaje en HyperFrames a 1080p y exportación a MP4.  
    * **Artefactos generados:** `presentation/` (guion, audio, transcripción, capturas y proyecto HyperFrames), versionado en el repositorio. El MP4 final queda fuera de git.  
    * **Estado:** *(Pendiente de ejecución)*
+
+### **4.3. Decisiones del Cuestionario de Descubrimiento (build-brief, 2026-11-12)**
+
+Resumen de las respuestas dadas durante la entrevista de `/build-brief`. El detalle está en los documentos generados (CONTEXT.md, docs/build-brief.md, docs/domain-model.md, docs/user-and-access-model.md, docs/technical-discovery.md, docs/risks-and-open-questions.md, DESIGN.md y docs/adr/).
+
+| # | Pregunta | Decisión | Motivo / consecuencia |
+| :---- | :---- | :---- | :---- |
+| 1 | Idioma de los documentos | **Inglés** | Coherente con la regla de código y documentación técnica en inglés. La conversación sigue en español. |
+| 2 | Alcance del MVP con 10 días de plazo | **PRD completo** | Es el riesgo principal. `/harness-starter` ordenará las features siguiendo el recorrido de la demo: primero infraestructura, captura, IA, resultados y marketplace; después el panel de administración; y al final la amplitud (11 idiomas, Google SSO, pulido). |
+| 3 | Origen de los precios (NotebookLM no tiene API) | **RAG local sobre los catálogos en PDF** | Los PDF, curados por el desarrollador con NotebookLM fuera de la app, se indexan con *embeddings* en PostgreSQL (pgvector). NotebookLM no forma parte del sistema en ejecución. |
+| 4 | Quién calcula los importes | **El LLM extrae, el código calcula** (ADR 0002) | El LLM devuelve partidas en JSON citando la fuente. El backend comprueba que el precio aparece en el fragmento recuperado y calcula subtotales, niveles, IVA, penalizaciones y comisión con aritmética decimal. Totales reproducibles. |
+| 5 | Demo con o sin internet | **Online, con modo offline** | Con red: Google SSO y PayPal Sandbox reales. Sin red: login con usuario y contraseña de Keycloak, OTP por email a un buzón local (Mailpit en Docker) y pago simulado. Apple SSO y OTP por SMS quedan fuera del MVP. |
+| 6 | Servidor LLM y modelos | **llama.cpp con un modelo MoE y los expertos en RAM** (ADR 0001) | `llama-server` en Docker (ROCm o Vulkan) con un MoE mediano (objetivo: Qwen3-30B-A3B Q4), usando `--n-cpu-moe`. Ocupa poca VRAM y deja sitio a **SDXL + ControlNet** en ComfyUI. Se descartó **Avalon** como motor principal: es un fork para un solo modelo de 125B, no está medido en RDNA4, exige ROCm nativo y ocupa ~98 GiB. Queda como posible experimento, intercambiable desde el panel. |
+| 7 | Arquitectura frontend/backend | **Monorepo TypeScript: Next.js PWA + API NestJS** (ADR 0003) | Monorepo con pnpm: `apps/web` (Next.js + Tailwind) y `apps/api` (NestJS REST + OpenAPI, Prisma, SSE). Un solo lenguaje, tipos compartidos y una API reutilizable por la futura app iOS. |
+| 8 | Qué profesionales reciben un dossier | **Todas las empresas validadas** | Una sola puja por empresa. La gestiona el profesional que la crea; sus compañeros la ven en solo lectura. Sin filtro por zona en el MVP. |
+| 9 | Ciclo de vida de la ventana de pujas | **Pujas editables y aceptables en cualquier momento** | Cada cambio de una puja avisa al usuario por SSE. Aceptar una puja cierra el dossier, y si en 15 días no se acepta ninguna, caduca. La duración de la ventana la configura el administrador, para poder enseñar el ciclo completo en el vídeo. |
+| 10 | Recursos visuales previos | **Ninguno: dirección inicial definida por el agente** | DESIGN.md recoge tokens y dirección minimalista estilo Apple/IKEA (azul profundo, neutros cálidos, acento naranja, Inter). Cada pantalla se diseña en OpenPencil vía MCP, y una vez aprobada es la fuente de verdad. |
+| 11 | Alta de autónomos (no tienen CIF) | **Empresa de un solo miembro con NIF** | El campo pasa a ser "Tax ID" (CIF o NIF) y se valida su formato. Cada profesional pertenece a una única empresa. |
+| 12 | Firma del contrato | **Aceptación electrónica registrada** | Cada parte se vuelve a autenticar en Keycloak y se guarda quién, cuándo, la IP y el hash SHA-256 del PDF. Se añade una página de evidencias al PDF. Funciona sin red. |
+
+**Supuestos adoptados sin pregunta explícita** (todos configurables por el administrador o revisables):
+- Comisión de plataforma del 5 %.
+- Penalización mínima de 50 €/día de retraso; cada profesional propone la suya en la puja.
+- Ventana de pujas de 15 días por defecto.
+- Interfaz traducida a los 11 idiomas, con el inglés como idioma canónico; el chat responde en el idioma del usuario.
+- Los borradores anónimos que no se reclaman se borran a los 7 días.
+- Las valoraciones de las empresas son datos de demostración precargados.
+
+**Primera tarea técnica:** una prueba en la máquina de desarrollo el primer día, antes de la primera feature con IA. Consiste en ejecutar llama.cpp MoE y ComfyUI SDXL + ControlNet en Docker sobre la RX 9070 XT y medir VRAM, tokens/s y segundos por render.
 
 ## **5\. Creación de la Presentación (Vídeo Demo de 15 minutos)**
 

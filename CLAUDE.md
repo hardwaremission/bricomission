@@ -16,8 +16,8 @@ MVP deadline: 2026-11-22 (15-minute demo video).
 Skills in `.claude/skills/` (from `devexpert-io/ai-expert-project`), subagents in `.claude/agents/`.
 
 0. Git local config + GitHub MCP — done.
-1. `/build-brief` — next. Discovery interview, one question at a time; produces `CONTEXT.md`, `docs/build-brief.md`, `docs/domain-model.md`, `docs/risks-and-open-questions.md`, `DESIGN.md`. No code.
-2. `/harness-starter`: splits the MVP into 12-30 single-session features in `feature_list.json` with `depends_on`.
+1. `/build-brief` — done (2026-11-12). Outputs: `CONTEXT.md`, `DESIGN.md`, `docs/build-brief.md`, `docs/domain-model.md`, `docs/user-and-access-model.md`, `docs/technical-discovery.md`, `docs/risks-and-open-questions.md`, `docs/adr/0001-0003`. Read these before any feature work.
+2. `/harness-starter` — next: splits the MVP into 12-30 single-session features in `feature_list.json` with `depends_on`.
 3. `/feature-flow <feature-id>`: the main agent orchestrates the subagents sequentially, never in parallel for one feature: `planner` (preloads `feature-spec`, may write only `docs/specs/` and `feature_list.json`) -> `implementer` (`feature-implementer`, self-verifies, marks `passing`) -> `validator` (`feature-validator`, read-only, verdict accept/revise/block). `revise` loops back to the implementer. Only the orchestrator marks `accepted` and commits; subagents never commit.
 4. `/github-flow plan|execute|publish`: one worktree per feature at `../hardwaremission.bricomission-worktrees/<feature-id>`, branch `feature/<feature-id>`, issue `[<feature-id>] <title>`, PR per accepted feature. Adapted to this repo: GitHub MCP instead of `gh`, one headless `claude -p` session per worktree (hooks disabled, `COMPOSE_PROJECT_NAME=<feature-id>`). Push needs explicit per-run permission. Never merge PRs.
 5. Demo video, only after the MVP (doc section 5): agent proposes the script -> developer records narration -> local speech-to-text (Whisper) gives per-sentence timestamps -> screenshots via the browser MCP -> HyperFrames project in `presentation/hyperframes/` (1920x1080) synced to the transcript -> developer validates the preview -> guided render to MP4 (`presentation/out/`, git-ignored). Everything else under `presentation/` is versioned.
@@ -38,12 +38,14 @@ Skills in `.claude/skills/` (from `devexpert-io/ai-expert-project`), subagents i
 - Mobile-first PWA (Next.js + Tailwind) over a framework-agnostic REST API that a future native iOS app will reuse unchanged.
 - Keycloak realm `BricoMission` owns auth, RBAC, SSO, OTP. Lazy login: anonymous until the first costly AI call.
 - PostgreSQL (container) for data; MinIO as S3-compatible storage for photos, generated images, PDFs.
-- AI abstraction layer with hot-swappable endpoints (Ollama / lemonade-server locally on an AMD Radeon 9070 XT 16 GB via ROCm containers, Vulkan fallback, cloud fallback). Image generation via ControlNet (Depth/Canny) preserving room geometry.
-- Budgeting is conversational: UI controls inject structured prompts into the LLM chat; four tiers (Luxury/High/Medium/Low); four switchable personas. Prices grounded on partner catalogs (NotebookLM-curated), never invented.
+- pnpm TypeScript monorepo: `apps/web` (Next.js + Tailwind PWA), `apps/api` (NestJS REST + OpenAPI, Prisma, SSE). ADR 0003.
+- AI abstraction layer with hot-swappable endpoints: llama.cpp `llama-server` in Docker with a MoE model, experts in system RAM (ADR 0001); ComfyUI SDXL + ControlNet (Depth/Canny) preserving room geometry; cloud fallback.
+- Budgeting is conversational: UI controls inject structured prompts into the LLM chat; four tiers (Luxury/High/Medium/Low); four switchable personas. Prices come from a local RAG index (pgvector) over catalog PDFs; LLM extracts cited Line Items, code verifies and computes every amount (ADR 0002).
+- Online with offline fallback: Google SSO / PayPal Sandbox online; Keycloak password + email OTP (Mailpit) / simulated payment offline.
 - Marketplace: locked dossier, 15-day anonymous sealed bidding, no chat, SSE notifications, PDF contract with computed delay penalties and platform commission.
 - i18n from day one: en, es, fr, de, it, pt, nl, sv, no, da, fi; browser detection, choice persisted per user.
 
-Known open questions to settle in `/build-brief` (offline demo vs SSO/PayPal/NotebookLM, NotebookLM has no runtime query API, deterministic budget math, ControlNet/ROCm on RDNA4 (gfx1201) inside containers, VRAM sharing, MinIO image licensing) were raised at the start of the 2026-11-06 session log.
+Discovery questions were settled on 2026-11-12; remaining unknowns and risks live in `docs/risks-and-open-questions.md` (Day-1 GPU spike first).
 
 Host state (2026-11-12): CachyOS, kernel 7.3.3-1-cachyos; Ryzen 9 5950X (16C/32T, AVX2), 64 GB RAM + zram swap; Radeon RX 9070 XT 16 GB (RADV/Vulkan works, no host ROCm); 465 GB system NVMe plus unmounted 1.8 TB / 4 TB NVMe data drives. Installed: git, python3 3.14, ffmpeg, Node 26 + npm. Missing: Docker + Compose (everything else goes in containers).
 
