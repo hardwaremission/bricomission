@@ -1,0 +1,13 @@
+packages:
+  - apps/*
+  - packages/*
+
+# Only these packages may run install scripts (pnpm 10 blocks the rest by default).
+onlyBuiltDependencies:
+  - "@prisma/engines"
+  - "@swc/core"
+  - prisma
+
+# Install scripts deliberately skipped (swagger-ui-dist telemetry).
+ignoredBuiltDependencies:
+  - "@scarf/scarf"
