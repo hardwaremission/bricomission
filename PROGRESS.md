@@ -4,10 +4,10 @@
 
 - Repository root: `/home/juanmi/Proyectos/hardwaremission.bricomission`
 - Standard startup path: `./init.sh`
-- Standard verification path: `./init.sh` checks host prerequisites, validates `feature_list.json`, then runs the compose gate (`docker compose up -d --wait`; postgres, minio, mailpit healthy). Without Docker it skips the gate and exits 0; with an unreachable daemon it exits 1. `pnpm -r lint && pnpm -r test` joins after `api-skeleton`.
-- Last accepted feature: `infra-compose-core` (validator ACCEPT, 2026-11-12)
-- Current next ready feature: `local-ai-gpu-spike` (also ready: `api-skeleton`)
-- Current blockers: none for infra. pnpm not installed (enable with `corepack enable` during `api-skeleton`). Agent shells started before the docker group was added must run docker through `newgrp docker` (no `sg` on this host).
+- Standard verification path: `./init.sh` (bootstrapped variant since `api-skeleton`) checks host prerequisites, validates `feature_list.json`, runs the workspace gate (`pnpm install --frozen-lockfile`, `pnpm -r lint`, `pnpm -r test`), then the compose gate (`docker compose up -d --build --wait`; postgres, minio, mailpit, api healthy) and requires `GET /health` to report `database: up`. Without Docker it skips the compose gate after the pnpm steps and exits 0; with an unreachable daemon, an unhealthy stack or API health not up it exits 1; without pnpm it exits 1 with no-sudo guidance.
+- Last accepted feature: `api-skeleton` (validator ACCEPT, 2026-11-12)
+- Current next ready feature: `local-ai-gpu-spike`
+- Current blockers: none. pnpm 10.34.9 (pinned in `packageManager`) resolves through a corepack shim in `~/.local/bin` (host Node 26 has no bundled corepack). Agent shells started before the docker group was added must run docker through `newgrp docker` (no `sg` on this host).
 - Last verified at: 2026-11-12 (`./init.sh` exit 0 with the stack healthy; feature list valid)
 
 ## Session Log
@@ -34,3 +34,15 @@
 - Runtime verification (after the developer installed Docker; agent used `newgrp docker`, no sudo): `--check` all 9 ok; `docker compose config -q` and `up -d --wait` exit 0, 3 services healthy; pgvector 0.8.1; ports 9001/8025/9000-live return 200; data survived `down`/`up`; `./init.sh` exit 0 (Scenario 5), exit 1 on unreachable daemon (Scenario 7), recovers a stopped minio (Scenario 8). MinIO curl healthcheck confirmed (`/usr/bin/curl` in image). Digests recorded in `feature_list.json`. Status `passing`. Stack left running.
 - Independent validation: ACCEPT (2026-11-12). Validator re-ran scenarios 1-9 itself, confirmed 127.0.0.1-only bindings and digests; minor doc findings (data NVMe wording) fixed by the orchestrator. Status `accepted`.
 - Next best step: `/feature-flow local-ai-gpu-spike`.
+
+### Session 003
+
+- Date: 2026-11-12
+- Goal: implement `api-skeleton` (spec `docs/specs/api-skeleton.md`) in worktree `feature/api-skeleton` (`COMPOSE_PROJECT_NAME=api-skeleton`, `API_PORT=3200`).
+- Completed: pnpm workspace (root `package.json` with `packageManager: pnpm@10.34.9`, `pnpm-workspace.yaml`, `pnpm-lock.yaml`, `tsconfig.base.json`, `eslint.config.mjs`, `.dockerignore`); `packages/shared-types` (type-only `HealthResponse`); `apps/api` (NestJS 12 ESM, Prisma 7 + adapter-pg, lazy-connecting `PrismaService`, `GET /health` with 2 s timeout and 200/503 contract, Swagger at `/docs` and `/docs-json` via `configureApp`, Vitest unit + supertest HTTP tests, multi-stage Dockerfile running as `node`); compose `api` service (`API_PORT`, healthcheck, depends on healthy postgres); `.env.example` `API_PORT`; `.gitignore`; `init.sh` bootstrapped variant; `ARCHITECTURE.md`; `AGENTS.md` startup path.
+- Verification run: frozen install (worktree and clean copy, lockfile unchanged); `pnpm -r lint` exit 0; `pnpm -r test` 7 passed; compose up 4 healthy; `/health` 200 up; postgres stopped -> 503 down in ~2 s with no api restart, recovery to 200; `/docs-json` OpenAPI 3.0.0 "BricoMission API" with /health 200+503; `/docs` 200 with local assets; 127.0.0.1-only binding; container user `node`; pin checks; `./init.sh` exit 0 and the Scenario 7 failure paths (no pnpm, failing test, no docker, no daemon, health down). Details in `feature_list.json` evidence.
+- Deviations from the spec: Prisma 7 does not accept `url = env("DATABASE_URL")` in `schema.prisma`; the URL lives in `apps/api/prisma.config.ts`. NestJS 12 is ESM-only, so the API is ESM and tests use Vitest + unplugin-swc (an option the spec allowed). No Nest CLI / `nest-cli.json`: `build` is `prisma generate && tsc -p tsconfig.build.json`. `prisma generate` runs at the start of `lint`/`test`/`build` instead of `postinstall` (keeps the prod `pnpm deploy` free of the Prisma CLI step). TypeScript pinned to 6.0.3, not 7.0.2, because typescript-eslint 8.72 and @nestjs/swagger 12 support TS < 6.1 / ^6. GPU devices are now informational in `init.sh`.
+- Known risks: the host pnpm shim points into the npx cache (`~/.npm/_npx/...`); if the cache is cleaned, re-run the corepack enable command (init.sh prints it). Prisma's preinstall prints a spurious "unsupported Node" banner on Node 26 (install succeeds). api image is ~890 MB (prod deps include the Prisma CLI as a peer of `@prisma/client`); acceptable for local use. `docker compose up --build` output is verbose in `init.sh`.
+- Not run: no persistent E2E harness yet (Playwright arrives with `web-pwa-shell`). No GPU. No commit.
+- Independent validation: ACCEPT (2026-11-12). Validator re-ran S1-S6 and the S7 pnpm-missing path, checked 127.0.0.1-only binding, non-root user, pinning, offline docs. Minor follow-ups (not blocking): `init.sh` uses `curl -f`, which hides the 503 body on failure; `curl` is not a checked prerequisite. Status `accepted`.
+- Next best step: `/feature-flow local-ai-gpu-spike` (or the next ready feature after `api-skeleton`).
