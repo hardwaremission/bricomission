@@ -1,5 +1,6 @@
-# Core data services for BricoMission (feature infra-compose-core).
-# Start with: docker compose up -d --wait   (or ./init.sh)
+# BricoMission local stack: core data services (infra-compose-core) plus the
+# NestJS API (api-skeleton), built from apps/api/Dockerfile.
+# Start with: docker compose up -d --build --wait   (or ./init.sh)
 # No top-level `name:` so COMPOSE_PROJECT_NAME can isolate parallel worktrees.
 # Every variable has a default equal to .env.example; the stack runs without a .env.
 # Host ports bind to 127.0.0.1 only and are overridable through env vars.
@@ -63,6 +64,26 @@ services:
       timeout: 5s
       retries: 20
       start_period: 10s
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PORT: 3000
+      DATABASE_URL: postgresql://${POSTGRES_USER:-bricomission}:${POSTGRES_PASSWORD:-bricomission}@postgres:5432/${POSTGRES_DB:-bricomission}?schema=public
+    ports:
+      - "127.0.0.1:${API_PORT:-3000}:3000"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
 
 volumes:
   postgres-data:

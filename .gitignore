@@ -3,3 +3,8 @@
 !.env.example
 .claude/settings.local.json
 presentation/out/
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+apps/api/src/generated/

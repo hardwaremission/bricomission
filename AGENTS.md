@@ -13,6 +13,7 @@ Read when relevant:
 
 - `docs/user-and-access-model.md` — roles, permissions, anonymity, revocation.
 - `docs/technical-discovery.md` — stack, Compose services, integrations, GPU serialization, testing.
+- `ARCHITECTURE.md` — what is built today: monorepo layout, API module layout, runtime services, test layering.
 - `docs/adr/` — accepted decisions (0001 local MoE LLM, 0002 deterministic budget math, 0003 monorepo).
 - `DESIGN.md` — visual tokens and UI rules, for any UI work.
 - `Documentación del Proyecto_BricoMission.md` — full project definition and PRD (section 3), phase plan (4.2), discovery decisions (4.3), demo video pipeline (5).
@@ -24,7 +25,9 @@ Before writing code:
 1. Confirm the working directory with `pwd`.
 2. Read `PROGRESS.md` for current verified state and next step.
 3. Read `feature_list.json` and pick the first ready unfinished feature in list order (all `depends_on` accepted).
-4. Run `./init.sh`. If it reports Docker missing or the daemon unreachable, ask the developer to run `./scripts/install-host-prereqs.sh` in their own terminal (it uses sudo) and re-login. Agents never run the install mode or `sudo`; they only run `./scripts/install-host-prereqs.sh --check`.
+4. Run `./init.sh`. It runs the workspace gate (`pnpm install --frozen-lockfile`, `pnpm -r lint`, `pnpm -r test`), then the compose gate (`docker compose up -d --build --wait`, then `/health` must report `database: up`). If it reports Docker missing or the daemon unreachable, ask the developer to run `./scripts/install-host-prereqs.sh` in their own terminal (it uses sudo) and re-login. Agents never run the install mode or `sudo`; they only run `./scripts/install-host-prereqs.sh --check`.
+   - pnpm (version pinned in `package.json` `packageManager`) must be resolvable as `pnpm` or `corepack pnpm`. Without sudo: `corepack enable --install-directory "$HOME/.local/bin" pnpm`, or `npx --yes corepack@0.36.0 enable --install-directory "$HOME/.local/bin" pnpm`, or `npm install --prefix "$HOME/.local" pnpm@<pinned>`. Set `COREPACK_ENABLE_DOWNLOAD_PROMPT=0` in headless shells.
+   - Baseline commands: `pnpm -r lint` and `pnpm -r test` (no database needed). Parallel worktrees set `COMPOSE_PROJECT_NAME` and the port env vars (including `API_PORT`) before any `docker compose` command.
 5. If baseline verification fails, fix the baseline before adding new feature work.
 
 ## Working Rules

@@ -55,15 +55,27 @@
     "title": "NestJS API answers health and exposes OpenAPI",
     "user_visible_behavior": "pnpm monorepo with apps/api (NestJS + Prisma on PostgreSQL) runs in compose; GET /health reports DB status and /docs serves the OpenAPI spec.",
     "depends_on": ["infra-compose-core"],
-    "status": "not_started",
+    "status": "accepted",
     "verification": [
       "pnpm install --frozen-lockfile succeeds",
       "pnpm -r lint and pnpm -r test pass (at least one API test)",
       "curl /health returns 200 with database: up",
       "./init.sh upgraded to the bootstrapped variant and passes"
     ],
-    "evidence": [],
-    "notes": "ADR 0003. Shared packages/ for types. Upgrade init.sh to the bootstrapped variant in this feature."
+    "evidence": [
+      "2026-11-12 implementer. pnpm 10.34.9 pinned via packageManager; host pnpm via `npx --yes corepack@0.36.0 enable --install-directory ~/.local/bin pnpm` (method 2; host Node 26.13.1 ships no corepack; shim points into the npx cache). No sudo.",
+      "Versions: NestJS 12.5.0 (ESM), @nestjs/swagger 12.1.1 (swagger-ui-dist 5.34.1), Prisma/@prisma/client/@prisma/adapter-pg 7.10.1, TypeScript 6.0.3, ESLint 10.14.0, typescript-eslint 8.72.2, Vitest 5.1.0 + unplugin-swc 2.0.0. Base image node:26.13.1-bookworm-slim @ sha256:5df79989ed685e09f0a98019db4cebfb22fb9df1a53c0161664a011f7ff6b0f1.",
+      "S1: pnpm install --frozen-lockfile exit 0 in the worktree and in a clean copy of tracked+new files; pnpm-lock.yaml sha256 4e2a7c66... unchanged.",
+      "S2: pnpm -r lint exit 0 (eslint + tsc --noEmit in shared-types and api); pnpm -r test exit 0, 7 passed: HealthService up/down/hang-past-2s-timeout; HTTP GET /health 200 up, 503 down without error details, /docs-json documents /health 200+503, /docs without CDN assets.",
+      "S3: COMPOSE_PROJECT_NAME=api-skeleton, API_PORT=3200: docker compose config -q ok; up -d --build --wait exit 0, 4 services healthy; curl /health -> {\"status\":\"ok\",\"database\":\"up\"} 200.",
+      "S4: compose stop postgres -> {\"status\":\"error\",\"database\":\"down\"} 503 in 2015 ms and 2010 ms; api Up, RestartCount 0, same StartedAt; compose start postgres -> 200 up, no api restart. Also: api restarted while postgres stopped boots and answers 503, then 200 after postgres start.",
+      "S5: /docs-json openapi 3.0.0, title 'BricoMission API', version 0.1.0, /health responses [200, 503]; /docs 200; grep cdn|unpkg|jsdelivr = 0; assets ./docs/swagger-ui-bundle.js 200 (local).",
+      "Checks: ss shows only 127.0.0.1:3200; docker compose exec api id -un -> node; compose awk pin check exit 0; Dockerfile FROM only node:26.13.1-bookworm-slim; bash -n init.sh ok.",
+      "S6: ./init.sh (bootstrapped) exit 0 with API_PORT=3200: prerequisites, feature_list valid, frozen install, lint, test (7 passed), compose healthy, 'GET /health -> {\"status\":\"ok\",\"database\":\"up\"}' on port from `docker compose port api 3000`.",
+      "S7: pnpm unresolvable (restricted PATH) -> exit 1 with no-sudo guidance; broken test -> exit 1 'workspace step failed: pnpm -r test' (reverted); docker absent from PATH -> pnpm steps pass, 'Compose gate skipped.', exit 0; DOCKER_HOST to missing socket -> 'Docker daemon unreachable', exit 1; curl shim returning down -> prints response + api logs, exit 1.",
+      "2026-11-12 independent validator: ACCEPT. Re-ran S1-S6 (frozen install lockfile unchanged, lint, 7 tests, 4 services healthy, /health up 200 / down 503 in 2 s with no api restart and recovery, /docs + /docs-json offline, ./init.sh exit 0) and S7 pnpm-missing path; 127.0.0.1-only binding, non-root node user, pinned images. Minor follow-ups: init.sh curl -f hides 503 body; curl not a checked prerequisite."
+    ],
+    "notes": "Spec: docs/specs/api-skeleton.md. ADR 0003. Shared packages/ for types (type-only). Upgrade init.sh to the bootstrapped variant in this feature. API host port overridable via API_PORT (default 3000). pnpm via corepack or user-level install, never sudo."
   },
   {
     "id": "web-pwa-shell",

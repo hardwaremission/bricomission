@@ -1,0 +1,12 @@
+// BricoMission Prisma schema. No models yet: domain models arrive with their features.
+// The connection URL comes from DATABASE_URL via prisma.config.ts.
+
+generator client {
+  provider     = "prisma-client"
+  output       = "../src/generated/prisma"
+  moduleFormat = "esm"
+}
+
+datasource db {
+  provider = "postgresql"
+}
