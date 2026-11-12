@@ -24,7 +24,7 @@ Before writing code:
 1. Confirm the working directory with `pwd`.
 2. Read `PROGRESS.md` for current verified state and next step.
 3. Read `feature_list.json` and pick the first ready unfinished feature in list order (all `depends_on` accepted).
-4. Run `./init.sh`.
+4. Run `./init.sh`. If it reports Docker missing or the daemon unreachable, ask the developer to run `./scripts/install-host-prereqs.sh` in their own terminal (it uses sudo) and re-login. Agents never run the install mode or `sudo`; they only run `./scripts/install-host-prereqs.sh --check`.
 5. If baseline verification fails, fix the baseline before adding new feature work.
 
 ## Working Rules

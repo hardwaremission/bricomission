@@ -22,7 +22,7 @@ Mobile-first PWA for Homeowners; the same PWA serves the B2B dashboard and the A
 
 - PostgreSQL (container): relational data + pgvector.
 - MinIO (container): photos, Renders, Catalog PDFs, generated PDFs. Credentials editable from the Admin Dashboard.
-- Model weights and Docker volumes on a data NVMe, not the system disk.
+- Optional (not required, developer-run, needs sudo): keep Docker images and volumes off the system disk by mounting a data NVMe and setting `"data-root"` in `/etc/docker/daemon.json` before the first image pull, then restarting docker (`sudo systemctl restart docker`). Not scripted.
 - Catalog ingestion: Catalog PDFs (curated with NotebookLM offline by the developer) are chunked and embedded by an ingestion script into pgvector.
 
 ## Integrations

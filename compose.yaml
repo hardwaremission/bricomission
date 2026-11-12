@@ -1,0 +1,70 @@
+# Core data services for BricoMission (feature infra-compose-core).
+# Start with: docker compose up -d --wait   (or ./init.sh)
+# No top-level `name:` so COMPOSE_PROJECT_NAME can isolate parallel worktrees.
+# Every variable has a default equal to .env.example; the stack runs without a .env.
+# Host ports bind to 127.0.0.1 only and are overridable through env vars.
+
+services:
+  postgres:
+    image: pgvector/pgvector:0.8.1-pg17
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-bricomission}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-bricomission}
+      POSTGRES_DB: ${POSTGRES_DB:-bricomission}
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./infra/postgres/initdb:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+
+  minio:
+    # Pigsty-maintained community fork (AGPLv3): upstream minio/minio is no longer pullable.
+    # Run unmodified as a separate service, used over S3 only. See docs/risks-and-open-questions.md.
+    image: pgsty/minio:RELEASE.2026-08-04T00-00-00Z
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-bricomission}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-bricomission-dev-secret}
+    ports:
+      - "127.0.0.1:${MINIO_API_PORT:-9000}:9000"
+      - "127.0.0.1:${MINIO_CONSOLE_PORT:-9001}:9001"
+    volumes:
+      - minio-data:/data
+    healthcheck:
+      # The image ships /usr/bin/curl (confirmed at runtime 2026-11-12) and mc (symlink to mcli).
+      test: ["CMD", "curl", "-fsS", "-o", "/dev/null", "http://127.0.0.1:9000/minio/health/live"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+
+  mailpit:
+    image: axllent/mailpit:v1.33.1
+    restart: unless-stopped
+    environment:
+      MP_MAX_MESSAGES: ${MP_MAX_MESSAGES:-5000}
+      MP_DATABASE: /data/mailpit.db
+    ports:
+      - "127.0.0.1:${MAILPIT_UI_PORT:-8025}:8025"
+      - "127.0.0.1:${MAILPIT_SMTP_PORT:-1025}:1025"
+    volumes:
+      - mailpit-data:/data
+    healthcheck:
+      test: ["CMD", "/mailpit", "readyz"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+
+volumes:
+  postgres-data:
+  minio-data:
+  mailpit-data:

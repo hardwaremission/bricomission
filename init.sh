@@ -1,13 +1,14 @@
 #!/usr/bin/env bash
 # Standard startup and verification path for BricoMission.
-# Status: pre-bootstrap. No application stack exists yet; this script only checks
-# host prerequisites. Replace the provisional section when `infra-compose-core`
-# and `api-skeleton` land (see feature_list.json).
+# Status: infra. Checks host prerequisites, then starts the detached infrastructure
+# stack (compose.yaml: postgres, minio, mailpit) with `docker compose up -d --wait`
+# and verifies its health. Never runs foreground or long-running dev servers.
+# The pnpm workspace gate is added by `api-skeleton` (see feature_list.json).
 set -euo pipefail
 
 cd "$(dirname "$0")"
 echo "Repository: $(pwd)"
-echo "Harness status: pre-bootstrap"
+echo "Harness status: infra"
 
 missing=0
 check() {
@@ -44,12 +45,45 @@ echo "feature_list.json: valid JSON"
 
 echo
 if [ "$missing" -gt 0 ]; then
-  echo "$missing prerequisite(s) missing. Docker Engine + Compose v2 must be installed before 'infra-compose-core'."
+  echo "$missing prerequisite(s) missing (pnpm is only needed from 'api-skeleton' on)."
 fi
-echo "Application stack is not initialized yet."
+
+echo
+echo "Compose gate:"
+if ! command -v docker >/dev/null 2>&1; then
+  echo "Docker not installed: run ./scripts/install-host-prereqs.sh in your own terminal (needs sudo), then log out/in"
+  echo "Compose gate skipped."
+  exit 0
+fi
+if ! docker compose version >/dev/null 2>&1; then
+  echo "ERROR: Compose v2 plugin missing: run the helper ./scripts/install-host-prereqs.sh" >&2
+  exit 1
+fi
+if ! docker info >/dev/null 2>&1; then
+  echo "ERROR: Docker daemon unreachable. Likely causes and fixes:" >&2
+  echo "  - service stopped:            systemctl status docker  (start: sudo systemctl enable --now docker.service)" >&2
+  echo "  - docker group not active:    log out/in, or run: newgrp docker" >&2
+  echo "  - full check:                 ./scripts/install-host-prereqs.sh --check" >&2
+  exit 1
+fi
+if ! docker compose config -q; then
+  echo "ERROR: compose.yaml is invalid (docker compose config -q failed)" >&2
+  exit 1
+fi
+if ! docker compose up -d --wait --wait-timeout 180; then
+  echo "ERROR: infrastructure stack is not healthy:" >&2
+  docker compose ps -a >&2 || true
+  exit 1
+fi
+docker compose ps --format 'table {{.Service}}\t{{.Status}}'
+
+echo
+echo "Infrastructure stack is up and healthy (detached)."
 echo "Next step: run /feature-flow on the first ready feature in feature_list.json."
-echo "Expected future commands (after bootstrap):"
-echo "  docker compose up -d --wait     # infrastructure"
+echo "Useful commands:"
+echo "  docker compose logs -f <service>  # follow one service's logs"
+echo "  docker compose down               # stop the stack (keeps named volumes)"
+echo "After api-skeleton:"
 echo "  pnpm install --frozen-lockfile  # workspace dependencies"
 echo "  pnpm -r lint && pnpm -r test    # baseline verification"
 exit 0

@@ -14,7 +14,10 @@ None. Discovery is sufficient to derive the harness (`/harness-starter`).
 - Which Catalog PDFs are ingested for the demo, and their licensing for a public video.
 - Contract template legal wording (Spanish), VAT handling in totals.
 - Platform rating shown on anonymous Bids: source of ratings in the MVP (seeded demo data).
-- MinIO image/licensing choice for the container (community edition constraints).
+
+## Resolved
+
+- MinIO image/licensing (2026-11-12, `infra-compose-core`, developer decision): use `pgsty/minio:RELEASE.2026-08-04T00-00-00Z`, the Pigsty-maintained community fork (AGPLv3). Rationale: the official `minio/minio` image is no longer pullable (Docker Hub repository gone, `quay.io/minio/minio` denies anonymous pulls); the fork keeps the same S3 API and web console; it runs unmodified as a separate local service that BricoMission reaches only over the S3 protocol, so the AGPL obligations do not extend to our code. Swapping to another S3-compatible server later is an image change only.
 
 ## Later / Not MVP
 
@@ -43,7 +46,7 @@ None. Discovery is sufficient to derive the harness (`/harness-starter`).
 | RAG returns wrong or no price | Wrong Budget | Cited-price verification; reject unverified Line Items |
 | Local LLM produces invalid JSON | Broken budget flow | Schema-constrained decoding (llama.cpp JSON schema / grammar), retries |
 | Keycloak + Google SSO setup time | Delay | Password login first; Google SSO late feature |
-| Disk space for models | Stack fails | Mount a data NVMe for volumes and weights before the spike |
+| Disk space for models | Stack fails | Optional: move Docker data-root and model weights to a data NVMe (see docs/technical-discovery.md); otherwise monitor free space on the 465 GB system disk |
 
 ## Research Tasks
 
