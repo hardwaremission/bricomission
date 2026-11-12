@@ -1,0 +1,498 @@
+[
+  {
+    "id": "infra-compose-core",
+    "area": "infrastructure",
+    "title": "Core data services start with one compose command",
+    "user_visible_behavior": "`docker compose up -d --wait` starts PostgreSQL (with pgvector), MinIO and Mailpit with healthchecks and named volumes; `./init.sh` reports them healthy.",
+    "depends_on": [],
+    "status": "not_started",
+    "verification": [
+      "docker compose up -d --wait exits 0 and all services report healthy",
+      "psql inside the postgres container runs `CREATE EXTENSION IF NOT EXISTS vector` successfully",
+      "MinIO console and Mailpit UI answer on their published ports",
+      "./init.sh runs the compose health check and exits 0"
+    ],
+    "evidence": [],
+    "notes": "Prerequisite: developer installs Docker Engine + Compose v2 (sudo pacman). Pinned image tags. Volumes should live on a data NVMe (docs/technical-discovery.md). Keycloak and AI services are separate features."
+  },
+  {
+    "id": "local-ai-gpu-spike",
+    "area": "ai-infrastructure",
+    "title": "Local MoE LLM and SDXL ControlNet run on the GPU in containers",
+    "user_visible_behavior": "llama-server (MoE model, experts in RAM) and ComfyUI (SDXL + ControlNet Depth/Canny) run as compose services on the RX 9070 XT; a measurement report records VRAM, tokens/s and seconds per image.",
+    "depends_on": ["infra-compose-core"],
+    "status": "not_started",
+    "verification": [
+      "curl to llama-server /v1/chat/completions returns a completion and valid JSON under a JSON schema constraint",
+      "A ComfyUI API workflow turns a sample kitchen photo into an SDXL + ControlNet Depth image",
+      "Peak VRAM with both services loaded is recorded and stays under ~14.5 GB, or the serialization need is documented",
+      "Results recorded in PROGRESS.md and ADR 0001 status updated"
+    ],
+    "evidence": [],
+    "notes": "Day-1 spike (docs/risks-and-open-questions.md). Try ROCm images first (gfx1201 needs ROCm >= 6.4), Vulkan fallback for llama.cpp. Decide model/quant; fall back to SD 1.5 if SDXL is too slow. Spike output is compose services + report, no app code."
+  },
+  {
+    "id": "api-skeleton",
+    "area": "backend",
+    "title": "NestJS API answers health and exposes OpenAPI",
+    "user_visible_behavior": "pnpm monorepo with apps/api (NestJS + Prisma on PostgreSQL) runs in compose; GET /health reports DB status and /docs serves the OpenAPI spec.",
+    "depends_on": ["infra-compose-core"],
+    "status": "not_started",
+    "verification": [
+      "pnpm install --frozen-lockfile succeeds",
+      "pnpm -r lint and pnpm -r test pass (at least one API test)",
+      "curl /health returns 200 with database: up",
+      "./init.sh upgraded to the bootstrapped variant and passes"
+    ],
+    "evidence": [],
+    "notes": "ADR 0003. Shared packages/ for types. Upgrade init.sh to the bootstrapped variant in this feature."
+  },
+  {
+    "id": "web-pwa-shell",
+    "area": "frontend",
+    "title": "Installable PWA shell with design tokens and en/es i18n",
+    "user_visible_behavior": "apps/web (Next.js + Tailwind with DESIGN.md tokens) serves an installable home screen in English or Spanish chosen from the browser language, and shows API health.",
+    "depends_on": ["api-skeleton"],
+    "status": "not_started",
+    "verification": [
+      "Lighthouse PWA installability passes on the home screen",
+      "Browser language es shows Spanish strings, en shows English",
+      "Home screen calls the API health endpoint through the generated client",
+      "Playwright smoke test at 390x844 passes"
+    ],
+    "evidence": [],
+    "notes": "UI gate: design the home screen in design/openpencil/bricomission_B2C_app.fig via open-pencil MCP before implementing. Remaining 9 locales are feature i18n-all-locales."
+  },
+  {
+    "id": "keycloak-realm-roles",
+    "area": "identity",
+    "title": "Keycloak realm issues tokens the API authorizes by role",
+    "user_visible_behavior": "Keycloak runs in compose with realm BricoMission (roles user, professional, admin, seeded admin and demo accounts); API endpoints reject requests without a valid token or with the wrong role.",
+    "depends_on": ["api-skeleton"],
+    "status": "not_started",
+    "verification": [
+      "Realm is imported from a versioned JSON on container start",
+      "API test: request without token -> 401, user token on admin route -> 403, admin token -> 200",
+      "Email OTP configured with Mailpit as SMTP"
+    ],
+    "evidence": [],
+    "notes": "docs/user-and-access-model.md. Secrets via .env (git-ignored) with .env.example committed. Google SSO is a later feature."
+  },
+  {
+    "id": "homeowner-password-login",
+    "area": "identity",
+    "title": "Homeowner signs in with password and email OTP",
+    "user_visible_behavior": "From the PWA a Homeowner registers or signs in through Keycloak with username/password and an email OTP delivered to Mailpit, and lands back signed in.",
+    "depends_on": ["web-pwa-shell", "keycloak-realm-roles"],
+    "status": "not_started",
+    "verification": [
+      "Playwright: register, read OTP from Mailpit API, complete login, see signed-in state",
+      "Works with the network disabled"
+    ],
+    "evidence": [],
+    "notes": "OIDC Authorization Code + PKCE. Keycloak login theme styled with DESIGN.md tokens (UI gate applies)."
+  },
+  {
+    "id": "kitchen-capture-draft",
+    "area": "homeowner-capture",
+    "title": "Anonymous visitor uploads kitchen photos and measurements",
+    "user_visible_behavior": "Without an account, a visitor creates a draft Kitchen Project, uploads photos (stored in MinIO) and enters length x width x height; the draft survives a page reload.",
+    "depends_on": ["web-pwa-shell"],
+    "status": "not_started",
+    "verification": [
+      "API test: anonymous draft creation, photo upload to MinIO, measurement validation (positive numbers, sane ranges)",
+      "Playwright at 390x844: upload two photos, enter measurements, reload, data still shown"
+    ],
+    "evidence": [],
+    "notes": "UI gate: Photo Upload + Measurements screen. Anonymous drafts bound to a browser session token; 7-day cleanup is an assumption."
+  },
+  {
+    "id": "moodboard-selection",
+    "area": "homeowner-capture",
+    "title": "Visitor builds a Moodboard from references",
+    "user_visible_behavior": "The visitor uploads own reference photos or picks from a curated style gallery, selects favorites, and the Moodboard is saved on the draft.",
+    "depends_on": ["kitchen-capture-draft"],
+    "status": "not_started",
+    "verification": [
+      "Playwright: add one uploaded and two gallery images, deselect one, reload, Moodboard intact",
+      "API test: Moodboard belongs to the draft and rejects foreign drafts"
+    ],
+    "evidence": [],
+    "notes": "UI gate: Moodboard screen. Prompt-to-image reference generation is out of this slice (costly AI, needs the Login Gate)."
+  },
+  {
+    "id": "login-gate-claim",
+    "area": "identity",
+    "title": "Costly AI action requires login and claims the draft",
+    "user_visible_behavior": "When an anonymous visitor requests a Render or a Budget, the Login Gate appears; after signing in, the same draft Kitchen Project now belongs to the new Homeowner.",
+    "depends_on": ["moodboard-selection", "homeowner-password-login"],
+    "status": "not_started",
+    "verification": [
+      "Playwright: anonymous draft -> press Generate -> login -> back on the draft, owned by the account",
+      "API test: costly endpoints return 401 for anonymous sessions; claim is idempotent and refuses drafts of other sessions"
+    ],
+    "evidence": [],
+    "notes": "docs/domain-model.md Kitchen Project lifecycle draft -> claimed."
+  },
+  {
+    "id": "gpu-job-broker",
+    "area": "ai-infrastructure",
+    "title": "API serializes GPU jobs and streams their status",
+    "user_visible_behavior": "AI requests go through one API job broker: image jobs run one at a time, chat waits while the GPU is busy, and clients receive queued/running/done status over SSE.",
+    "depends_on": ["local-ai-gpu-spike", "api-skeleton"],
+    "status": "not_started",
+    "verification": [
+      "Test with fake AI adapters: two image jobs never overlap; chat request during an image job is queued then served",
+      "SSE endpoint emits ordered status events for a job",
+      "AI adapters are behind interfaces with deterministic fakes"
+    ],
+    "evidence": [],
+    "notes": "docs/technical-discovery.md GPU Serialization. Queue technology (BullMQ+Redis vs Postgres) decided in the spec. Endpoints read from platform settings (default: compose service URLs)."
+  },
+  {
+    "id": "controlnet-render",
+    "area": "ai-visuals",
+    "title": "Homeowner gets a photorealistic Render that keeps the room geometry",
+    "user_visible_behavior": "A signed-in Homeowner requests a Render; ComfyUI SDXL + ControlNet produces an image from their photo and Moodboard, stored in MinIO and shown with a before/after slider.",
+    "depends_on": ["gpu-job-broker", "login-gate-claim"],
+    "status": "not_started",
+    "verification": [
+      "Integration run on the real GPU: one Render produced from a sample photo within the measured time budget",
+      "Visual check: window, door and plumbing positions match the source photo (screenshot evidence)",
+      "API test with fake adapter covers storage and ownership"
+    ],
+    "evidence": [],
+    "notes": "UI gate: AI Results screen (render part). Quota checks are added by daily-quota-enforcement."
+  },
+  {
+    "id": "catalog-rag-ingestion",
+    "area": "ai-budget",
+    "title": "Catalog PDFs are searchable in the local RAG index",
+    "user_visible_behavior": "An ingestion command chunks and embeds the partner Catalog PDFs into pgvector; a search endpoint returns relevant chunks with document and page references.",
+    "depends_on": ["local-ai-gpu-spike", "api-skeleton"],
+    "status": "not_started",
+    "verification": [
+      "Ingestion of the sample Catalog PDFs completes and reports chunk counts",
+      "Search for a known product returns the chunk containing its SKU and price, with page reference",
+      "Re-running ingestion is idempotent"
+    ],
+    "evidence": [],
+    "notes": "Developer supplies Catalog PDFs (curated offline with NotebookLM). Check text layer vs scanned. Embedding model choice in spec."
+  },
+  {
+    "id": "budget-tier-computation",
+    "area": "ai-budget",
+    "title": "Homeowner receives four verified Budget Tiers",
+    "user_visible_behavior": "For a claimed Kitchen Project, the system returns Luxury/High/Medium/Low tiers whose Line Items cite Catalog sources; every unit price is verified against the source chunk and all totals are computed by code.",
+    "depends_on": ["catalog-rag-ingestion", "gpu-job-broker", "login-gate-claim"],
+    "status": "not_started",
+    "verification": [
+      "Unit tests: decimal computation of subtotals, tier totals and VAT",
+      "Unit test: a Line Item whose cited price is absent from its chunk is rejected",
+      "Same Line Items recomputed twice give identical totals",
+      "Integration run with the real LLM on a sample project produces four tiers"
+    ],
+    "evidence": [],
+    "notes": "ADR 0002. Schema-constrained JSON output from llama-server. UI gate: Budget Tier Overview screen."
+  },
+  {
+    "id": "budget-chat-personas",
+    "area": "ai-budget",
+    "title": "Homeowner refines the Budget by chat with a switchable Persona",
+    "user_visible_behavior": "The Homeowner chats about materials; answers stream in the selected Persona's voice; switching Persona changes the tone of the next answer; Line Item changes recompute totals in code.",
+    "depends_on": ["budget-tier-computation"],
+    "status": "not_started",
+    "verification": [
+      "Test: four Persona system prompts selectable; switching does not alter totals",
+      "Playwright with fake LLM: send message, see streamed answer, switch Persona, next answer tagged with new Persona",
+      "Chat responds in the user's locale"
+    ],
+    "evidence": [],
+    "notes": "UI gate: AI Results & Chat screen with Persona dropdown."
+  },
+  {
+    "id": "budget-prompt-macros",
+    "area": "ai-budget",
+    "title": "UI controls adjust the Budget through Prompt Macros",
+    "user_visible_behavior": "Selecting a tier or changing a material in a dropdown sends a structured hidden prompt to the chat, and the Budget updates through the same verified Line Item path.",
+    "depends_on": ["budget-chat-personas"],
+    "status": "not_started",
+    "verification": [
+      "Test: each control emits the expected structured prompt and no client-side math exists",
+      "Playwright with fake LLM: change countertop material -> Budget total changes to the code-computed value"
+    ],
+    "evidence": [],
+    "notes": "Prompt Macro definition in CONTEXT.md."
+  },
+  {
+    "id": "diy-shopping-list-pdf",
+    "area": "outcomes",
+    "title": "Homeowner downloads the DIY Shopping List PDF",
+    "user_visible_behavior": "From a selected tier the Homeowner downloads a PDF with exact products, SKUs, quantities, unit prices, sources and totals; the Kitchen Project moves to diy_completed.",
+    "depends_on": ["budget-tier-computation"],
+    "status": "not_started",
+    "verification": [
+      "PDF text extraction test: totals and SKUs match the stored Budget",
+      "PDF stored in MinIO and downloadable only by its owner"
+    ],
+    "evidence": [],
+    "notes": "UI gate: DIY Partner Selection screen."
+  },
+  {
+    "id": "dossier-publication",
+    "area": "marketplace",
+    "title": "Homeowner publishes a locked Dossier",
+    "user_visible_behavior": "The Homeowner publishes the project to the Marketplace; an immutable Dossier snapshot (Renders, Measurements, chosen tier, Line Items) is created with an open Bidding Window.",
+    "depends_on": ["budget-tier-computation", "controlnet-render"],
+    "status": "not_started",
+    "verification": [
+      "API test: Dossier content cannot be modified after publication",
+      "API test: window end = publication time + configured duration; expiry job moves it to expired",
+      "Republishing an expired Dossier creates a new one"
+    ],
+    "evidence": [],
+    "notes": "Bidding Window default 15 days, read from platform settings when admin-marketplace-settings exists."
+  },
+  {
+    "id": "professional-registration",
+    "area": "b2b",
+    "title": "Professional registers with a Tax ID and waits for validation",
+    "user_visible_behavior": "A Professional signs up with corporate email, Company legal name and Tax ID (CIF or NIF, format-validated); the account is pending_validation and sees a waiting screen.",
+    "depends_on": ["homeowner-password-login"],
+    "status": "not_started",
+    "verification": [
+      "Unit tests: CIF and NIF format/checksum validation",
+      "Playwright: registration ends on the pending screen; Dossier routes return 403"
+    ],
+    "evidence": [],
+    "notes": "Self-employed = one-member Company with NIF. UI gate: design in bricomission_B2B_dashboard.fig."
+  },
+  {
+    "id": "admin-company-validation",
+    "area": "admin",
+    "title": "Administrator validates pending Professionals",
+    "user_visible_behavior": "The Admin Dashboard lists pending Professionals; the Administrator approves (creating or linking a Company by Tax ID) or rejects them, and the Professional's access changes accordingly.",
+    "depends_on": ["professional-registration"],
+    "status": "not_started",
+    "verification": [
+      "Playwright as admin: approve one, reject one; approved user gains Dossier access, rejected does not",
+      "API test: a second Professional with an existing Tax ID is linked, not duplicated"
+    ],
+    "evidence": [],
+    "notes": "First Admin Dashboard screen: UI gate with design/openpencil/bricomission_admin.fig."
+  },
+  {
+    "id": "admin-marketplace-settings",
+    "area": "admin",
+    "title": "Administrator edits marketplace settings",
+    "user_visible_behavior": "The Administrator sets Bidding Window duration, Platform Commission %, minimum delay penalty and Payment Mode from the dashboard; new Dossiers and Contracts use the saved values.",
+    "depends_on": ["admin-company-validation"],
+    "status": "not_started",
+    "verification": [
+      "Playwright as admin: change window to 10 minutes, publish a Dossier, its end time reflects 10 minutes",
+      "API test: non-admin cannot read or write settings"
+    ],
+    "evidence": [],
+    "notes": "Defaults: 15 days, 5 %, 50 EUR/day, Simulated."
+  },
+  {
+    "id": "b2b-dossier-feed",
+    "area": "b2b",
+    "title": "Validated Professionals see open Dossiers and their Company's work",
+    "user_visible_behavior": "A Professional of a validated Company sees all open Dossiers, plus the Company's Kitchen Projects: own ones editable, co-workers' read-only.",
+    "depends_on": ["admin-company-validation", "dossier-publication"],
+    "status": "not_started",
+    "verification": [
+      "API tests for the permission matrix in docs/user-and-access-model.md",
+      "Playwright: two Professionals of one Company see each other's projects with correct edit/read-only state"
+    ],
+    "evidence": [],
+    "notes": "UI gate: B2B Contractor Dashboard."
+  },
+  {
+    "id": "bid-submission-revision",
+    "area": "marketplace",
+    "title": "Company submits and revises one Bid per Dossier",
+    "user_visible_behavior": "A Professional submits a Bid (price, guaranteed installation date, delay penalty >= minimum) on an open Dossier and can revise it while open; co-workers see it read-only; each revision is versioned.",
+    "depends_on": ["b2b-dossier-feed"],
+    "status": "not_started",
+    "verification": [
+      "API test: second Bid from the same Company rejected; co-worker cannot edit",
+      "API test: revision creates a new version; edits refused once the Dossier is not open",
+      "Penalty below the platform minimum is rejected"
+    ],
+    "evidence": [],
+    "notes": "UI gate: B2B Bid Submission screen."
+  },
+  {
+    "id": "homeowner-bid-acceptance",
+    "area": "marketplace",
+    "title": "Homeowner compares anonymous Bids and accepts one",
+    "user_visible_behavior": "The Homeowner sees Bids with price, date, penalty and rating but no Company identity, and accepts one; the Dossier closes and other Bids become not_selected.",
+    "depends_on": ["bid-submission-revision"],
+    "status": "not_started",
+    "verification": [
+      "API test: Bid DTO for Homeowners contains no Company identifiers",
+      "API test: acceptance binds to the Bid version shown; concurrent revision does not change it",
+      "Playwright: accept a Bid, Dossier shows accepted"
+    ],
+    "evidence": [],
+    "notes": "UI gate: Marketplace Bidding Dashboard (B2C). Ratings are seeded demo data."
+  },
+  {
+    "id": "bid-live-notifications",
+    "area": "marketplace",
+    "title": "Homeowner gets live alerts for new and lowered Bids",
+    "user_visible_behavior": "While viewing the Dossier, the Homeowner receives an SSE alert and the list updates when a Bid arrives or its price drops.",
+    "depends_on": ["homeowner-bid-acceptance"],
+    "status": "not_started",
+    "verification": [
+      "Playwright with two browser contexts: Professional lowers price, Homeowner sees toast and updated price without reload",
+      "SSE reconnect resumes without duplicate alerts"
+    ],
+    "evidence": [],
+    "notes": "SSE only, no external push services. Alerts announced via ARIA live region (DESIGN.md)."
+  },
+  {
+    "id": "contract-pdf-generation",
+    "area": "contracts",
+    "title": "Accepted Bid produces a Contract PDF with penalties and commission",
+    "user_visible_behavior": "On acceptance a Contract PDF is generated with parties, scope, price, installation date, code-computed delay penalty clause and Platform Commission, stored in MinIO with its SHA-256.",
+    "depends_on": ["homeowner-bid-acceptance", "admin-marketplace-settings"],
+    "status": "not_started",
+    "verification": [
+      "Unit tests: penalty and commission amounts computed with decimal arithmetic",
+      "PDF text extraction matches stored amounts; stored hash equals file hash"
+    ],
+    "evidence": [],
+    "notes": "UI gate: Digital Contract / PDF View screen. Spanish legal wording; contract language follows the Homeowner locale when available."
+  },
+  {
+    "id": "contract-electronic-acceptance",
+    "area": "contracts",
+    "title": "Both parties accept the Contract electronically",
+    "user_visible_behavior": "The Homeowner and the managing Professional re-authenticate and accept; evidence (who, when, IP, PDF hash) is recorded and appended; the Contract becomes binding and Company identity is revealed to the Homeowner.",
+    "depends_on": ["contract-pdf-generation"],
+    "status": "not_started",
+    "verification": [
+      "Playwright: both acceptances in either order lead to binding",
+      "API test: acceptance without recent re-authentication is refused",
+      "Company identity appears only after binding"
+    ],
+    "evidence": [],
+    "notes": "Electronic Acceptance in CONTEXT.md. UI gate: B2B Contract Signing screen."
+  },
+  {
+    "id": "commission-simulated-checkout",
+    "area": "payments",
+    "title": "Company settles the commission in Simulated Payment Mode",
+    "user_visible_behavior": "With Payment Mode Simulated, the Professional completes the commission checkout offline and the Contract moves from commission_pending to commission_paid.",
+    "depends_on": ["contract-electronic-acceptance"],
+    "status": "not_started",
+    "verification": [
+      "Playwright with network disabled: checkout completes and status updates",
+      "API test: amount equals the Contract commission"
+    ],
+    "evidence": [],
+    "notes": "Default Payment Mode."
+  },
+  {
+    "id": "commission-paypal-sandbox",
+    "area": "payments",
+    "title": "Company settles the commission through PayPal Sandbox",
+    "user_visible_behavior": "With Payment Mode PayPal, checkout redirects to PayPal Sandbox and the Contract is marked commission_paid after capture.",
+    "depends_on": ["commission-simulated-checkout"],
+    "status": "not_started",
+    "verification": [
+      "Online run with sandbox buyer account: capture confirmed and status updated",
+      "API test with mocked PayPal client covers success and cancel"
+    ],
+    "evidence": [],
+    "notes": "Requires online network and PayPal Sandbox credentials in .env. Offline fallback is Simulated."
+  },
+  {
+    "id": "daily-quota-enforcement",
+    "area": "quotas",
+    "title": "Costly AI calls respect the Daily Quota",
+    "user_visible_behavior": "When the Quota Flag is on, each Homeowner's LLM calls and image generations are counted per day and blocked with a clear message once the limit is reached; free actions keep working.",
+    "depends_on": ["controlnet-render", "budget-chat-personas"],
+    "status": "not_started",
+    "verification": [
+      "API tests: counter increments per call type, resets at local midnight, blocks at limit, ignored when the flag is off",
+      "Playwright: limit 1 image -> second Render request shows the quota message"
+    ],
+    "evidence": [],
+    "notes": "Usage also feeds the Admin token/image usage view."
+  },
+  {
+    "id": "admin-quota-controls",
+    "area": "admin",
+    "title": "Administrator overrides or resets a user's quota",
+    "user_visible_behavior": "The Administrator views per-user and per-service usage, sets a custom daily limit for a user, and resets a user's daily counter to zero.",
+    "depends_on": ["daily-quota-enforcement", "admin-company-validation"],
+    "status": "not_started",
+    "verification": [
+      "Playwright as admin: reset a blocked user's counter -> user's next Render succeeds",
+      "API test: override takes precedence over the global limit"
+    ],
+    "evidence": [],
+    "notes": "Critical for continuous demos."
+  },
+  {
+    "id": "admin-user-management",
+    "area": "admin",
+    "title": "Administrator manages platform users",
+    "user_visible_behavior": "The Administrator lists, searches, creates, edits, disables and deletes users of any role; disabling revokes sessions.",
+    "depends_on": ["admin-company-validation"],
+    "status": "not_started",
+    "verification": [
+      "Playwright as admin: create, edit, disable a user; disabled user's next API call returns 401",
+      "API test: Keycloak and local profile stay consistent"
+    ],
+    "evidence": [],
+    "notes": "Revocation rules in docs/user-and-access-model.md."
+  },
+  {
+    "id": "admin-service-endpoints",
+    "area": "admin",
+    "title": "Administrator hot-swaps AI endpoints and storage credentials",
+    "user_visible_behavior": "The Administrator edits LLM, image and embedding endpoint URLs/models and MinIO connection credentials from the dashboard, tests the connection, and the API uses the new values without restart or .env edits.",
+    "depends_on": ["gpu-job-broker", "admin-company-validation"],
+    "status": "not_started",
+    "verification": [
+      "Playwright as admin: switch LLM endpoint to a second server, test connection, next chat uses it",
+      "Secrets stored encrypted at rest and never returned in clear to the UI"
+    ],
+    "evidence": [],
+    "notes": "Enables swapping to a cloud endpoint or an Avalon experiment (ADR 0001)."
+  },
+  {
+    "id": "google-sso-login",
+    "area": "identity",
+    "title": "Homeowner signs in with Google when online",
+    "user_visible_behavior": "The login screen offers Google sign-in through Keycloak; with no network the password option still works.",
+    "depends_on": ["homeowner-password-login"],
+    "status": "not_started",
+    "verification": [
+      "Online run: Google sign-in completes and creates a Homeowner account",
+      "Offline run: Google button degrades gracefully, password login works"
+    ],
+    "evidence": [],
+    "notes": "Requires Google OAuth client credentials in .env. Apple SSO and SMS OTP are non-goals."
+  },
+  {
+    "id": "i18n-all-locales",
+    "area": "frontend",
+    "title": "App is available in all 11 locales with language persistence",
+    "user_visible_behavior": "All UI strings exist in en, es, fr, de, it, pt, nl, sv, no, da, fi; unsupported browser languages see the Language Selection screen (English default); the choice is saved on the account.",
+    "depends_on": ["web-pwa-shell", "homeowner-password-login"],
+    "status": "not_started",
+    "verification": [
+      "Test: no missing keys in any locale",
+      "Playwright: browser locale ja shows Language Selection; choosing de persists after logout/login",
+      "Visual check of the longest strings (de, fi) on 360px width"
+    ],
+    "evidence": [],
+    "notes": "UI gate: Language Selection screen. Run late so all strings exist."
+  }
+]

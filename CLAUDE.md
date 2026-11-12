@@ -2,9 +2,11 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+@AGENTS.md
+
 ## Project status
 
-Pre-code, end of Phase 0. The repository holds the product definition, agent tooling and the DevExpert harness; there is no application code and no build, lint, or test commands yet.
+Pre-code, end of Phase 2. Discovery docs and the startup harness (`AGENTS.md`, `init.sh`, `PROGRESS.md`, `feature_list.json`) exist; there is no application code yet. `AGENTS.md` is the operational source of truth.
 
 - `Documentación del Proyecto_BricoMission.md`: full project definition (Spanish, versioned; no date prefix in the name). Section 1.4 holds the measured dev hardware and local-model limits; section 3 is the English PRD that feeds `/build-brief` (PRD §8 = demo video production); section 4.2 is the phase plan (Phases 0-5); section 5 is the presentation pipeline.
 - Commands will come from `/harness-starter` (`AGENTS.md`, `init.sh`, `PROGRESS.md`, `feature_list.json`). `init.sh` (bash) is the entry point and should bring up/verify the Docker Compose stack. Once `AGENTS.md` exists it is the operational source of truth and this file should import it (`@AGENTS.md`).
@@ -17,7 +19,7 @@ Skills in `.claude/skills/` (from `devexpert-io/ai-expert-project`), subagents i
 
 0. Git local config + GitHub MCP — done.
 1. `/build-brief` — done (2026-11-12). Outputs: `CONTEXT.md`, `DESIGN.md`, `docs/build-brief.md`, `docs/domain-model.md`, `docs/user-and-access-model.md`, `docs/technical-discovery.md`, `docs/risks-and-open-questions.md`, `docs/adr/0001-0003`. Read these before any feature work.
-2. `/harness-starter` — next: splits the MVP into 12-30 single-session features in `feature_list.json` with `depends_on`.
+2. `/harness-starter` — done (2026-11-12): 34 features; next ready `infra-compose-core` (needs Docker installed), then `local-ai-gpu-spike`. Phase 3 (`/feature-flow`) is next: splits the MVP into 12-30 single-session features in `feature_list.json` with `depends_on`.
 3. `/feature-flow <feature-id>`: the main agent orchestrates the subagents sequentially, never in parallel for one feature: `planner` (preloads `feature-spec`, may write only `docs/specs/` and `feature_list.json`) -> `implementer` (`feature-implementer`, self-verifies, marks `passing`) -> `validator` (`feature-validator`, read-only, verdict accept/revise/block). `revise` loops back to the implementer. Only the orchestrator marks `accepted` and commits; subagents never commit.
 4. `/github-flow plan|execute|publish`: one worktree per feature at `../hardwaremission.bricomission-worktrees/<feature-id>`, branch `feature/<feature-id>`, issue `[<feature-id>] <title>`, PR per accepted feature. Adapted to this repo: GitHub MCP instead of `gh`, one headless `claude -p` session per worktree (hooks disabled, `COMPOSE_PROJECT_NAME=<feature-id>`). Push needs explicit per-run permission. Never merge PRs.
 5. Demo video, only after the MVP (doc section 5): agent proposes the script -> developer records narration -> local speech-to-text (Whisper) gives per-sentence timestamps -> screenshots via the browser MCP -> HyperFrames project in `presentation/hyperframes/` (1920x1080) synced to the transcript -> developer validates the preview -> guided render to MP4 (`presentation/out/`, git-ignored). Everything else under `presentation/` is versioned.

@@ -27,6 +27,7 @@
    * 4.1. [Pasos para Invocar las Skills en la Terminal](#bookmark=id.jt4vnv8odkhi)  
    * 4.2. [Flujo de Trabajo del Harness Avanzado y Registro de Estado](#bookmark=id.5qm4m2qbyaxb)  
    * 4.3. Decisiones del Cuestionario de Descubrimiento (build-brief)  
+   * 4.4. Resumen de la Fase 2: Harness del Repositorio (harness-starter)  
 > 5. [5\. Creación de la Presentación (Vídeo Demo de 15 minutos)](#5-creación-de-la-presentación-vídeo-demo-de-15-minutos)  
    * 5.1. Guion  
    * 5.2. Narración con voz propia  
@@ -417,7 +418,11 @@ El desarrollo se organiza en 6 grandes etapas secuenciales (Fases 0 a 5) según 
    * **Comando:** /harness-starter.  
    * **Artefactos generados:** AGENTS.md, init.sh, PROGRESS.md, feature\_list.json.  
    * **Verificación del Desarrollador:** *(Comprobar explícitamente que init.sh levanta y verifica el stack con `docker compose` en Linux).*  
-   * **Estado:** *(Pendiente de ejecución)*  
+   * **Estado:** ✅ *Finalizada (2026-11-12).*
+     * Se han creado AGENTS.md, init.sh, PROGRESS.md y feature\_list.json.
+     * feature\_list.json tiene **34 features**, cada una con sus dependencias (`depends_on`), ordenadas según el recorrido de la demo: infraestructura → captura → IA → resultados → marketplace → administración → amplitud. Son algo más de las 30 orientativas porque el alcance es el PRD completo.
+     * init.sh está en versión previa al bootstrap: comprueba los requisitos del host y valida la lista de features. Pasará a levantar el stack con `docker compose` en las features `infra-compose-core` y `api-skeleton`.
+     * Pendiente: instalar Docker Engine + Compose v2 antes de la primera feature.  
 > 3. **Fase 3: Ejecución Orquestada por Feature (feature-flow)**  
    * **Objetivo:** Seleccionar una funcionalidad de feature\_list.json y ejecutar automáticamente el ciclo completo con los tres subagentes en bucle hasta su aceptación e integración.  
    * **Comando:** /feature-flow (o indicando un ID específico: /feature-flow \<feature-id\>).  
@@ -469,6 +474,50 @@ Resumen de las respuestas dadas durante la entrevista de `/build-brief`. El deta
 - Las valoraciones de las empresas son datos de demostración precargados.
 
 **Primera tarea técnica:** una prueba en la máquina de desarrollo el primer día, antes de la primera feature con IA. Consiste en ejecutar llama.cpp MoE y ComfyUI SDXL + ControlNet en Docker sobre la RX 9070 XT y medir VRAM, tokens/s y segundos por render.
+
+### **4.4. Resumen de la Fase 2: Harness del Repositorio (harness-starter, 2026-11-12)**
+
+La skill `/harness-starter` ha convertido los documentos de descubrimiento de la Fase 1 en la infraestructura mínima que los agentes necesitan para trabajar solos. No ha escrito código de producto, no ha inicializado frameworks ni ha instalado dependencias.
+
+**Artefactos generados:**
+
+| Archivo | Función |
+| :---- | :---- |
+| `AGENTS.md` | Punto de entrada de cualquier agente: qué documentos leer, cómo arrancar, reglas de trabajo, criterio de terminado y cierre de sesión. `CLAUDE.md` lo importa (`@AGENTS.md`) y pasa a ser la fuente de verdad operativa. |
+| `init.sh` | Ruta estándar de arranque y verificación, en bash. Ahora es una versión previa al bootstrap: comprueba los requisitos del host (git, node, pnpm, docker, docker compose, python3, ffmpeg y los dispositivos de GPU `/dev/kfd` y `/dev/dri`) y valida `feature_list.json`. En las features `infra-compose-core` y `api-skeleton` pasará a levantar el stack con `docker compose` y a ejecutar lint y tests. |
+| `PROGRESS.md` | Estado verificado actual (siguiente feature, bloqueos, última verificación) y registro de cada sesión. |
+| `feature_list.json` | Lista de features en JSON que leen las máquinas. Cada feature tiene `id`, `area`, `title`, `user_visible_behavior`, `depends_on`, `status`, `verification`, `evidence` y `notes`. |
+
+**Las 34 features, por bloques y en orden de ejecución:**
+
+| Bloque | Features (`id`) |
+| :---- | :---- |
+| Infraestructura | `infra-compose-core`, `local-ai-gpu-spike`, `api-skeleton`, `web-pwa-shell`, `keycloak-realm-roles` |
+| Identidad y captura | `homeowner-password-login`, `kitchen-capture-draft`, `moodboard-selection`, `login-gate-claim` |
+| IA (imagen y presupuesto) | `gpu-job-broker`, `controlnet-render`, `catalog-rag-ingestion`, `budget-tier-computation`, `budget-chat-personas`, `budget-prompt-macros` |
+| Resultados | `diy-shopping-list-pdf`, `dossier-publication` |
+| B2B y marketplace | `professional-registration`, `admin-company-validation`, `admin-marketplace-settings`, `b2b-dossier-feed`, `bid-submission-revision`, `homeowner-bid-acceptance`, `bid-live-notifications` |
+| Contratos y pagos | `contract-pdf-generation`, `contract-electronic-acceptance`, `commission-simulated-checkout`, `commission-paypal-sandbox` |
+| Cuotas y administración | `daily-quota-enforcement`, `admin-quota-controls`, `admin-user-management`, `admin-service-endpoints` |
+| Amplitud | `google-sso-login`, `i18n-all-locales` |
+
+**Criterios de corte aplicados:**
+- Cada feature es una porción vertical que se completa y se verifica en una sola sesión de agente.
+- Las épicas se han partido. Por ejemplo, "Admin" queda en 6 features y "Contrato" en 2: generación del PDF y aceptación electrónica.
+- Se han separado los títulos que unían varios dominios con "y".
+- Son algo más de las 12-30 orientativas porque el alcance es el PRD completo.
+- El orden sigue el recorrido de la demo. Lo más arriesgado va primero (la prueba de GPU es la segunda feature) y lo prescindible si falta tiempo va al final (Google SSO y los 11 idiomas).
+- Las dependencias (`depends_on`) deciden cuándo una feature está lista para empezar. El orden de la lista solo desempata.
+- Toda feature con pantallas lleva en `notes` que hay que diseñarla antes en OpenPencil vía MCP.
+
+**Verificación realizada:**
+- Un script de validación ha comprobado campos obligatorios, ids únicos y dependencias existentes, sin referencias a sí mismas y sin dependencias hacia features posteriores (por tanto, sin ciclos). Resultado: `features: 34 OK, deps acyclic and ordered`.
+- `chmod +x init.sh` y `./init.sh` terminan con código 0. En el host faltan **pnpm, docker y docker compose**.
+
+**Siguiente paso (Fase 3):**
+1. El desarrollador instala Docker Engine + Compose v2.
+2. Se ejecuta `/feature-flow infra-compose-core`.
+3. Justo después, `/feature-flow local-ai-gpu-spike`.
 
 ## **5\. Creación de la Presentación (Vídeo Demo de 15 minutos)**
 

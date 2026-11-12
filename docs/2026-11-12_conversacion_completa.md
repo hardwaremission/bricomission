@@ -1,6 +1,6 @@
 # Registro de conversación con Claude Code · 2026-11-12
 
-_Actualizado: 2026-11-12 22:34_
+_Actualizado: 2026-11-12 22:42_
 
 
 ---
@@ -964,5 +964,145 @@ He añadido al documento la sección **4.3, "Decisiones del Cuestionario de Desc
 - **Tabla de 12 filas:** cada pregunta con la decisión tomada y su motivo o consecuencia, enlazando al ADR que corresponda (0001-0003).
 - **Supuestos sin pregunta explícita:** comisión del 5 %, penalización mínima de 50 €/día, ventana de 15 días, 11 idiomas, borradores anónimos que caducan a los 7 días y valoraciones de demo.
 - **Primera tarea técnica:** la prueba de GPU del primer día.
+
+Todavía no hay commit.
+
+
+### 🧑 **Juan Miguel** · 2026-11-12 22:34:14
+
+commit y push
+
+
+### 🤖 **Claude** · 2026-11-12 22:34:19
+
+> 🔧 **Bash**: `{"command": "cd /home/juanmi/Proyectos/hardwaremission.bricomission && git add -A && git status --short && git commit -q -F - <<'EOF'\ndocs: complete phase 1 discovery (build-brief)\n\n- Add discovery outputs: CONTEXT.md, DESIGN.md, docs/build-brief.md,\n  docs/domain-model.md, docs/user-and-access-`
+
+
+### 🤖 **Claude** · 2026-11-12 22:34:24
+
+Hecho: el commit `bbde123` está subido a `origin/main` (`3c026b0..bbde123`). Incluye los documentos de la Fase 1, los 3 ADR, la sección 4.3, `CLAUDE.md` y el log de conversación.
+
+Lo siguiente es la Fase 2 con `/harness-starter`.
+
+
+### 🧑 **Juan Miguel** · 2026-11-12 22:36:07
+
+Pasamos a fase 2
+
+
+### 🤖 **Claude** · 2026-11-12 22:36:10
+
+> 🔧 **Skill**: `{"skill": "harness-starter", "args": "Discovery docs complete (CONTEXT.md, DESIGN.md, docs/*.md, docs/adr/0001-0003). Linux host, bash init.sh only (no .ps1), Docker Compose v2 stack. Full PRD scope by 2026-11-22: order features by the demo path (infra → capture → AI → outcomes → marketplace → admin`
+
+
+### 🤖 **Claude** · 2026-11-12 22:36:12
+
+> 🔧 **Bash**: `{"command": "ls AGENTS.md init.sh PROGRESS.md feature_list.json 2>&1; cat .claude/skills/harness-starter/references/artifact-templates.md", "description": "Check target files and read harness templates"}`
+
+
+### 🤖 **Claude** · 2026-11-12 22:36:56
+
+> 🔧 **Write**: `{"file_path": "/home/juanmi/Proyectos/hardwaremission.bricomission/AGENTS.md", "content": "# Project Agent Instructions\n\nBricoMission is an AI-powered kitchen renovation platform: homeowners turn photos and measurements into photorealistic renders and catalog-grounded budgets, then go DIY or publi`
+
+
+### 🤖 **Claude** · 2026-11-12 22:37:03
+
+> 🔧 **Write**: `{"file_path": "/home/juanmi/Proyectos/hardwaremission.bricomission/init.sh", "content": "#!/usr/bin/env bash\n# Standard startup and verification path for BricoMission.\n# Status: pre-bootstrap. No application stack exists yet; this script only checks\n# host prerequisites. Replace the provisional s`
+
+
+### 🤖 **Claude** · 2026-11-12 22:37:05
+
+Ahora `feature_list.json`, con las features ordenadas por el recorrido de la demo:
+
+
+### 🤖 **Claude** · 2026-11-12 22:38:28
+
+> 🔧 **Write**: `{"file_path": "/home/juanmi/Proyectos/hardwaremission.bricomission/feature_list.json", "content": "[\n  {\n    \"id\": \"infra-compose-core\",\n    \"area\": \"infrastructure\",\n    \"title\": \"Core data services start with one compose command\",\n    \"user_visible_behavior\": \"`docker compose u`
+
+
+### 🤖 **Claude** · 2026-11-12 22:38:32
+
+> 🔧 **Bash**: `{"command": "chmod +x init.sh && python3 -I - <<'EOF'\nimport json\nf=json.load(open('feature_list.json'))\nids=[x['id'] for x in f]\nreq={'id','area','title','user_visible_behavior','depends_on','status','verification','evidence','notes'}\nassert len(ids)==len(set(ids)),\"dup ids\"\nfor x in f:\n  `
+
+
+### 🤖 **Claude** · 2026-11-12 22:38:41
+
+> 🔧 **Write**: `{"file_path": "/home/juanmi/Proyectos/hardwaremission.bricomission/PROGRESS.md", "content": "# Progress Log\n\n## Current Verified State\n\n- Repository root: `/home/juanmi/Proyectos/hardwaremission.bricomission`\n- Standard startup path: `./init.sh`\n- Standard verification path: provisional, pre-b`
+
+
+### 🤖 **Claude** · 2026-11-12 22:38:43
+
+> 🔧 **Edit**: `{"replace_all": false, "file_path": "/home/juanmi/Proyectos/hardwaremission.bricomission/CLAUDE.md", "old_string": "# CLAUDE.md\n\nThis file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.\n\n## Project status\n\nPre-code, end of Phase 0. The repository h`
+
+
+### 🤖 **Claude** · 2026-11-12 22:38:45
+
+> 🔧 **Edit**: `{"replace_all": false, "file_path": "/home/juanmi/Proyectos/hardwaremission.bricomission/CLAUDE.md", "old_string": "2. `/harness-starter` — next:", "new_string": "2. `/harness-starter` — done (2026-11-12): 34 features; next ready `infra-compose-core` (needs Docker installed), then `local-ai-gpu-spik`
+
+
+### 🤖 **Claude** · 2026-11-12 22:38:49
+
+> 🔧 **Edit**: `{"replace_all": false, "file_path": "/home/juanmi/Proyectos/hardwaremission.bricomission/Documentación del Proyecto_BricoMission.md", "old_string": "   * **Verificación del Desarrollador:** *(Comprobar explícitamente que init.sh levanta y verifica el stack con `docker compose` en Linux).*  \n   * **`
+
+
+### 🤖 **Claude** · 2026-11-12 22:38:57
+
+He terminado la Fase 2 (`/harness-starter`). Todavía no hay commit.
+
+| Archivo | Contenido |
+| --- | --- |
+| `AGENTS.md` | Punto de entrada para los agentes: qué leer, cómo arrancar, reglas y cuándo una feature está terminada. `CLAUDE.md` ahora lo importa con `@AGENTS.md`. |
+| `init.sh` | Script bash, ya ejecutable. Por ahora solo comprueba los requisitos del host y valida `feature_list.json`, porque todavía no hay aplicación. |
+| `PROGRESS.md` | Estado verificado actual y registro de la sesión 001. |
+| `feature_list.json` | 34 features con sus dependencias, ordenadas según el recorrido de la demo. |
+
+Son 34 features, algo más de las 30 orientativas, por el alcance del PRD completo. Las he partido para que cada una se pueda verificar en una sola sesión. Por ejemplo, "Admin" es en realidad 6 features (validar empresas, ajustes del marketplace, cuotas, usuarios, endpoints…).
+
+**Verificación:**
+- Un script ha validado la lista: todos los campos obligatorios, ids únicos y dependencias que existen y no forman ciclos.
+- `./init.sh` termina sin error. Faltan **pnpm, docker y docker compose**.
+
+**Orden de arranque:**
+1. `infra-compose-core`: PostgreSQL con pgvector, MinIO y Mailpit.
+2. `local-ai-gpu-spike`: la prueba de GPU del primer día.
+3. `api-skeleton`, que convierte `init.sh` en la versión completa.
+4. El resto en el orden de la lista.
+
+Las features con pantallas llevan anotado que antes de implementarlas hay que diseñarlas en OpenPencil.
+
+**Antes de la Fase 3 tienes que instalar Docker** desde tu terminal:
+
+```bash
+sudo pacman -S docker docker-compose docker-buildx
+sudo systemctl enable --now docker
+sudo usermod -aG docker $USER   # luego cierra sesión y vuelve a entrar
+```
+
+¿Quieres que haga commit y push de la Fase 2?
+
+
+### 🧑 **Juan Miguel** · 2026-11-12 22:40:35
+
+actualiza en Documentación del Proyecto_BricoMission.md un resumen de esta fase
+
+
+### 🤖 **Claude** · 2026-11-12 22:40:52
+
+> 🔧 **Edit**: `{"replace_all": false, "file_path": "/home/juanmi/Proyectos/hardwaremission.bricomission/Documentación del Proyecto_BricoMission.md", "old_string": "## **5\\. Creación de la Presentación (Vídeo Demo de 15 minutos)**", "new_string": "### **4.4. Resumen de la Fase 2: Harness del Repositorio (harness-s`
+
+
+### 🤖 **Claude** · 2026-11-12 22:40:53
+
+> 🔧 **Edit**: `{"replace_all": false, "file_path": "/home/juanmi/Proyectos/hardwaremission.bricomission/Documentación del Proyecto_BricoMission.md", "old_string": "   * 4.3. Decisiones del Cuestionario de Descubrimiento (build-brief)  ", "new_string": "   * 4.3. Decisiones del Cuestionario de Descubrimiento (build`
+
+
+### 🤖 **Claude** · 2026-11-12 22:40:56
+
+He añadido al documento la sección **4.4, "Resumen de la Fase 2: Harness del Repositorio"**, con su entrada en el índice. Recoge:
+- Los 4 artefactos y para qué sirve cada uno.
+- Las 34 features agrupadas en 8 bloques, en orden de ejecución.
+- Los criterios de corte aplicados.
+- La verificación hecha y su resultado.
+- El siguiente paso: instalar Docker, luego `infra-compose-core` y `local-ai-gpu-spike`.
 
 Todavía no hay commit.
