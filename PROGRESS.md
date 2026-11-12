@@ -5,8 +5,9 @@
 - Repository root: `/home/juanmi/Proyectos/hardwaremission.bricomission`
 - Standard startup path: `./init.sh`
 - Standard verification path: `./init.sh` (bootstrapped variant since `api-skeleton`) checks host prerequisites, validates `feature_list.json`, runs the workspace gate (`pnpm install --frozen-lockfile`, `pnpm -r lint`, `pnpm -r test`), then the compose gate (`docker compose up -d --build --wait`; postgres, minio, mailpit, api healthy) and requires `GET /health` to report `database: up`. Without Docker it skips the compose gate after the pnpm steps and exits 0; with an unreachable daemon, an unhealthy stack or API health not up it exits 1; without pnpm it exits 1 with no-sudo guidance.
-- Last accepted feature: `api-skeleton` (validator ACCEPT, 2026-11-12)
-- Current next ready feature: `local-ai-gpu-spike`
+- Last accepted features: `api-skeleton` and `local-ai-gpu-spike` (validator ACCEPT, 2026-11-12), both run in parallel by github-flow `execute`
+- Current next ready features: see `feature_list.json` (dependency-ready after these two)
+- Local AI stack: opt-in compose profiles `ai` (`llama-server`, `comfyui`) and `ai-fetch` (weights). Both run on the RX 9070 XT with ROCm in Docker. GPU jobs must be serialized (see `docs/spikes/local-ai-gpu-spike.md`). Weight volumes have fixed names (`bricomission_*`) shared by all checkouts.
 - Current blockers: none. pnpm 10.34.9 (pinned in `packageManager`) resolves through a corepack shim in `~/.local/bin` (host Node 26 has no bundled corepack). Agent shells started before the docker group was added must run docker through `newgrp docker` (no `sg` on this host).
 - Last verified at: 2026-11-12 (`./init.sh` exit 0 with the stack healthy; feature list valid)
 
@@ -38,6 +39,34 @@
 ### Session 003
 
 - Date: 2026-11-12
+- Goal: implement `local-ai-gpu-spike` (spec `docs/specs/local-ai-gpu-spike.md`), headless, in worktree `../hardwaremission.bricomission-worktrees/local-ai-gpu-spike`.
+- Completed:
+  - `compose.yaml`: `llama-server` and `comfyui` in profile `ai`, `ai-fetch` in profile `ai-fetch`, 4 new volumes, ports on 127.0.0.1 with env overrides.
+  - `infra/comfyui/Dockerfile`: ROCm 10.1 / torch 2.14 base, ComfyUI v0.45.3, controlnet_aux pinned.
+  - `infra/comfyui/workflows/sdxl-controlnet-{depth,canny}.json`.
+  - `infra/ai/fetch-models.sh`: pinned HF commits, resumable, idempotent.
+  - Public-domain sample photo with `SOURCE.md`.
+  - `scripts/ai-spike/{vram-sample,llm-bench,comfy-run}.sh`.
+  - Report `docs/spikes/local-ai-gpu-spike.md` with renders.
+  - Doc updates: ADR 0001 (validated plus a Validation section), risks, technical-discovery, AGENTS.md (AI Services), `.env.example`, `init.sh` hints.
+- Verification run:
+  - `bash -n` on all scripts; `docker compose config -q`, with and without the profiles; awk pin check; Dockerfile `FROM` pinned.
+  - Scenarios 1-8 as written, plus `--profile ai down` then `up -d --wait` (16 s, no re-download).
+  - `./init.sh` exit 0, 3 services.
+- Results:
+  - LLM: ROCm `server-rocm-b12316` with Qwen3-30B-A3B-Instruct-2507 Q4_K_M. Prompt 771 tok/s, generation 25.5 tok/s, TTFT 2.6 s on a 2k-token prompt. JSON valid in 12/12 runs. VRAM 3.2 GB peak. Vulkan reaches 358 / 24.1 tok/s.
+  - ComfyUI: SDXL RealVisXL V5 + ControlNet at 1216x832 with 25 steps. Depth: 16.9 s cold, 8.5 s warm. Canny: 16.8 s cold, 9.0 s warm.
+  - Co-residency: serialization required. ComfyUI peaks at about 15 GB over the desktop baseline. Running both at once did not OOM but slowed each by about 25 %.
+  - `POST /free` releases VRAM within 3 s. Stopping llama takes 0.6 s and starting it about 5.5 s.
+  - No fallbacks were needed (no SD 1.5, no Vulkan, no `HSA_OVERRIDE_GFX_VERSION`).
+- Failed / not run: a cold-page-cache llama load time was not measured (needs root to drop caches). No sudo was run and `.env` was not read.
+- State left: GPU stack stopped (volumes kept: about 30.6 GB of weights). Core stack healthy.
+- Independent validation: ACCEPT (2026-11-12). Validator re-ran scenarios 1-6 on the GPU with matching numbers (25.8 tok/s gen, depth render warm 8.48 s, VRAM +3.2 GB LLM / +15 GB ComfyUI: serialization required). Low findings fixed by the orchestrator: stop hints now name `llama-server comfyui` (a bare `--profile ai stop/down` also stops the core stack); bench comment says ~2k tokens. Deferred: pip lock for the ComfyUI image, `pull_policy: build` for fresh hosts, host-specific `RENDER_GID` default. Status `accepted`.
+- Known risk: ComfyUI takes all free VRAM during renders. The `gpu-job-broker` must free or stop the LLM, or pause chat, around image jobs. `RENDER_GID` default 987 is host-specific.
+
+### Session 004
+
+- Date: 2026-11-12
 - Goal: implement `api-skeleton` (spec `docs/specs/api-skeleton.md`) in worktree `feature/api-skeleton` (`COMPOSE_PROJECT_NAME=api-skeleton`, `API_PORT=3200`).
 - Completed: pnpm workspace (root `package.json` with `packageManager: pnpm@10.34.9`, `pnpm-workspace.yaml`, `pnpm-lock.yaml`, `tsconfig.base.json`, `eslint.config.mjs`, `.dockerignore`); `packages/shared-types` (type-only `HealthResponse`); `apps/api` (NestJS 12 ESM, Prisma 7 + adapter-pg, lazy-connecting `PrismaService`, `GET /health` with 2 s timeout and 200/503 contract, Swagger at `/docs` and `/docs-json` via `configureApp`, Vitest unit + supertest HTTP tests, multi-stage Dockerfile running as `node`); compose `api` service (`API_PORT`, healthcheck, depends on healthy postgres); `.env.example` `API_PORT`; `.gitignore`; `init.sh` bootstrapped variant; `ARCHITECTURE.md`; `AGENTS.md` startup path.
 - Verification run: frozen install (worktree and clean copy, lockfile unchanged); `pnpm -r lint` exit 0; `pnpm -r test` 7 passed; compose up 4 healthy; `/health` 200 up; postgres stopped -> 503 down in ~2 s with no api restart, recovery to 200; `/docs-json` OpenAPI 3.0.0 "BricoMission API" with /health 200+503; `/docs` 200 with local assets; 127.0.0.1-only binding; container user `node`; pin checks; `./init.sh` exit 0 and the Scenario 7 failure paths (no pnpm, failing test, no docker, no daemon, health down). Details in `feature_list.json` evidence.
@@ -45,4 +74,4 @@
 - Known risks: the host pnpm shim points into the npx cache (`~/.npm/_npx/...`); if the cache is cleaned, re-run the corepack enable command (init.sh prints it). Prisma's preinstall prints a spurious "unsupported Node" banner on Node 26 (install succeeds). api image is ~890 MB (prod deps include the Prisma CLI as a peer of `@prisma/client`); acceptable for local use. `docker compose up --build` output is verbose in `init.sh`.
 - Not run: no persistent E2E harness yet (Playwright arrives with `web-pwa-shell`). No GPU. No commit.
 - Independent validation: ACCEPT (2026-11-12). Validator re-ran S1-S6 and the S7 pnpm-missing path, checked 127.0.0.1-only binding, non-root user, pinning, offline docs. Minor follow-ups (not blocking): `init.sh` uses `curl -f`, which hides the 503 body on failure; `curl` is not a checked prerequisite. Status `accepted`.
-- Next best step: `/feature-flow local-ai-gpu-spike` (or the next ready feature after `api-skeleton`).
+- Next best step: next dependency-ready feature in `feature_list.json`.

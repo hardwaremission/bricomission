@@ -1,6 +1,10 @@
 # BricoMission local stack: core data services (infra-compose-core) plus the
 # NestJS API (api-skeleton), built from apps/api/Dockerfile.
 # Start with: docker compose up -d --build --wait   (or ./init.sh)
+# Local AI services (feature local-ai-gpu-spike) are opt-in, never started by ./init.sh:
+#   docker compose --profile ai-fetch run --rm ai-fetch   # one-time weight download into volumes
+#   docker compose --profile ai up -d --wait               # llama-server + comfyui on the GPU
+#   docker compose --profile ai stop llama-server comfyui  # name services; bare stop/down also stops the core stack
 # No top-level `name:` so COMPOSE_PROJECT_NAME can isolate parallel worktrees.
 # Every variable has a default equal to .env.example; the stack runs without a .env.
 # Host ports bind to 127.0.0.1 only and are overridable through env vars.
@@ -85,7 +89,109 @@ services:
       retries: 20
       start_period: 20s
 
+  # --- Local AI (profile "ai"; see docs/spikes/local-ai-gpu-spike.md) ---
+  llama-server:
+    # Backend chosen by measurement (2026-11-12): ROCm. The Vulkan image
+    # ghcr.io/ggml-org/llama.cpp:server-vulkan-b12316 also works on RADV but has half
+    # the prompt speed (358 vs 757 tok/s; generation 24.1 vs 24.6 tok/s).
+    image: ghcr.io/ggml-org/llama.cpp:server-rocm-b12316
+    profiles: ["ai"]
+    restart: unless-stopped
+    devices:
+      - /dev/kfd
+      - /dev/dri
+    group_add:
+      - video
+      - "${RENDER_GID:-987}"
+    command:
+      - -m
+      - /models/Qwen3-30B-A3B-Instruct-2507-Q4_K_M.gguf
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8080"
+      - -ngl
+      - "99"
+      - --n-cpu-moe
+      - "${LLAMA_N_CPU_MOE:-48}"
+      - -c
+      - "${LLAMA_CTX_SIZE:-16384}"
+      - -fa
+      - "on"
+      - --jinja
+      - -t
+      - "16"
+      # Verbosity 4 prints the device and layer-offload lines (load_tensors, KV buffer).
+      - -lv
+      - "4"
+    ports:
+      - "127.0.0.1:${LLAMA_PORT:-8080}:8080"
+    volumes:
+      - llm-models:/models:ro
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "-o", "/dev/null", "http://127.0.0.1:8080/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 600s
+
+  comfyui:
+    build:
+      context: ./infra/comfyui
+    image: bricomission/comfyui:v0.45.3-rocm10.1.0
+    profiles: ["ai"]
+    restart: unless-stopped
+    devices:
+      - /dev/kfd
+      - /dev/dri
+    group_add:
+      - video
+      - "${RENDER_GID:-987}"
+    ipc: host
+    security_opt:
+      - seccomp=unconfined
+    environment:
+      # Annotator weights come from the comfyui-annotators volume (filled by ai-fetch);
+      # offline mode proves the demo never reaches Hugging Face at render time.
+      AUX_ANNOTATOR_CKPTS_PATH: /opt/annotators
+      HF_HUB_OFFLINE: "1"
+    ports:
+      - "127.0.0.1:${COMFYUI_PORT:-8188}:8188"
+    volumes:
+      - comfyui-models:/opt/ComfyUI/models
+      - comfyui-annotators:/opt/annotators
+      - comfyui-output:/opt/ComfyUI/output
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "-o", "/dev/null", "http://127.0.0.1:8188/system_stats"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 300s
+
+  ai-fetch:
+    # One-shot downloader; reuses the pinned llama.cpp image (Ubuntu, bash, curl).
+    image: ghcr.io/ggml-org/llama.cpp:server-rocm-b12316
+    profiles: ["ai-fetch"]
+    restart: "no"
+    entrypoint: ["bash", "/fetch/fetch-models.sh"]
+    environment:
+      FETCH_SD15: ${FETCH_SD15:-0}
+    volumes:
+      - ./infra/ai:/fetch:ro
+      - llm-models:/models
+      - comfyui-models:/comfy-models
+      - comfyui-annotators:/annotators
+
 volumes:
   postgres-data:
   minio-data:
   mailpit-data:
+  # Model weights use fixed names so every checkout and worktree (any
+  # COMPOSE_PROJECT_NAME) shares one copy instead of re-downloading ~30 GB.
+  llm-models:
+    name: bricomission_llm-models
+  comfyui-models:
+    name: bricomission_comfyui-models
+  comfyui-annotators:
+    name: bricomission_comfyui-annotators
+  comfyui-output:

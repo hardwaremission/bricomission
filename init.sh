@@ -129,4 +129,8 @@ echo "  ${PNPM[*]} -r lint && ${PNPM[*]} -r test  # workspace verification (no d
 echo "  docker compose up -d --build --wait     # rebuild the api image after code changes"
 echo "  docker compose logs -f <service>        # follow one service's logs"
 echo "  docker compose down                     # stop the stack (keeps named volumes)"
+echo "Local AI (opt-in, GPU; never started by this script):"
+echo "  docker compose --profile ai-fetch run --rm ai-fetch   # one-time model download into volumes (~30 GB)"
+echo "  docker compose --profile ai up -d --wait               # llama-server + comfyui on the GPU"
+echo "  docker compose --profile ai stop llama-server comfyui  # stop only the GPU services (keeps volumes)"
 exit 0

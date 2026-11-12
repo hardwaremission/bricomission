@@ -42,6 +42,15 @@ Before writing code:
 - Do not mark a feature done just because code exists. Do not silently change verification rules.
 - Git: repository-local identity only, never `gh`, never merge PRs. Subagents never commit.
 
+## AI Services
+
+- The local AI stack is opt-in and GPU-bound, so `./init.sh` never starts it.
+  - Download the weights once: `docker compose --profile ai-fetch run --rm ai-fetch` (about 30 GB into named volumes; idempotent).
+  - Start: `docker compose --profile ai up -d --wait` (`llama-server` on `LLAMA_PORT` 8080, `comfyui` on `COMFYUI_PORT` 8188, both on 127.0.0.1).
+  - Stop: `docker compose --profile ai stop llama-server comfyui` (name the services: a bare `--profile ai stop/down` also stops the core stack).
+- Measured on 2026-11-12: serialization required. The LLM uses about 3.2 GB of VRAM; ComfyUI fills the card (about 15 GB) during a render. Run renders alone. Free VRAM with ComfyUI `POST /free` or `docker compose stop llama-server`. Numbers: `docs/spikes/local-ai-gpu-spike.md`.
+- Spike tools: `scripts/ai-spike/{llm-bench,comfy-run,vram-sample}.sh`.
+
 ## Required Artifacts
 
 - `feature_list.json`: source of truth for feature state (`not_started`, `in_progress`, `blocked`, `passing`, `accepted`).

@@ -6,9 +6,6 @@ None. Discovery is sufficient to derive the harness (`/harness-starter`).
 
 ## Implementation-Time Questions
 
-- Exact MoE model and quantization (Qwen3-30B-A3B Q4 vs alternatives): decided by the Day-1 spike.
-- llama.cpp backend: ROCm vs Vulkan on gfx1201, whichever is stable in Docker.
-- SDXL base checkpoint and ControlNet models (Depth/Canny); fall back to SD 1.5 if SDXL is too slow.
 - Embedding model for the RAG index.
 - Job queue: BullMQ + Redis vs PostgreSQL-based queue.
 - Which Catalog PDFs are ingested for the demo, and their licensing for a public video.
@@ -17,6 +14,9 @@ None. Discovery is sufficient to derive the harness (`/harness-starter`).
 
 ## Resolved
 
+- LLM model and quantization (2026-11-12, `local-ai-gpu-spike`): `unsloth/Qwen3-30B-A3B-Instruct-2507-GGUF` Q4_K_M, all experts in RAM (`--n-cpu-moe 48`). 3.2 GB VRAM peak, 25.5 tok/s generation, 3/3 valid schema-constrained JSON. See `docs/spikes/local-ai-gpu-spike.md`.
+- llama.cpp backend (2026-11-12, `local-ai-gpu-spike`): ROCm image `server-rocm-b12316`, native gfx1201. Vulkan works too, but prompt processing is half as fast (358 vs 771 tok/s).
+- SDXL checkpoint and ControlNet models (2026-11-12, `local-ai-gpu-spike`): RealVisXL V5.0 fp16 with `diffusers/controlnet-{depth,canny}-sdxl-1.0` fp16, plus the Depth Anything V2 Small annotator. Warm render about 8.5-9 s at 1216x832 with 25 steps. No SD 1.5 fallback needed.
 - MinIO image/licensing (2026-11-12, `infra-compose-core`, developer decision): use `pgsty/minio:RELEASE.2026-08-04T00-00-00Z`, the Pigsty-maintained community fork (AGPLv3). Rationale: the official `minio/minio` image is no longer pullable (Docker Hub repository gone, `quay.io/minio/minio` denies anonymous pulls); the fork keeps the same S3 API and web console; it runs unmodified as a separate local service that BricoMission reaches only over the S3 protocol, so the AGPL obligations do not extend to our code. Swapping to another S3-compatible server later is an image change only.
 
 ## Later / Not MVP
@@ -41,8 +41,8 @@ None. Discovery is sufficient to derive the harness (`/harness-starter`).
 | Risk | Impact | Mitigation |
 | --- | --- | --- |
 | Full PRD scope in 10 days | Demo incomplete | Harness orders features by the demo path; breadth (locales, SSO, polish) last |
-| ROCm on RDNA4 inside containers unstable | No local AI | Day-1 spike; Vulkan backend for llama.cpp; native exception documented if needed |
-| SDXL + ControlNet too slow or VRAM-tight with the LLM | Slow Renders in video | GPU serialization; SD 1.5 fallback; pre-generate demo Renders |
+| ROCm on RDNA4 inside containers unstable | No local AI | Retired by the 2026-11-12 spike: llama.cpp (ROCm b12316) and ComfyUI (rocm/pytorch ROCm 10.1, torch 2.14) both run natively on gfx1201 in Docker with no `HSA_OVERRIDE_GFX_VERSION`. Vulkan llama.cpp is a tested fallback |
+| SDXL + ControlNet too slow or VRAM-tight with the LLM | Slow Renders in video | Speed is fine (about 8.5 s warm, 17-20 s cold). VRAM is tight: ComfyUI alone peaks at about 15 GB over the desktop baseline. Concurrent LLM + render did not OOM but slowed both by about 25 %, so serialization is required: the broker runs renders alone and pauses or stops the LLM (`POST /free`, `docker compose stop llama-server`). Pre-generate demo Renders as a backup |
 | RAG returns wrong or no price | Wrong Budget | Cited-price verification; reject unverified Line Items |
 | Local LLM produces invalid JSON | Broken budget flow | Schema-constrained decoding (llama.cpp JSON schema / grammar), retries |
 | Keycloak + Google SSO setup time | Delay | Password login first; Google SSO late feature |
@@ -50,6 +50,6 @@ None. Discovery is sufficient to derive the harness (`/harness-starter`).
 
 ## Research Tasks
 
-1. Day-1 spike: llama-server MoE (experts in RAM) + ComfyUI SDXL/ControlNet in Docker on the RX 9070 XT; record VRAM, tokens/s, seconds/Render.
-2. Verify llama.cpp structured output with the chosen model.
+1. Done 2026-11-12: Day-1 spike (`docs/spikes/local-ai-gpu-spike.md`).
+2. Done 2026-11-12: llama.cpp structured output verified (json_schema, 3/3 valid).
 3. Confirm Catalog PDFs are parseable (text layer vs scanned).

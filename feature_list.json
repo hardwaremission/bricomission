@@ -39,15 +39,28 @@
     "title": "Local MoE LLM and SDXL ControlNet run on the GPU in containers",
     "user_visible_behavior": "llama-server (MoE model, experts in RAM) and ComfyUI (SDXL + ControlNet Depth/Canny) run as compose services on the RX 9070 XT; a measurement report records VRAM, tokens/s and seconds per image.",
     "depends_on": ["infra-compose-core"],
-    "status": "not_started",
+    "status": "accepted",
     "verification": [
       "curl to llama-server /v1/chat/completions returns a completion and valid JSON under a JSON schema constraint",
       "A ComfyUI API workflow turns a sample kitchen photo into an SDXL + ControlNet Depth image",
       "Peak VRAM with both services loaded is recorded and stays under ~14.5 GB, or the serialization need is documented",
       "Results recorded in PROGRESS.md and ADR 0001 status updated"
     ],
-    "evidence": [],
-    "notes": "Day-1 spike (docs/risks-and-open-questions.md). Try ROCm images first (gfx1201 needs ROCm >= 6.4), Vulkan fallback for llama.cpp. Decide model/quant; fall back to SD 1.5 if SDXL is too slow. Spike output is compose services + report, no app code."
+    "evidence": [
+      "2026-11-12 implementer: report docs/spikes/local-ai-gpu-spike.md (all numbers, pins, HF commits/sizes).",
+      "Static: bash -n init.sh infra/ai/fetch-models.sh scripts/ai-spike/*.sh OK; docker compose config -q and --profile ai --profile ai-fetch config -q OK; awk pin check OK; Dockerfile FROM rocm/pytorch:rocm10.1.0_ubuntu24.04_py3.12_pytorch_release_2.14.0 (digest sha256:099f59a3...).",
+      "Scenario 1: ./init.sh exit 0, only postgres/minio/mailpit started, prints the --profile ai / ai-fetch hints.",
+      "Scenario 2: ai-fetch first run 9m13s (5 files, ~30.6 GB, sizes match x-linked-size); second run 'present, skipping' x5 in 0.6s.",
+      "Scenario 3: docker compose --profile ai up -d --wait --wait-timeout 900 exit 0 in 16s after down (no re-download); llama-server and comfyui healthy; ports 127.0.0.1:8080 and 127.0.0.1:8188.",
+      "Scenario 4: backend ROCm ghcr.io/ggml-org/llama.cpp:server-rocm-b12316 (sha256:1da62f4e...), log 'using device ROCm0 (AMD Radeon RX 9070 XT)', 'offloaded 49/49 layers to GPU', experts CPU_Mapped (--n-cpu-moe 48); ComfyUI system_stats 'cuda:0 AMD Radeon RX 9070 XT : native' (HIP), log 'AMD arch: gfx1201'. No HSA_OVERRIDE_GFX_VERSION.",
+      "Scenario 5: llm-bench.sh 3/3 valid JSON (12/12 across 4 runs); Qwen3-30B-A3B-Instruct-2507 Q4_K_M, 2003-token prompt: median prompt 771 tok/s, gen 25.5 tok/s, TTFT 2.6 s. Vulkan b12316: 358 / 24.1 tok/s, 5.6 s -> ROCm chosen.",
+      "Scenario 6: depth (RealVisXL V5.0 + diffusers controlnet-depth-sdxl fp16 + Depth Anything V2 Small), 1216x832, 25 steps: cold 16.9 s, warm 8.46/8.45/10.38 s; docs/spikes/assets/render-depth.jpg; geometry check in report (left window became a glazed cabinet).",
+      "Scenario 7: canny (core Canny): cold 16.8 s, warm 8.48/9.46/9.00 s; docs/spikes/assets/render-canny.jpg; all geometry incl. windows preserved.",
+      "Scenario 8: desktop baseline 1181 MiB; LLM-only peak 4388 MiB (+3207); ComfyUI-only peak 16197 MiB (+15016, idle cached +7449); both + concurrent chat peak 16270 MiB (+15089), no OOM, render +26 % slower, LLM gen 17-19 tok/s. Verdict: serialization required. POST /free 5 ms (VRAM released within 3 s, reload +8-11 s on next render); llama stop 0.6 s, start to healthy 5.3-5.8 s.",
+      "Docs: ADR 0001 status validated + Validation section; risks (3 questions resolved, ROCm/SDXL rows updated); technical-discovery GPU sections; AGENTS.md AI Services; .env.example new vars. GPU stack left stopped (volumes kept), core stack healthy. No sudo, no native installs, no app code.",
+      "2026-11-12 independent validator: ACCEPT. Re-ran scenarios 1-6 on the GPU (fetch idempotent 0.4 s, ai profile healthy 10.9 s, 3/3 schema-valid JSON at 25.8 tok/s gen / 774.5 tok/s prompt, depth render warm median 8.48 s byte-identical to committed asset, VRAM +3,210 LLM / +14,970 ComfyUI MiB), ports 127.0.0.1 and env-overridable, pins ok, ./init.sh exit 0. Findings 1-2 (stop hints, bench comment) fixed by orchestrator."
+    ],
+    "notes": "Spec: docs/specs/local-ai-gpu-spike.md. GPU services in compose profile 'ai' (weights via one-shot profile 'ai-fetch'); ./init.sh default gate stays postgres/minio/mailpit. Day-1 spike (docs/risks-and-open-questions.md). Try ROCm images first (gfx1201 needs ROCm >= 6.4), Vulkan fallback for llama.cpp. Decide model/quant; fall back to SD 1.5 if SDXL is too slow. Spike output is compose services + report, no app code."
   },
   {
     "id": "api-skeleton",

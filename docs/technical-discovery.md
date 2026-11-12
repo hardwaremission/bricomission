@@ -41,7 +41,8 @@ OIDC Authorization Code + PKCE from the PWA; the API validates Keycloak JWTs and
 ## Deployment and Operations
 
 - Single `compose.yaml` at repo root: postgres, keycloak, minio, mailpit, llama-server, comfyui, (redis), api, web. Pinned image tags, named volumes, healthchecks.
-- GPU passed to llama-server and ComfyUI via `/dev/kfd` and `/dev/dri` (ROCm) or `/dev/dri` (Vulkan).
+- GPU passed to llama-server and ComfyUI via `/dev/kfd` and `/dev/dri` (ROCm) or `/dev/dri` (Vulkan). Measured setup (2026-11-12): both use ROCm, `group_add: [video, ${RENDER_GID:-987}]` (host `render` GID 987 owns `/dev/kfd`; `video` GID 983). ComfyUI also uses `ipc: host` and `seccomp=unconfined`.
+- The AI services are opt-in compose profiles: `ai` (`llama-server`, `comfyui`) and `ai-fetch` (one-shot weight download into the named volumes `llm-models`, `comfyui-models`, `comfyui-annotators`). `./init.sh` never starts them. Ports `LLAMA_PORT` (8080) and `COMFYUI_PORT` (8188) bind to 127.0.0.1. Measurements: `docs/spikes/local-ai-gpu-spike.md`.
 - `init.sh` brings the stack up and verifies health; works offline after the first pull.
 - Per-worktree isolation via `COMPOSE_PROJECT_NAME`.
 
@@ -49,6 +50,7 @@ OIDC Authorization Code + PKCE from the PWA; the API validates Keycloak JWTs and
 
 - One GPU job broker in `apps/api`: image jobs run one at a time.
 - Before an SDXL job, the broker ensures VRAM headroom (MoE LLM uses little VRAM; if not enough, pause chat requests or unload the LLM).
+- Measured 2026-11-12: serialization is required. The LLM holds about 3.2 GB. ComfyUI holds about 7.4 GB idle-cached and peaks at about 15 GB over the desktop baseline during a render, because it takes whatever VRAM is free. Running both at once did not OOM but cost about 25 % speed on each, so renders run alone and chat requests wait. Unload: ComfyUI `POST /free` (VRAM is released within about 3 s, and the next render adds about 8-11 s of reload). `docker compose stop llama-server` takes 0.6 s, and `up -d --wait` brings it back healthy in about 5.5 s.
 - Chat requests during a Render wait in the queue with a visible status.
 
 ## Budget Computation
