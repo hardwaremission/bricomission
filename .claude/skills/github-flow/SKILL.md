@@ -58,7 +58,7 @@ Checked before `execute` is allowed to mutate anything. `plan` runs the same che
 1. Dependencies accepted: every id in `depends_on` has status `accepted` in `feature_list.json`.
 2. Clean base: the base checkout has no staged, modified, or deleted tracked files (`git status --porcelain` has no tracked entries; untracked files are allowed and reported), no merge/rebase in progress, and `base_branch` resolves. The daily conversation log `docs/<yyyy-mm-dd>_conversacion_completa.md` is rewritten by the Stop hook on every turn; report it but do not treat it as a blocker.
 3. Permissions: `get_me` succeeds, the repository lookup reports `permissions.push: true`, `BRICOMISSION_GITHUB_PAT` is set (check its length only, never print it), and the user explicitly granted push permission (otherwise work stays local and `publish` cannot push or open PRs).
-4. Independent environments: one worktree per feature outside the base checkout, one session per worktree, no shared mutable state between features (each worktree runs its own `./init.ps1` and local database).
+4. Independent environments: one worktree per feature outside the base checkout, one session per worktree, no shared mutable state between features (each worktree runs its own `./init.sh` with a distinct Docker Compose project, `COMPOSE_PROJECT_NAME=<feature-id>`, so containers, volumes and databases are not shared).
 
 If any precondition fails, report the failing features and stop before mutating anything.
 
@@ -77,12 +77,12 @@ Reuse lookup before any creation (read-only):
 
 ## Session command
 
-Run from the worktree directory (PowerShell):
+Run from the worktree directory (bash):
 
-```powershell
-Push-Location <worktrees-root>/<feature-id>
-claude -p "Use feature-flow for <feature-id> only, until accepted." --permission-mode auto --settings '{\"disableAllHooks\": true}'
-Pop-Location
+```bash
+(cd <worktrees-root>/<feature-id> && \
+  COMPOSE_PROJECT_NAME=<feature-id> claude -p "Use feature-flow for <feature-id> only, until accepted." \
+    --permission-mode auto --settings '{"disableAllHooks": true}')
 ```
 
 - `--permission-mode auto` lets the headless session run its role loop without interactive prompts; if the developer prefers another mode, use theirs.

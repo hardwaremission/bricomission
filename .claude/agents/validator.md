@@ -1,7 +1,7 @@
 ---
 name: validator
 description: Wrapper agent that delegates validation work to the feature-validator skill.
-tools: Read, Glob, Grep, Bash, PowerShell, Skill
+tools: Read, Glob, Grep, Bash, Skill
 skills:
   - feature-validator
 ---

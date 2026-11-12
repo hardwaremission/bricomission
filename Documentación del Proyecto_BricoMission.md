@@ -6,7 +6,9 @@
 | **Autor** | HardwareMission |
 | **Plataforma** | Aplicación Web Responsiva Mobile-First (PWA) \+ Backend API REST |
 | **Fecha límite** | 22 de noviembre |
-| **Última Modificación** | 2026-11-06 11:27 |
+| **Entorno de desarrollo** | Linux CachyOS 7.3.3-1 · AMD Ryzen 9 5950X · 64 GB RAM · AMD Radeon RX 9070 XT 16 GB |
+| **Infraestructura** | Contenedores Docker orquestados con Docker Compose v2 |
+| **Última Modificación** | 2026-11-12 |
 
 ## **📑 Índice de Contenidos**
 
@@ -23,7 +25,15 @@
 > 3. [3\. Product Requirements Document (PRD)](#bookmark=id.70mo2wrrm9sy)  
 > 4. [4\. Ejecución de Skills del Harness (Registro de Progreso)](#bookmark=id.o9lxd56d7nx9)  
    * 4.1. [Pasos para Invocar las Skills en la Terminal](#bookmark=id.jt4vnv8odkhi)  
-   * 4.2. [Flujo de Trabajo del Harness Avanzado y Registro de Estado](#bookmark=id.5qm4m2qbyaxb)
+   * 4.2. [Flujo de Trabajo del Harness Avanzado y Registro de Estado](#bookmark=id.5qm4m2qbyaxb)  
+> 5. [5\. Creación de la Presentación (Vídeo Demo de 15 minutos)](#5-creación-de-la-presentación-vídeo-demo-de-15-minutos)  
+   * 5.1. Guion  
+   * 5.2. Narración con voz propia  
+   * 5.3. Transcripción con marcas de tiempo  
+   * 5.4. Capturas de pantalla sincronizadas con la narración  
+   * 5.5. Montaje con HyperFrames (1080p horizontal)  
+   * 5.6. Validación visual y exportación a MP4  
+   * 5.7. Versionado del proyecto de presentación
 
 ## **1\. Definición del Proyecto: Cuestionario y Conclusiones Extensas**
 
@@ -49,7 +59,8 @@ A continuación, se detallan exhaustivamente las conclusiones, decisiones estrat
      * **Pasarela de Pagos Dual:** Podrá alternar visualmente entre un modo de cobro simulado offline y la integración real con PayPal Sandbox.  
 > * **Estrategia de Demo (Vídeo de 15 minutos para el 22 de noviembre):**  
   * **Minutos 0-5 (Storytelling / Caso Real):** Narración ágil desde la perspectiva del usuario final (B2C) subiendo fotos de su cocina, interactuando con la IA y viendo cómo llegan las pujas en tiempo real. Breve muestra del panel B2B del profesional.  
-  * **Minutos 5-15 (Pitch de Arquitectura Técnica):** Demostración del dominio del curso explicando el *behind the scenes*: el uso del HARNESS, las fuentes en NotebookLM, la capa de abstracción con LiteLLM ejecutando Ollama en la GPU local, el pipeline de ControlNet, la automatización en GitHub vía MCP y las directrices dadas en OpenPencil.
+  * **Minutos 5-15 (Pitch de Arquitectura Técnica):** Demostración del dominio del curso explicando el *behind the scenes*: el uso del HARNESS, las fuentes en NotebookLM, la capa de abstracción con LiteLLM ejecutando Ollama en la GPU local, el pipeline de ControlNet, la automatización en GitHub vía MCP, las directrices dadas en OpenPencil y la infraestructura en contenedores Docker.  
+  * **Producción del vídeo:** Se realizará como último paso, una vez terminado el MVP, siguiendo el proceso descrito en la sección 5 (guion propuesto por el agente, narración con voz propia, transcripción con marcas de tiempo, capturas mediante el MCP del navegador y montaje en HyperFrames).
 
 ### **1.2. Flujo de Usuario y Experiencia Visual (UX/UI)**
 
@@ -88,9 +99,44 @@ A continuación, se detallan exhaustivamente las conclusiones, decisiones estrat
 > * **Control de Versiones y Automatización (GitHub MCP):** Como pilar fundamental de la arquitectura, se delega toda la gestión del código fuente, automatización de *Pull Requests* y creación de *Issues* al agente de IA mediante el **servidor MCP de GitHub** (https\://github.com/github/github-mcp-server). Se exige una inicialización local y aislada de Git para proteger las credenciales globales del entorno de desarrollo.  
 > * **Autenticación y Gestión de Identidad (IAM):** Uso de **Keycloak** como proveedor de identidad. Se creará y configurará un *realm* (reino) específico llamado "BricoMission" que manejará de forma centralizada todos los roles (Usuario, Profesional, Administrador), el SSO (Google/Apple) y el flujo B2B (OTP), delegando esta complejidad fuera del código de la aplicación.  
 > * **Frontend (MVP):** Aplicación Web Responsiva Mobile-First (PWA) construida idealmente con Next.js \+ Tailwind o ecosistemas similares que los agentes dominen.  
-> * **Backend y Base de Datos Local:** Instalación nativa de **PostgreSQL** en la máquina de desarrollo (sin Docker, para exprimir el rendimiento de la CPU Ryzen 5950X). Esto garantiza que la demostración en vídeo será 100% *offline*, sin latencias de red ni caídas de servidores externos. El backend expondrá una **API REST robusta y agnóstica**, diseñada para servir a la web ahora y a la app móvil en el futuro.  
+> * **Sistema Operativo y Scripts:** La máquina de desarrollo principal funciona con **Linux CachyOS 7.3.3-1** (base Arch). Todos los scripts de automatización y verificación que se generen (empezando por `init.sh`) serán **scripts bash (`.sh`)**; no se generarán versiones PowerShell (`.ps1`).  
+> * **Infraestructura en Contenedores (Docker Compose v2):** Todos los programas que el proyecto necesita como requisito (PostgreSQL, Keycloak, MinIO, el servidor de modelos LLM y el servicio de generación de imágenes con ControlNet) se ejecutarán en **contenedores Docker** siempre que sea posible, en lugar de instalarse de forma nativa en el host. El entorno completo se levanta con un único `compose.yaml` en la raíz del repositorio (`docker compose up -d`), con imágenes en versiones fijas, volúmenes nombrados persistentes y *healthchecks*. Tras la primera descarga de imágenes y modelos, todo funciona 100% *offline*. Solo se instalará de forma nativa aquello que no pueda contenerizarse razonablemente, y esa excepción deberá quedar justificada por escrito.  
+> * **Backend y Base de Datos Local:** **PostgreSQL** se ejecuta en un contenedor dentro del stack de Docker Compose. Esto garantiza que la demostración en vídeo será 100% *offline*, sin latencias de red ni caídas de servidores externos, y que el entorno se puede reproducir en cualquier máquina. El backend expondrá una **API REST robusta y agnóstica**, diseñada para servir a la web ahora y a la app móvil en el futuro.  
 > * **Almacenamiento de Archivos (Object Storage):** Uso de una instancia local de **MinIO** configurada para simular un bucket de AWS S3. Esto asegura un almacenamiento robusto de las fotos subidas, imágenes generadas por IA y PDFs generados manteniéndose 100% offline para la demo, pero dejando la arquitectura lista para dar el salto directo a S3 o Supabase Storage en producción. La configuración y credenciales de MinIO serán accesibles y modificables visualmente desde el panel de Administración.  
-> * **Capa de Abstracción de IA (LiteLLM/AI SDK):** Se utilizará una librería que unifique el formato de los *prompts*. Esto permitirá conectar la app tanto a APIs comerciales (OpenAI) como a modelos locales servidos mediante **Ollama** o **lemonade-server.ai** aprovechando la GPU **AMD Radeon 9070 XT (16GB)**. Esto ahorra costes durante las iteraciones de desarrollo y permite una demo totalmente gratuita y local.  
+> * **Capa de Abstracción de IA (LiteLLM/AI SDK):** Se utilizará una librería que unifique el formato de los *prompts*. Esto permitirá conectar la app tanto a APIs comerciales (OpenAI) como a modelos locales servidos mediante **Ollama** o **lemonade-server.ai** aprovechando la GPU **AMD Radeon 9070 XT (16GB)**. Esto ahorra costes durante las iteraciones de desarrollo y permite una demo totalmente gratuita y local. La GPU se expone a los contenedores mediante **ROCm** (dispositivos `/dev/kfd` y `/dev/dri`); si el rendimiento o la compatibilidad de RDNA4 lo exigieran, se permite ejecutar la inferencia de forma nativa o mediante el backend Vulkan, y esta decisión se validará durante `/build-brief`.  
+> * **Hardware de Desarrollo y Límites de los Modelos Locales:** Inventario medido en la máquina de desarrollo (2026-11-12):
+
+| Componente | Detalle |
+| :---- | :---- |
+| Sistema operativo | CachyOS (Arch Linux), kernel 7.3.3-1-cachyos |
+| CPU | AMD Ryzen 9 5950X: 16 núcleos / 32 hilos, hasta ~5,1 GHz, 64 MiB de caché L3, AVX2 (sin AVX-512) |
+| RAM | 64 GB DDR4 (62 GiB útiles) + 62,7 GB de swap comprimida en zram (zstd) |
+| GPU | AMD Radeon RX 9070 XT (Navi 48, RDNA4, gfx1201): **16 GB de VRAM** (~1,3 GB ocupados por el escritorio, unos **14,5 GB libres**), PCIe 5.0 x16, 32 GB de GTT (memoria del sistema accesible por la GPU), Vulkan 1.4 con el driver RADV |
+| Disco del sistema | NVMe KIOXIA Exceria Plus de 465 GB (452 GB libres) |
+| Discos adicionales (sin montar) | NVMe Corsair MP600 PRO LPX de 1,8 TB, NVMe Crucial P3 Plus de 4 TB, SSD OCZ Trion 150 de 960 GB, HDD Seagate de 4 TB |
+| Software de partida | python3, ffmpeg, Node.js 26 + npm y el driver `amdgpu` del kernel. **Pendientes de instalar:** Docker Engine + Compose v2 (y todo lo demás irá en contenedores) |
+
+>   **Restricciones derivadas para los modelos locales:**  
+  * **La VRAM es el cuello de botella.** Todos los modelos que estén cargados en la GPU a la vez deben caber en unos 14,5 GB.  
+  * **Consumo orientativo de VRAM** (a validar con una prueba técnica durante `/build-brief`):
+    * LLM de 7-8B cuantizado a Q4: ~5-6 GB con contexto de 8k.
+    * LLM de 14B en Q4: ~9-10 GB.
+    * Stable Diffusion 1.5 + ControlNet: ~4-5 GB.
+    * SDXL + ControlNet en fp16: ~8-10 GB.
+    * Whisper large-v3: ~3-4 GB; puede ejecutarse en CPU.
+  * **Convivencia simultánea:**
+    * **Sí cabe:** un LLM de 7-8B en Q4 junto con SD 1.5 + ControlNet.
+    * **No cabe:** un LLM de 14B junto con SDXL + ControlNet, ni ningún LLM de 30B o más.  
+  * **Regla de convivencia:**
+    * La aplicación nunca dará por hecho que el LLM y el generador de imágenes pueden estar cargados a la vez.
+    * La capa de IA carga los modelos uno tras otro: el servidor de LLM usa un `keep_alive` corto o descarga el modelo antes de generar una imagen, y las imágenes pasan por una cola que procesa un solo trabajo cada vez.
+    * Desde el panel de Administración se pueden elegir modelos más ligeros o cambiar al *endpoint* en la nube.  
+  * **CPU como respaldo:** el 5950X con 64 GB de RAM puede ejecutar en CPU, aunque más despacio, LLMs pequeños, *embeddings* y Whisper. Un modelo de 7-8B en Q4 genera del orden de unos pocos tokens por segundo y como mucho ~10. Desbordar la VRAM hacia la GTT o el swap se considera inviable para la demo.  
+  * **Pila de GPU en contenedores:**
+    * RDNA4 (gfx1201) necesita ROCm 6.4 o superior dentro de las imágenes (por ejemplo, `ollama/ollama:rocm` y una imagen de ComfyUI para ROCm). El host solo necesita el driver `amdgpu`, que ya está presente.
+    * Si ROCm falla, la alternativa es llama.cpp con backend Vulkan (RADV ya funciona en el host).  
+  * **Almacenamiento:** los pesos de los modelos y los volúmenes de Docker ocuparán decenas de GB. Se recomienda montar uno de los NVMe de datos (1,8 TB o 4 TB) para modelos y volúmenes, sin llenar el disco del sistema.  
+
 > * **Notificaciones en Tiempo Real (MVP):** Implementación estricta mediante **Server-Sent Events (SSE)**. Esta tecnología nativa de los navegadores permite un flujo ligero y unidireccional del servidor al cliente web para alertar sobre nuevas pujas, manteniendo la infraestructura 100% local y evitando dependencias de la nube como FCM o Pusher durante la demo offline.
 
 ### **1.5. Fuera del alcance del MVP (Fase 2: App Nativa iOS y LiDAR)**
@@ -114,11 +160,11 @@ El *Harness* (arnés) es el ecosistema metodológico y técnico que rodea al age
 El flujo global de desarrollo integra el descubrimiento inicial, la preparación del repo, la triada de subagentes por feature y la entrega continua en GitHub:  
 \[Descubrimiento\]     build-brief ─▶ Genera CONTEXT.md, build-brief.md, DESIGN.md  
                            │  
-\[Preparación Repo\]   harness-starter ─▶ Genera AGENTS.md, init.ps1, PROGRESS.md, feature\_list.json  
+\[Preparación Repo\]   harness-starter ─▶ Genera AGENTS.md, init.sh, PROGRESS.md, feature\_list.json  
                            │  
 \[Orquestación local\] feature-flow ─┐  
                            ├── 1\. planner             (invoca feature-spec ─▶ docs/specs/\<id\>.md)  
-                           ├── 2\. implementer         (invoca feature-implementer ─▶ Código \+ init.ps1)  
+                           ├── 2\. implementer         (invoca feature-implementer ─▶ Código \+ init.sh)  
                            └── 3\. validator           (invoca feature-validator ─▶ Veredicto accept/revise)  
                            │  
 \[Entrega GitHub\]     github-flow ─▶ Worktrees aislados ─▶ Commits convencionales ─▶ Pull Requests
@@ -144,7 +190,7 @@ A continuación se detalla exhaustivamente el propósito, reglas, entradas y art
 > * **Criterio de Corte de Features:** Divide el proyecto en *features* ejecutables en una sola sesión de agente (para un MVP complejo exige entre 12 y 30 features acotadas). Rechaza épicas amplias como "autenticación y pagos".  
 > * **Artefactos generados:**  
   * AGENTS.md: Página de aterrizaje con las reglas operativas para cualquier agente que entre al repo.  
-  * init.sh / init.ps1: Script ejecutable de arranque y verificación no bloqueante del entorno (adaptado a PowerShell para Windows).  
+  * init.sh: Script bash ejecutable de arranque y verificación no bloqueante del entorno (Linux; levanta y comprueba el stack de Docker Compose).  
   * PROGRESS.md: Bitácora y registro de estado verificado del repositorio.  
   * feature\_list.json: Matriz JSON ejecutable de features con dependencias (depends\_on), estados (not\_started, in\_progress, passing, accepted) y evidencias.
 
@@ -157,7 +203,7 @@ A continuación se detalla exhaustivamente el propósito, reglas, entradas y art
 #### **4\. feature-implementer (Ejecutor de Código / Subagente Implementer)**
 
 > * **Propósito:** Actúa como el rol de **Implementer**. Toma el contrato de docs/specs/\<feature-id\>.md y escribe el código fuente estrictamente necesario sin salirse del alcance (*WIP=1*).  
-> * **Auto-verificación:** Al terminar de codificar, ejecuta las pruebas estáticas, unitarias y scripts de verificación (init.ps1). Registra las evidencias en PROGRESS.md y cambia el estado de la feature en feature\_list.json a passing.  
+> * **Auto-verificación:** Al terminar de codificar, ejecuta las pruebas estáticas, unitarias y scripts de verificación (init.sh). Registra las evidencias en PROGRESS.md y cambia el estado de la feature en feature\_list.json a passing.  
 > * **Regla estricta:** passing significa "implementado y autoverificado", pero NUNCA significa aceptado. El implementer jamás puede marcar una feature como accepted.
 
 #### **5\. feature-validator (Auditoría Independiente / Subagente Validator)**
@@ -190,7 +236,7 @@ El siguiente documento es el texto fundacional que se pasará a la skill build-b
 \*\*Project Name:\*\* BricoMission  
 \*\*Target Platform:\*\* Mobile-First Responsive Web Application (PWA) \+ REST API Backend  
 \*\*Repository Target:\*\* DevExpert \`harness-starter\`   
-\*\*Last Modified:\*\* 2026-11-06 11:27
+\*\*Last Modified:\*\* 2026-11-12
 
 \*\*Documentation Strategy for Harness:\*\* The agent must split these requirements into a modular architecture (e.g., \`01\_ui\_spec.md\`, \`02\_ai\_pipeline.md\`, \`03\_marketplace\_logic.md\`, \`04\_database\_schema.md\`) rather than a single monolithic file during development.
 
@@ -198,7 +244,8 @@ El siguiente documento es el texto fundacional que se pasará a la skill build-b
 BricoMission is an AI-powered platform designed to disrupt the kitchen renovation sector. It bridges the gap between home DIYers and professional contractors, solving the problem of hidden costs for users and time-wasting ("tire-kickers") for professionals.   
 \*\*Demo Context (15-Minute Video Pitch Target for Nov 22nd):\*\*  
 \*   \*\*Part 1 (5 mins):\*\* Real-case storytelling demonstrating the B2C homeowner web flow (photo uploads, AI persona chat, visual generation) and a brief look at the B2B contractor dashboard receiving real-time bids.  
-\*   \*\*Part 2 (10 mins):\*\* Technical architecture pitch showcasing the integration of the DevExpert harness, NotebookLM (RAG with IKEA catalogs), LiteLLM abstraction running Ollama on a local AMD Radeon 9070 XT GPU, OpenPencil UX workflows via MCP, strict prompt engineering, and GitHub MCP automation.
+\*   \*\*Part 2 (10 mins):\*\* Technical architecture pitch showcasing the integration of the DevExpert harness, NotebookLM (RAG with IKEA catalogs), LiteLLM abstraction running Ollama on a local AMD Radeon 9070 XT GPU, OpenPencil UX workflows via MCP, strict prompt engineering, GitHub MCP automation, and the containerized Docker Compose infrastructure.  
+\*\*Video Production:\*\* The demo video is the final deliverable, produced only after the MVP is complete, following the pipeline defined in Section 8.
 
 \#\# 2\. Technical Architecture & Infrastructure  
 \*   \*\*Codebase & Documentation Language:\*\* All source code, variable names, function names, git commits, and internal technical documentation must be written strictly in English to support future international development teams.  
@@ -206,10 +253,18 @@ BricoMission is an AI-powered platform designed to disrupt the kitchen renovatio
     \*   The agent MUST use the GitHub MCP server (\`https\://github.com/github/github-mcp-server\`) for automatic git management, Issue tracking, and PR Automation for all generated code.  
     \*   \*\*Git Configuration Rule (Step 0):\*\* The absolute first task, BEFORE generating any code, documentation, or versioned files, is to configure the git repository within the coding agent. This git configuration MUST be repository-specific (local config). The agent must NOT read or use the host machine's global user credentials unless explicitly authorized by the developer in the chat.  
     \*   The agent is required to actively guide the developer through setting up the local GitHub repository configuration to ensure the MCP is fully authenticated, secured, and ready for versioning from day one.  
-\*   \*\*Development OS (Windows):\*\* The primary development environment is Microsoft Windows. The harness and agents MUST generate PowerShell equivalents (\`.ps1\`) alongside any bash scripts (\`.sh\`). The developer will strictly use the \`.ps1\` scripts (e.g., \`init.ps1\` instead of \`init.sh\`) for all local execution and verification.  
+\*   \*\*Development OS (Linux):\*\* The primary development machine runs Linux CachyOS 7.3.3-1 (Arch-based). All automation and verification scripts generated by the harness and agents MUST be bash scripts (\`.sh\`), with \`init.sh\` as the single entry point. Do NOT generate PowerShell (\`.ps1\`) scripts.  
+\*   \*\*Containerized Infrastructure (Docker Compose v2):\*\* Every prerequisite service (PostgreSQL, Keycloak, MinIO, the LLM server, and the ControlNet image-generation service) MUST run in Docker containers whenever possible instead of being installed natively on the host. The full stack is defined in a single \`compose.yaml\` at the repository root and started with \`docker compose up -d\`. Requirements: pinned image versions (no \`latest\`), named persistent volumes, healthchecks, and fully offline operation after the first image/model pull. The AMD GPU is passed into the AI containers through the ROCm devices (\`/dev/kfd\`, \`/dev/dri\`). Any component left native on the host requires a written justification.  
+\*   \*\*Development Hardware & Local AI Constraints:\*\*  
+    \*   \*\*Measured host (2026-11-12):\*\* AMD Ryzen 9 5950X (16C/32T, AVX2, no AVX-512); 64 GB DDR4 RAM + 62.7 GB zram swap; AMD Radeon RX 9070 XT (RDNA4, gfx1201) with 16 GB VRAM (~14.5 GB free with the desktop running), PCIe 5.0 x16, Vulkan 1.4 (RADV); 465 GB NVMe system disk plus unmounted 1.8 TB and 4 TB NVMe data drives. Docker Engine + Compose v2 must be installed first; everything else runs in containers.  
+    \*   \*\*VRAM is the bottleneck:\*\* All models resident on the GPU at the same time must fit in ~14.5 GB. Indicative footprints (to be validated by a technical spike during discovery): 7-8B LLM at Q4 ≈ 5-6 GB (8k context); 14B LLM at Q4 ≈ 9-10 GB; SD 1.5 + ControlNet ≈ 4-5 GB; SDXL + ControlNet (fp16) ≈ 8-10 GB; Whisper large-v3 ≈ 3-4 GB (can run on CPU).  
+    \*   \*\*Co-residency rule:\*\* A 7-8B Q4 LLM and SD 1.5 + ControlNet can stay loaded together; a 14B LLM plus SDXL + ControlNet, or any 30B+ LLM, cannot. The application MUST NOT assume the LLM and the image generator are loaded simultaneously: the AI layer serializes GPU loads (short \`keep\_alive\` or explicit unload of the LLM before image generation, single-worker image queue), and the Admin can switch to smaller models or to the cloud endpoint from the dashboard.  
+    \*   \*\*CPU fallback:\*\* Small LLMs, embeddings and Whisper may run on the CPU at reduced speed (roughly a few to ~10 tokens/s for a 7-8B Q4 model). Spilling VRAM into GTT/system memory or swap is not acceptable for the demo.  
+    \*   \*\*GPU stack:\*\* RDNA4 requires ROCm ≥ 6.4 inside the container images (e.g., \`ollama/ollama:rocm\`, a ROCm build of ComfyUI); the host only needs the in-kernel \`amdgpu\` driver. Fallback: llama.cpp with the Vulkan backend.  
+    \*   \*\*Storage:\*\* Model weights and Docker volumes should live on a dedicated data NVMe, not on the system disk.  
 \*   \*\*Identity & Access Management (IAM):\*\* Keycloak. A dedicated "BricoMission" realm will be configured to handle all user authentication, role-based access control (RBAC), SSO integrations (Google/Apple), and B2B OTP validation, keeping auth logic cleanly separated from the core application.  
 \*   \*\*Frontend / Client:\*\* Mobile-First Responsive Web Application (PWA) optimized for mobile browser viewports.  
-\*   \*\*Backend & API:\*\* Local PostgreSQL (Native installation directly on the host machine, strictly NO Docker) to guarantee zero latency and full offline capability during the presentation. The backend must expose a robust, framework-agnostic REST API. This API will serve the MVP web frontend but is fundamentally structured to support a future Native iOS mobile application without major refactoring.  
+\*   \*\*Backend & API:\*\* Local PostgreSQL running as a container in the Docker Compose stack to guarantee zero external latency, reproducibility, and full offline capability during the presentation. The backend must expose a robust, framework-agnostic REST API. This API will serve the MVP web frontend but is fundamentally structured to support a future Native iOS mobile application without major refactoring.  
 \*   \*\*File Storage (Object Storage):\*\* A local instance of \*\*MinIO\*\* acting as an AWS S3-compatible storage bucket. This guarantees robust offline file handling for user-uploaded photos, AI-generated images, and PDF contracts for the MVP while keeping the codebase strictly cloud-ready (S3/Supabase Storage API) for production. The connection strings and credentials for this MinIO bucket MUST be visually configurable via the Administrator dashboard without needing code changes.  
 \*   \*\*Internationalization (i18n):\*\* The application must be built with multi-language support from day one. For the MVP, the supported language list is explicitly: \*\*English, Spanish, French, German, Italian, Portuguese, Dutch, Swedish, Norwegian, Danish, and Finnish\*\*. It must detect browser/device language automatically and persist the user's choice in the database.  
 \*   \*\*AI Abstraction Layer:\*\* Implementation of an AI SDK (like Vercel AI SDK or LiteLLM) to allow hot-swapping between models. The primary development and demo environment will use local endpoints (Ollama or lemonade-server.ai) running on an AMD Radeon 9070 XT (16GB) to avoid API costs, with cloud API fallbacks ready.  
@@ -316,6 +371,17 @@ While the DevExpert harness might propose various generic roles during discovery
 \*   \*\*AI Geometry Sync:\*\* The LiDAR 3D mesh will be fed directly into the ControlNet pipeline for flawless architectural preservation during image generation.  
 \*   \*\*Backend Readiness:\*\* The agnostic REST API built during the MVP phase is strictly designed to serve this future native client without requiring backend architectural changes.
 
+\#\# 8\. Final Deliverable: Demo Video Production (Last Step After the MVP)  
+This is the final step of the project, executed only once the MVP is complete. The goal is the 15-minute demo video (Section 1) built with a reproducible, versioned pipeline:  
+1\.  \*\*Script:\*\* The agent proposes a two-part narration script: (a) app demonstration (\~5 min, B2C flow plus a look at the B2B and Admin dashboards); (b) how it was built with the course techniques (\~10 min: DevExpert harness and SDD, planner/implementer/validator subagents, GitHub MCP, OpenPencil MCP design workflow, NotebookLM grounding, local AI on the AMD GPU, Docker Compose infrastructure). Each sentence gets a stable id. The developer reviews and approves it. Stored in \`presentation/script/\`.  
+2\.  \*\*Narration:\*\* The developer records the approved script with their own voice. Audio stored in \`presentation/audio/\`.  
+3\.  \*\*Timed Transcript:\*\* A local speech-to-text model (Whisper / faster-whisper, natively or in Docker) transcribes the recording with per-sentence start/end timestamps, aligned to the script sentence ids. Output (JSON + SRT) stored in \`presentation/transcript/\`; this file is the single source of truth for the edit timing.  
+4\.  \*\*Screenshots:\*\* Using the browser MCP connector (Claude in Chrome), the agent drives the locally running app and captures the screenshots that match each sentence or block of the narration. Stored in \`presentation/screenshots/\`, named after the sentence ids.  
+5\.  \*\*Composition (HyperFrames):\*\* The video is assembled with HyperFrames (\`https://github.com/heygen-com/hyperframes\`, HTML-based, deterministic MP4 rendering; requires Node.js 22+ and FFmpeg), installed locally or run in Docker. The project lives in \`presentation/hyperframes/\` (created with \`npx hyperframes init\`), landscape 1920x1080 (1080p) set on the composition root (\`data-width\`/\`data-height\`). Each screenshot is a clip whose \`data-start\`/\`data-duration\` come from the timed transcript; the narration audio is the main track.  
+6\.  \*\*Visual Validation:\*\* The developer reviews the composition with \`npx hyperframes preview\` and iterates with the agent until approved.  
+7\.  \*\*Export:\*\* After approval, the agent guides the developer step by step through \`npx hyperframes render\` to MP4, flagging any manual action required.  
+8\.  \*\*Versioning:\*\* The HyperFrames project, script, transcript, audio, and screenshots are committed to this repository. Rendered MP4 files go to \`presentation/out/\` and are git-ignored.
+
 ## **4\. Ejecución de Skills del Harness (Registro de Progreso)**
 
 Este apartado servirá como bitácora y registro de ejecución de cada una de las *skills* del *harness-starter* de DevExpert durante el desarrollo de BricoMission.
@@ -332,7 +398,7 @@ Para cada fase del desarrollo, la invocación de las *skills* según el entorno 
 
 ### **4.2. Flujo de Trabajo del Harness Avanzado y Registro de Estado**
 
-El desarrollo se organiza en 5 grandes etapas secuenciales según la arquitectura de subagentes:
+El desarrollo se organiza en 6 grandes etapas secuenciales (Fases 0 a 5) según la arquitectura de subagentes:
 
 > 0. **Fase 0: Configuración Inicial (Git & GitHub MCP)**  
    * **Objetivo:** Preparar y blindar el control de versiones local antes de generar un solo archivo.  
@@ -348,15 +414,15 @@ El desarrollo se organiza en 5 grandes etapas secuenciales según la arquitectur
 > 2. **Fase 2: Preparación e Inicialización del Repositorio (harness-starter)**  
    * **Objetivo:** Convertir los documentos de descubrimiento en la matriz de funcionalidades acotadas y la infraestructura para los agentes de codificación.  
    * **Comando:** /harness-starter.  
-   * **Artefactos generados:** AGENTS.md, init.sh, init.ps1, PROGRESS.md, feature\_list.json.  
-   * **Verificación del Desarrollador:** *(Comprobar explícitamente que se ha creado init.ps1 adaptado a PowerShell para entorno Windows).*  
+   * **Artefactos generados:** AGENTS.md, init.sh, PROGRESS.md, feature\_list.json.  
+   * **Verificación del Desarrollador:** *(Comprobar explícitamente que init.sh levanta y verifica el stack con `docker compose` en Linux).*  
    * **Estado:** *(Pendiente de ejecución)*  
 > 3. **Fase 3: Ejecución Orquestada por Feature (feature-flow)**  
    * **Objetivo:** Seleccionar una funcionalidad de feature\_list.json y ejecutar automáticamente el ciclo completo con los tres subagentes en bucle hasta su aceptación e integración.  
    * **Comando:** /feature-flow (o indicando un ID específico: /feature-flow \<feature-id\>).  
    * **Pipeline Interno Ejecutado por el Orquestador:**  
      1. **planner (feature-spec):** Genera la especificación del contrato en docs/specs/\<feature-id\>.md.  
-     2. **implementer (feature-implementer):** Escribe el código, autoverifica ejecutando ./init.ps1, actualiza PROGRESS.md y marca el estado como passing.  
+     2. **implementer (feature-implementer):** Escribe el código, autoverifica ejecutando ./init.sh, actualiza PROGRESS.md y marca el estado como passing.  
      3. **validator (feature-validator):** Sesión independiente que audita el código.  
         * Si el resultado es revise: emite un *Implementation Repair Brief* y reenvía al implementer.  
         * Si el resultado es accept: confirma que cumple la especificación y los estándares de seguridad.  
@@ -368,4 +434,51 @@ El desarrollo se organiza en 5 grandes etapas secuenciales según la arquitectur
      * plan: Inspección en modo lectura para planificar ramas y sesiones sin alterar Git.  
      * execute: Crea los worktrees aislados (../\<repo\>-worktrees/\<feature-id\>) y lanza sesiones autónomas de feature-flow.  
      * publish: Verifica que la feature esté en estado accepted, sube la rama a GitHub y el agente abre automáticamente el Pull Request (PR) vinculado a la Issue usando el MCP de GitHub.  
+   * **Estado:** *(Pendiente de ejecución)*  
+> 5. **Fase 5: Producción del Vídeo de Presentación (último paso, con el MVP terminado)**  
+   * **Objetivo:** Producir el vídeo demo de 15 minutos siguiendo el proceso de la sección 5: guion, narración con voz propia, transcripción con marcas de tiempo, capturas con el MCP del navegador, montaje en HyperFrames a 1080p y exportación a MP4.  
+   * **Artefactos generados:** `presentation/` (guion, audio, transcripción, capturas y proyecto HyperFrames), versionado en el repositorio. El MP4 final queda fuera de git.  
    * **Estado:** *(Pendiente de ejecución)*
+
+## **5\. Creación de la Presentación (Vídeo Demo de 15 minutos)**
+
+La presentación es el **último punto del proyecto**: se aborda únicamente cuando el MVP esté terminado. El objetivo es que el vídeo se pueda reproducir y modificar fácilmente, por lo que todo el material fuente se versiona en este repositorio, en la carpeta `presentation/`.
+
+### **5.1. Guion**
+
+> * El agente propondrá un guion dividido en dos bloques, coherente con la estrategia de demo de la sección 1.1:  
+  1. **Presentación de la app (~5 min):** recorrido narrado del flujo B2C (fotos, medidas, moodboard, generación con IA, chat de presupuesto con personas, marketplace con pujas anónimas) y vistazo a los paneles B2B y de Administración.  
+  2. **Cómo lo hemos hecho (~10 min):** explicación del proceso aplicando lo aprendido en el curso: el *harness* de DevExpert y el *Spec-Driven Development*, la tríada planner/implementer/validator, el MCP de GitHub, el diseño con OpenPencil vía MCP, NotebookLM para basar los precios en catálogos reales, la IA local en la GPU AMD y la infraestructura en Docker Compose.  
+> * Cada frase del guion tendrá un identificador estable (por ejemplo `s01-03`) para enlazarla con su audio, su marca de tiempo y su captura.  
+> * El desarrollador revisa y aprueba el guion antes de grabar. Se guarda en `presentation/script/`.
+
+### **5.2. Narración con voz propia**
+
+> * El desarrollador graba el guion aprobado con su propia voz. El audio se guarda en `presentation/audio/`.
+
+### **5.3. Transcripción con marcas de tiempo**
+
+> * El agente transcribe la grabación con un modelo local de **voz a texto** (Whisper / faster-whisper, nativo o en Docker; puede ejecutarse en CPU para no competir por la VRAM).  
+> * El resultado incluye el inicio y el fin exactos de cada frase, alineados con los identificadores del guion, y se guarda en `presentation/transcript/` en formato JSON y SRT.  
+> * Este documento de tiempos es la **única referencia temporal** para el montaje final.
+
+### **5.4. Capturas de pantalla sincronizadas con la narración**
+
+> * Con la app funcionando en local, el agente usará el **conector MCP del navegador web** (Claude in Chrome) para recorrer las pantallas y hacer las capturas que correspondan a cada frase o bloque de la narración.  
+> * Las capturas se guardan en `presentation/screenshots/`, nombradas con el identificador de la frase a la que acompañan.
+
+### **5.5. Montaje con HyperFrames (1080p horizontal)**
+
+> * El vídeo se monta con **HyperFrames** (https://github.com/heygen-com/hyperframes), un framework *open source* de HeyGen que convierte composiciones HTML/CSS en vídeos MP4 deterministas. Requiere Node.js 22+ y FFmpeg y se instalará en local o se ejecutará en Docker.  
+> * El proyecto se crea en `presentation/hyperframes/` (`npx hyperframes init`) en **formato horizontal 1920×1080 (1080p)**, definido en la raíz de la composición (`data-width` / `data-height`).  
+> * Cada captura es un *clip* cuyo `data-start` y `data-duration` salen del documento de tiempos de la transcripción. El audio de la narración es la pista principal, de modo que imagen y voz quedan sincronizadas.
+
+### **5.6. Validación visual y exportación a MP4**
+
+> * El desarrollador revisa el montaje con la previsualización en el navegador (`npx hyperframes preview`) y pide los ajustes al agente por el chat hasta darlo por bueno.  
+> * Una vez validado, el agente guía al desarrollador **paso a paso** en la exportación a MP4 (`npx hyperframes render`), indicando cualquier acción manual necesaria.
+
+### **5.7. Versionado del proyecto de presentación**
+
+> * Se suben al repositorio el proyecto HyperFrames, el guion, el audio, la transcripción con tiempos y las capturas.  
+> * Los MP4 renderizados se generan en `presentation/out/` y quedan excluidos de git (`.gitignore`).

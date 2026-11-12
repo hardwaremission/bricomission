@@ -30,10 +30,12 @@ Homeowners don't know what a renovation really costs and struggle to picture the
 - **Client**: mobile-first PWA (Next.js + Tailwind), 11 languages (en, es, fr, de, it, pt, nl, sv, no, da, fi).
 - **API**: framework-agnostic REST, ready for a future native iOS client.
 - **Identity**: Keycloak (`BricoMission` realm) — RBAC, SSO, OTP.
-- **Data & files**: native PostgreSQL; MinIO (S3-compatible) object storage.
+- **Data & files**: PostgreSQL; MinIO (S3-compatible) object storage.
 - **AI**: provider-agnostic layer with hot-swappable endpoints — local models via Ollama / lemonade-server on an AMD Radeon 9070 XT, cloud fallback; ControlNet image pipeline.
 - **Real time**: Server-Sent Events for bid notifications.
-- **Offline demo**: everything runs locally, no Docker, no cloud dependencies.
+- **Infrastructure**: every service runs in Docker containers orchestrated with Docker Compose v2.
+- **Offline demo**: everything runs locally with no cloud dependencies.
+- **Dev machine**: Linux CachyOS, Ryzen 9 5950X, 64 GB RAM, Radeon RX 9070 XT 16 GB. VRAM limits which local models can be loaded at the same time.
 
 ## How it is built
 
@@ -41,10 +43,12 @@ Spec-driven development with the DevExpert harness and Claude Code:
 
 ```
 build-brief      -> product context, domain model, design system
-harness-starter  -> AGENTS.md, init.ps1, PROGRESS.md, feature_list.json
+harness-starter  -> AGENTS.md, init.sh, PROGRESS.md, feature_list.json
 feature-flow     -> planner -> implementer -> independent validator (per feature)
 github-flow      -> isolated git worktrees, conventional commits, pull requests
 ```
+
+The demo video is the final step. The narration is recorded in the developer's own voice and timed with local speech-to-text. Screenshots are captured through the browser MCP. Everything is assembled with [HyperFrames](https://github.com/heygen-com/hyperframes) in 1080p, and the project is versioned under `presentation/`.
 
 UI screens are designed by the agent inside OpenPencil through MCP, reviewed by the developer, and implemented strictly from the approved design. GitHub issues and pull requests are automated through the GitHub MCP server.
 
@@ -54,6 +58,6 @@ Native iOS app (SwiftUI) with LiDAR/ARKit room scanning replacing manual measure
 
 ## Repository contents
 
-- `2026-11-06_11.27_Documentación del Proyecto_BricoMission.md` — project definition and PRD (Spanish, PRD section in English).
+- `Documentación del Proyecto_BricoMission.md` — project definition and PRD (Spanish, PRD section in English).
 - `CLAUDE.md` — operating rules for AI agents.
 - `docs/` — development log (daily conversation exports).

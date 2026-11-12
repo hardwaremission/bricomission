@@ -1,7 +1,7 @@
 ---
 name: implementer
 description: Wrapper agent that delegates implementation work to the feature-implementer skill.
-tools: Read, Glob, Grep, Write, Edit, Bash, PowerShell, Skill
+tools: Read, Glob, Grep, Write, Edit, Bash, Skill
 skills:
   - feature-implementer
 ---
