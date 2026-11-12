@@ -1,6 +1,6 @@
 # Registro de conversación con Claude Code · 2026-11-12
 
-_Actualizado: 2026-11-12 23:00_
+_Actualizado: 2026-11-12 23:04_
 
 
 ---
@@ -1289,3 +1289,98 @@ The implementer marked it `passing`. Next is the validator.
 ### 🤖 **Claude** · 2026-11-12 22:58:42
 
 El implementer terminó y la feature está en `passing`. Todos los escenarios en tiempo de ejecución pasan y el stack (postgres, minio y mailpit) está levantado y sano. Ahora el validator lo está verificando de forma independiente.
+
+
+### 🤖 **Claude** · 2026-11-12 23:00:38
+
+The validator returned **accept**. I'm recording the acceptance and fixing the two minor documentation findings.
+
+
+### 🤖 **Claude** · 2026-11-12 23:00:42
+
+> 🔧 **Bash**: `{"command": "python3 -I - <<'EOF'\nimport json\np='feature_list.json'; f=json.load(open(p))\nfor x in f:\n    if x['id']=='infra-compose-core':\n        assert x['status']=='passing'\n        x['status']='accepted'\n        x['evidence'].append(\"2026-11-12 independent validator: ACCEPT. Re-ran scen`
+
+
+### 🤖 **Claude** · 2026-11-12 23:00:45
+
+The JSON rewrite reformatted the file and added noise to the diff. I'm restoring it and editing only the text that changes:
+
+
+### 🤖 **Claude** · 2026-11-12 23:00:50
+
+> 🔧 **Bash**: `{"command": "git stash list >/dev/null; git diff feature_list.json | head -0; git show :feature_list.json >/dev/null 2>&1; git diff --quiet HEAD -- feature_list.json; echo \"vs HEAD changed=$?\"; python3 -I - <<'EOF'\nimport json,subprocess\n# rebuild from the implementer's version? not available; r`
+
+
+### 🤖 **Claude** · 2026-11-12 23:00:52
+
+> 🔧 **Bash**: `{"command": "git diff feature_list.json | head -50", "description": "Review feature_list diff"}`
+
+
+### 🤖 **Claude** · 2026-11-12 23:00:54
+
+Diff limpio. Ahora corrijo los dos hallazgos de documentación y la línea obsoleta de PROGRESS:
+
+
+### 🤖 **Claude** · 2026-11-12 23:00:57
+
+> 🔧 **Bash**: `{"command": "sed -i 's/| Disk space for models | Stack fails | Mount a data NVMe for volumes and weights before the spike |/| Disk space for models | Stack fails | Optional: move Docker data-root and model weights to a data NVMe (see docs\\/technical-discovery.md); otherwise monitor free space on th`
+
+
+### 🤖 **Claude** · 2026-11-12 23:01:00
+
+> 🔧 **Read**: `{"file_path": "/home/juanmi/Proyectos/hardwaremission.bricomission/PROGRESS.md", "limit": 12}`
+
+
+### 🤖 **Claude** · 2026-11-12 23:01:01
+
+> 🔧 **Edit**: `{"replace_all": false, "file_path": "/home/juanmi/Proyectos/hardwaremission.bricomission/PROGRESS.md", "old_string": "- Next best step: independent validation of `infra-compose-core`, then `local-ai-gpu-spike`.", "new_string": "- Independent validation: ACCEPT (2026-11-12). Validator re-ran scenario`
+
+
+### 🤖 **Claude** · 2026-11-12 23:01:04
+
+> 🔧 **Edit**: `{"replace_all": false, "file_path": "/home/juanmi/Proyectos/hardwaremission.bricomission/PROGRESS.md", "old_string": "- Current feature: `infra-compose-core` (`passing`, awaiting independent validation)", "new_string": "- Last accepted feature: `infra-compose-core` (validator ACCEPT, 2026-11-12)\n- `
+
+
+### 🤖 **Claude** · 2026-11-12 23:01:08
+
+> 🔧 **Bash**: `{"command": "git status --short && git add -A && git commit -q -F - <<'EOF'\nchore: complete infra-compose-core\n\n- compose.yaml: PostgreSQL 17 + pgvector 0.8.1, MinIO (pgsty community\n  fork, official image unpullable), Mailpit; pinned tags, named volumes,\n  healthchecks, ports bound to 127.0.0.`
+
+
+### 🤖 **Claude** · 2026-11-12 23:01:17
+
+La primera feature de la Fase 3, `infra-compose-core`, ha pasado la validación independiente.
+
+**Qué se ha hecho**
+- `compose.yaml` levanta tres servicios: PostgreSQL 17 con pgvector 0.8.1, MinIO (`pgsty/minio`, porque la imagen oficial ya no se puede descargar) y Mailpit.
+  - Las imágenes van en versiones fijas, los datos en volúmenes con nombre y cada servicio tiene su comprobación de salud.
+  - Los puertos solo escuchan en `127.0.0.1`.
+- `scripts/install-host-prereqs.sh` instala Docker, Compose y buildx con pacman cuando lo ejecutas tú con sudo. Los agentes solo usan su modo `--check`, que no modifica nada.
+- `./init.sh` ahora comprueba los requisitos del host, levanta el stack con `docker compose up -d --wait` y verifica que los tres servicios están sanos.
+- `.env.example` recoge todas las variables; `.env` sigue fuera de git.
+
+**Cómo probarlo**
+```bash
+./init.sh                                    # levanta y muestra la tabla de salud
+docker compose exec postgres psql -U bricomission -d bricomission -c "select extversion from pg_extension where extname='vector';"
+```
+Si has cambiado el usuario o la base de datos en tu `.env`, usa esos valores en el `psql`.
+- Consola de MinIO: http://127.0.0.1:9001
+- Mailpit: http://127.0.0.1:8025
+- `docker compose down` para el stack y conserva los datos.
+
+**Validación**
+- **Veredicto del validador:** accept. Repitió por su cuenta los escenarios 1 a 9:
+  - arranque sano de los tres servicios;
+  - extensión pgvector;
+  - respuesta HTTP 200 de MinIO y Mailpit;
+  - persistencia de datos tras `down` y `up`;
+  - error sin acceso al servicio de Docker;
+  - fallo forzado de un servicio;
+  - recuperación de un servicio parado.
+- Puertos solo en `127.0.0.1`; los digests de las imágenes coinciden con los registrados.
+- **No ejecutado:** la segunda instalación con el script, porque necesita sudo; se dio por buena la salida de `--check`.
+- Encontró dos menciones al NVMe de datos como obligatorio. Las he corregido para que figure como opcional.
+
+**Commit:** `3ca11e3 chore: complete infra-compose-core`. Es local, sin push.
+
+**Siguiente:** `local-ai-gpu-spike`, la prueba de GPU del primer día. Hay que empezar por el planner. `api-skeleton` también está lista para empezar.
