@@ -11,8 +11,10 @@ import { AiModule } from '../src/ai/ai.module.js';
 import { IMAGE_ADAPTER, LLM_ADAPTER } from '../src/ai/ai.tokens.js';
 import { AppModule } from '../src/app.module.js';
 import { configureApp } from '../src/app.setup.js';
+import { KEY_RESOLVER } from '../src/auth/token-verifier.service.js';
 import { PrismaService } from '../src/prisma/prisma.service.js';
 import { flush, GateQueue } from './gpu-test-helpers.js';
+import { createTestKeys, signToken } from './support/tokens.js';
 
 interface SseMessage {
   id: string;
@@ -40,11 +42,18 @@ const UNKNOWN_ID = '3f1c2b0e-6a8d-4f3e-9b1a-2c4d5e6f7a8b';
 
 describe('HTTP /ai/jobs (debug endpoints off, AppModule)', () => {
   let app: INestApplication;
+  let token: string;
 
   beforeAll(async () => {
+    // AppModule includes the global default-deny AuthGuard (keycloak-realm-roles), so job
+    // routes need a Bearer token; a local JWKS stands in for Keycloak.
+    const keys = await createTestKeys('kc-test-key');
+    token = await signToken(keys, { roles: ['user'] });
     const moduleRef = await Test.createTestingModule({ imports: [AppModule] })
       .overrideProvider(PrismaService)
       .useValue({ $queryRaw: vi.fn(), $disconnect: vi.fn() })
+      .overrideProvider(KEY_RESOLVER)
+      .useValue(keys.resolver)
       .compile();
     app = configureApp(moduleRef.createNestApplication({ logger: false }));
     await app.init();
@@ -54,18 +63,25 @@ describe('HTTP /ai/jobs (debug endpoints off, AppModule)', () => {
     await app.close();
   });
 
+  const authGet = (path: string) => request(app.getHttpServer()).get(path).set('Authorization', `Bearer ${token}`);
+
   it('debug POST /ai/jobs is 404 when the flag is off', async () => {
     const res = await request(app.getHttpServer()).post('/ai/jobs').send({ kind: 'image' });
     expect(res.status).toBe(404);
   });
 
+  it('GET /ai/jobs/:id and /events require a token (401 without one)', async () => {
+    expect((await request(app.getHttpServer()).get(`/ai/jobs/${UNKNOWN_ID}`)).status).toBe(401);
+    expect((await request(app.getHttpServer()).get(`/ai/jobs/${UNKNOWN_ID}/events`)).status).toBe(401);
+  });
+
   it('GET /ai/jobs/:id is 404 for an unknown id and 400 for a malformed one', async () => {
-    expect((await request(app.getHttpServer()).get(`/ai/jobs/${UNKNOWN_ID}`)).status).toBe(404);
-    expect((await request(app.getHttpServer()).get('/ai/jobs/not-a-uuid')).status).toBe(400);
+    expect((await authGet(`/ai/jobs/${UNKNOWN_ID}`)).status).toBe(404);
+    expect((await authGet('/ai/jobs/not-a-uuid')).status).toBe(400);
   });
 
   it('GET /ai/jobs/:id/events is 404 for an unknown id', async () => {
-    const res = await request(app.getHttpServer()).get(`/ai/jobs/${UNKNOWN_ID}/events`);
+    const res = await authGet(`/ai/jobs/${UNKNOWN_ID}/events`);
     expect(res.status).toBe(404);
   });
 

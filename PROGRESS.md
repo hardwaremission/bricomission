@@ -4,10 +4,9 @@
 
 - Repository root: `/home/juanmi/Proyectos/hardwaremission.bricomission`
 - Standard startup path: `./init.sh`
-- Standard verification path: `./init.sh` (bootstrapped variant since `api-skeleton`) checks host prerequisites, validates `feature_list.json`, runs the workspace gate (`pnpm install --frozen-lockfile`, `pnpm -r lint`, `pnpm -r test`), then the compose gate (`docker compose up -d --build --wait`; postgres, minio, mailpit, api healthy) and requires `GET /health` to report `database: up`. Without Docker it skips the compose gate after the pnpm steps and exits 0; with an unreachable daemon, an unhealthy stack or API health not up it exits 1; without pnpm it exits 1 with no-sudo guidance.
-- Last accepted features: `gpu-job-broker` (validator ACCEPT, 2026-11-13); earlier `api-skeleton` and `local-ai-gpu-spike` (2026-11-12)
+- Standard verification path: `./init.sh` (bootstrapped variant since `api-skeleton`) checks host prerequisites, validates `feature_list.json`, runs the workspace gate (`pnpm install --frozen-lockfile`, `pnpm -r lint`, `pnpm -r test`), then the compose gate (`docker compose up -d --build --wait`; postgres, minio, mailpit, keycloak, api healthy). It requires `GET /health` to report `database: up` and, since `keycloak-realm-roles`, the realm `BricoMission` discovery issuer to equal `http://localhost:$KEYCLOAK_PORT/realms/BricoMission` ("Keycloak:" step). Real Keycloak behavior: `./scripts/keycloak-smoke.sh`. Without Docker it skips the compose gate after the pnpm steps and exits 0; with an unreachable daemon, an unhealthy stack or API health not up it exits 1; without pnpm it exits 1 with no-sudo guidance.
+- Last accepted features: `gpu-job-broker` (PR #8, merged) and `keycloak-realm-roles` (validator ACCEPT, 2026-11-13, github-flow `execute`); earlier `api-skeleton` and `local-ai-gpu-spike` (2026-11-12). Since the merge, the global default-deny `AuthGuard` also protects `/ai/jobs/*`.
 - Current next ready features: see `feature_list.json` (dependency-ready after these two)
-- `gpu-job-broker`: `passing` (2026-11-13, implementer self-verified; awaiting independent validation). The API exposes `GET /ai/jobs/:id` and SSE `GET /ai/jobs/:id/events`; `AI_ADAPTERS=fake` by default.
 - Local AI stack: opt-in compose profiles `ai` (`llama-server`, `comfyui`) and `ai-fetch` (weights). Both run on the RX 9070 XT with ROCm in Docker. GPU jobs must be serialized (see `docs/spikes/local-ai-gpu-spike.md`). Weight volumes have fixed names (`bricomission_*`) shared by all checkouts.
 - Current blockers: none. pnpm 10.34.9 (pinned in `packageManager`) resolves through a corepack shim in `~/.local/bin` (host Node 26 has no bundled corepack). Agent shells started before the docker group was added must run docker through `newgrp docker` (no `sg` on this host).
 - Last verified at: 2026-11-13 (`./init.sh` exit 0 with the stack healthy; feature list valid; gpu-job-broker validator ACCEPT)
@@ -92,3 +91,30 @@
 - Not run: no persistent E2E harness yet. No commit.
 - Status: `passing`, ready for independent validation.
 - Next best step: validator on `gpu-job-broker`, then `controlnet-render`.
+- Independent validation: ACCEPT (2026-11-13). Published as PR #8 and merged.
+
+### Session 006
+
+- Date: 2026-11-13
+- Goal: implement `keycloak-realm-roles` (spec `docs/specs/keycloak-realm-roles.md`) headless in worktree `feature/keycloak-realm-roles` (`COMPOSE_PROJECT_NAME=keycloak-realm-roles`, `KEYCLOAK_PORT=8390`, `API_PORT=3300`).
+- Completed:
+  - Compose `keycloak` service. It is built from `infra/keycloak/Dockerfile`: `quay.io/keycloak/keycloak:26.8.2` plus the Apache-2.0 email-OTP provider jar, sha256-checked. It runs `start-dev --import-realm` with dev-file H2 in the `keycloak-data` volume, fixed issuer `KC_HOSTNAME`, a dynamic backchannel, a bash `/dev/tcp` healthcheck on the management port, and `127.0.0.1:${KEYCLOAK_PORT:-8180}`.
+  - Realm `infra/keycloak/import/BricoMission-realm.json`: roles `user`/`professional`/`admin`; clients `bricomission-api` (audience only) and `bricomission-dev-cli` (public, PKCE S256, audience mapper); seeded `bm-admin`/`bm-homeowner`/`bm-professional` with `${BM_SEED_*}` passwords; SMTP to Mailpit; browser flow `browser-email-otp` (cookie, then password, then email code).
+  - API `src/auth/`: `TokenVerifier` (`jose` 6.2.17), global default-deny `AuthGuard` (401/503), `RolesGuard` (403), and the `@Public()`, `@Roles()` and `@CurrentUser()` decorators. Routes `GET /me` and `src/admin/` `GET /admin/ping`. `/health` is `@Public()`. Swagger declares the bearer scheme. Shared types `RealmRole`, `MeResponse`, `AdminPingResponse`.
+  - Tests `test/auth.http.spec.ts`, `test/token-verifier.spec.ts` and `test/support/tokens.ts` use a local JWKS. Smoke script `scripts/keycloak-smoke.sh`.
+  - `init.sh` "Keycloak:" step and hints. Updated `.env.example`, `ARCHITECTURE.md`, `AGENTS.md` ("Identity"), `docs/technical-discovery.md`, `docs/user-and-access-model.md` and `docs/risks-and-open-questions.md`, plus the spec's Implementation Notes.
+- Verification run: frozen install, `pnpm -r lint` and `pnpm -r test` (36 passed, including the 7 pre-existing); `docker compose config -q`; pin awk check; fresh-volume `up --wait` (5 healthy) and realm import log; `restart` and `down`/`up` both skip the import; `./scripts/keycloak-smoke.sh` exit 0 (23 ok) on 3 runs; `ss -ltn` shows 127.0.0.1 only and no published 9000; cleartext grep finds nothing; `bash -n`; `./init.sh` exit 0; Keycloak step failure path exits 1. Details are in the `feature_list.json` evidence.
+- Deviations from the spec (recorded in the spec's Implementation Notes):
+  - The realm file must be named `BricoMission-realm.json`.
+  - The audience mapper sits on the client instead of in a custom default client scope, because defining `clientScopes` drops Keycloak's built-in scopes.
+  - The email-OTP fallback image was needed. Its jar is fetched in a `node:26.13.1-bookworm-slim` stage because the Keycloak image has no curl.
+  - The 503 mapping also covers the generic `JOSEError` and `JWKSInvalid` (JWKS failures).
+- Known risks:
+  - The email-OTP provider implements Keycloak internal SPIs (warnings at boot), so recheck it on every Keycloak upgrade.
+  - Password grants on `bricomission-dev-cli` skip the email code. That is acceptable only because the client is local and dev-only.
+  - Realm JSON or seed password changes need a realm volume reset (AGENTS.md "Identity").
+  - Future OIDC clients must add the `bricomission-api` audience mapper.
+- Not run: no persistent E2E harness yet (Playwright arrives with `web-pwa-shell`). No GPU. No commit.
+- State left: worktree stack running and healthy (5 services).
+- Independent validation: ACCEPT (2026-11-13). Validator re-ran lint/test (36/36), `./init.sh`, the smoke (23 ok), a fresh-volume import plus restart in a throwaway project, port, secret and checksum checks, and hostile-JWT probes (all 401, no token leakage). Non-blocking notes: `init.sh` port parsing with `cut -d: -f2` breaks on IPv6 output (smoke uses `awk -F: '{print $NF}'`); `@Public()` wins over `@Roles()` on the same route. Status `accepted`.
+- Next best step: publish via github-flow; then the next dependency-ready feature in `feature_list.json`.

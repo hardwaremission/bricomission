@@ -13,6 +13,26 @@ export interface HealthResponse {
   database: DatabaseStatus;
 }
 
+/** Keycloak realm roles of realm `BricoMission` (`realm_access.roles` in the access token). */
+export type RealmRole = 'user' | 'professional' | 'admin';
+
+/** Body of `GET /me`: the authenticated caller as seen by the API. */
+export interface MeResponse {
+  /** Keycloak user id (`sub`). */
+  sub: string;
+  /** Keycloak `preferred_username`. */
+  username: string;
+  /** Account email, or null when the token carries none. */
+  email: string | null;
+  /** Realm roles of the caller, limited to the BricoMission roles. */
+  roles: RealmRole[];
+}
+
+/** Body of `GET /admin/ping` (admin-only liveness probe). */
+export interface AdminPingResponse {
+  status: 'ok';
+}
+
 /** Kind of GPU work: `image` runs exclusively, `llm` may share the GPU with other LLM jobs only. */
 export type GpuJobKind = 'image' | 'llm';
 

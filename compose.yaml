@@ -1,5 +1,6 @@
-# BricoMission local stack: core data services (infra-compose-core) plus the
-# NestJS API (api-skeleton), built from apps/api/Dockerfile.
+# BricoMission local stack: core data services (infra-compose-core), Keycloak with
+# realm BricoMission (keycloak-realm-roles) and the NestJS API (api-skeleton), built
+# from apps/api/Dockerfile. Five core services: postgres, minio, mailpit, keycloak, api.
 # Start with: docker compose up -d --build --wait   (or ./init.sh)
 # Local AI services (feature local-ai-gpu-spike) are opt-in, never started by ./init.sh:
 #   docker compose --profile ai-fetch run --rm ai-fetch   # one-time weight download into volumes
@@ -69,6 +70,46 @@ services:
       retries: 20
       start_period: 10s
 
+  keycloak:
+    # Pinned upstream quay.io/keycloak/keycloak:26.8.2 plus the email-OTP provider jar
+    # (see infra/keycloak/Dockerfile). Realm BricoMission is imported from the versioned
+    # JSON on first start; later starts skip it (IGNORE_EXISTING) and keep the volume state.
+    build:
+      context: ./infra/keycloak
+    image: bricomission/keycloak:26.8.2-emailotp26.7.2
+    restart: unless-stopped
+    command: ["start-dev", "--import-realm"]
+    depends_on:
+      mailpit:
+        condition: service_healthy
+    environment:
+      # dev-file (H2) persistence: local-only, isolated per worktree, no shared-DB bootstrap.
+      KC_DB: dev-file
+      KC_HEALTH_ENABLED: "true"
+      # Fixed issuer for every caller (browser, CLI, API); the api container still
+      # reaches Keycloak over the backchannel at http://keycloak:8080.
+      KC_HOSTNAME: http://localhost:${KEYCLOAK_PORT:-8180}
+      KC_HOSTNAME_BACKCHANNEL_DYNAMIC: "true"
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN_USERNAME:-admin}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-bricomission-kc-admin}
+      # Substituted into the ${BM_SEED_*} placeholders of the realm import file.
+      BM_SEED_ADMIN_PASSWORD: ${BM_SEED_ADMIN_PASSWORD:-bm-admin-dev}
+      BM_SEED_HOMEOWNER_PASSWORD: ${BM_SEED_HOMEOWNER_PASSWORD:-bm-homeowner-dev}
+      BM_SEED_PROFESSIONAL_PASSWORD: ${BM_SEED_PROFESSIONAL_PASSWORD:-bm-professional-dev}
+    ports:
+      # Management port 9000 stays internal (it would clash with MinIO on the host).
+      - "127.0.0.1:${KEYCLOAK_PORT:-8180}:8080"
+    volumes:
+      - ./infra/keycloak/import:/opt/keycloak/data/import:ro
+      - keycloak-data:/opt/keycloak/data/h2
+    healthcheck:
+      # The image has no curl: raw HTTP over bash /dev/tcp to the management port.
+      test: ["CMD-SHELL", "exec 3<>/dev/tcp/127.0.0.1/9000 && printf 'GET /health/ready HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n' >&3 && grep -q '\"UP\"' <&3"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 120s
+
   api:
     build:
       context: .
@@ -80,6 +121,11 @@ services:
     environment:
       PORT: 3000
       DATABASE_URL: postgresql://${POSTGRES_USER:-bricomission}:${POSTGRES_PASSWORD:-bricomission}@postgres:5432/${POSTGRES_DB:-bricomission}?schema=public
+      # JWT validation (src/auth). No depends_on keycloak: /health must not need it;
+      # the JWKS is fetched lazily on the first authenticated request.
+      KEYCLOAK_ISSUER: http://localhost:${KEYCLOAK_PORT:-8180}/realms/BricoMission
+      KEYCLOAK_JWKS_URL: http://keycloak:8080/realms/BricoMission/protocol/openid-connect/certs
+      KEYCLOAK_AUDIENCE: bricomission-api
       # AI layer (gpu-job-broker). fake = deterministic adapters, no GPU calls.
       AI_ADAPTERS: ${AI_ADAPTERS:-fake}
       LLM_BASE_URL: ${LLM_BASE_URL:-http://llama-server:8080}
@@ -193,6 +239,7 @@ volumes:
   postgres-data:
   minio-data:
   mailpit-data:
+  keycloak-data:
   # Model weights use fixed names so every checkout and worktree (any
   # COMPOSE_PROJECT_NAME) shares one copy instead of re-downloading ~30 GB.
   llm-models:

@@ -112,13 +112,25 @@
     "title": "Keycloak realm issues tokens the API authorizes by role",
     "user_visible_behavior": "Keycloak runs in compose with realm BricoMission (roles user, professional, admin, seeded admin and demo accounts); API endpoints reject requests without a valid token or with the wrong role.",
     "depends_on": ["api-skeleton"],
-    "status": "not_started",
+    "status": "accepted",
     "verification": [
       "Realm is imported from a versioned JSON on container start",
       "API test: request without token -> 401, user token on admin route -> 403, admin token -> 200",
       "Email OTP configured with Mailpit as SMTP"
     ],
-    "evidence": [],
+    "evidence": [
+      "2026-11-13 implementer (headless, worktree COMPOSE_PROJECT_NAME=keycloak-realm-roles, KEYCLOAK_PORT=8390, API_PORT=3300). Spec docs/specs/keycloak-realm-roles.md (Implementation Notes list deviations).",
+      "Image: quay.io/keycloak/keycloak:26.8.2 (digest sha256:c68e286cacd87b942ac1939a0a1481461109d6acd3a57dc496969a319a76bbf0), built locally as bricomission/keycloak:26.8.2-emailotp26.7.2 via infra/keycloak/Dockerfile.",
+      "Email OTP: core 26.8.2 has no email-code authenticator (AuthenticatorFactory scan + /authentication/authenticator-providers). Fallback jar mesutpiskin/keycloak-2fa-email-authenticator v26.7.2 (KC26.8.2 build), Apache-2.0, sha256 0e3dd714f0f20e7a1cd26cbe721fc12bef3be64c4c0abb221d9521d5331061fc, provider id email-authenticator-no-enrollment (6 digits, ttl 300 s, 5 attempts).",
+      "jose 6.2.17 (exact). pnpm install --frozen-lockfile, pnpm -r lint: exit 0. pnpm -r test: 4 files, 36 tests passed (7 pre-existing + 12 token-verifier + 17 auth.http covering every Scenario 4 case: 401 + WWW-Authenticate, 403 user/professional, 200 admin, /me, expired/wrong iss/wrong aud/foreign key/alg none/malformed/non-Bearer -> 401, JWKS timeout/unreachable -> 503 without details, /health public, docs-json bearer security on /me and /admin/ping).",
+      "S1: fresh keycloak-data volume -> docker compose up -d --build --wait: 5 services healthy; discovery issuer http://localhost:8390/realms/BricoMission; log 'Importing from directory /opt/keycloak/bin/../data/import' + \"Realm 'BricoMission' imported\".",
+      "S2: docker compose restart keycloak and down/up: healthy again, log \"Realm 'BricoMission' already exists. Import skipped\"; smoke re-run exit 0 both times.",
+      "S3/S5/S6/S7: ./scripts/keycloak-smoke.sh exit 0, 23 [ok], 0 [fail] (3 runs). Tokens: realm_access.roles exactly [admin]/[user]/[professional], aud bricomission-api. API: no token 401, homeowner 403, professional 403, admin 200, /me username bm-homeowner. Mailpit: 'Verify email' from noreply@bricomission.local; email-code login: password -> code form (HTTP 200), 6-digit code mail received, wrong code -> form again, right code -> 302 http://localhost/dev-callback?code=..., PKCE exchange -> role user.",
+      "Extra: keycloak stopped -> /health 200; /admin/ping with unknown kid -> 503 after the 3 s JWKS timeout, api log 'Token verification unavailable (JWKSTimeout)'.",
+      "Ports: ss -ltn shows 127.0.0.1:8390 only; keycloak publishes no 9000 (docker ps: 9000/tcp internal). Pin awk check exit 0. git grep '\"value\": *\"[^$]' infra/keycloak: no matches. bash -n init.sh scripts/keycloak-smoke.sh: ok.",
+      "./init.sh exit 0 (fresh realm volume): 5 healthy services, 'Keycloak:' step 'realm BricoMission issuer -> http://localhost:8390/realms/BricoMission'. Failure path: the Keycloak step run with a wrong port exits 1 and prints the issuer mismatch plus docker compose logs --tail 50 keycloak.",
+      "2026-11-13 independent validator ACCEPT: re-ran pnpm lint/test (36/36), ./init.sh exit 0 (5 healthy), keycloak-smoke.sh 23 ok / 0 fail, fresh-volume import + restart skip in throwaway project, 127.0.0.1-only bindings, jar sha256 match, hostile-JWT probes all 401 without token leakage."
+    ],
     "notes": "docs/user-and-access-model.md. Secrets via .env (git-ignored) with .env.example committed. Google SSO is a later feature."
   },
   {
