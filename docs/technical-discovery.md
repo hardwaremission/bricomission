@@ -10,6 +10,14 @@ Mobile-first PWA for Homeowners; the same PWA serves the B2B dashboard and the A
 
 - **Monorepo**: TypeScript, pnpm workspaces. `apps/web`, `apps/api`, shared `packages/` (types, API client generated from OpenAPI). See ADR 0003.
 - **Web**: Next.js (App Router) + Tailwind, client of the API only; i18n with 11 locales (en canonical); PWA manifest + service worker.
+
+Built in `web-pwa-shell` (2026-11-13):
+
+- Next.js 16.4.6 (Turbopack build, `output: 'standalone'`), React 19.3.1, Tailwind CSS 4.3.5 (`@tailwindcss/postcss`), `next-intl` 4.15.1 without i18n routing (no locale in the URL), `lucide-react` icons, Inter self-hosted from `@fontsource-variable/inter` (latin + latin-ext only). No Google Fonts or CDN: the PWA makes no internet requests.
+- Locale mapping: browser `nb`, `nn` and `no` all map to `no` (Bokmål); `pt-BR`/`pt-PT` to `pt`. Unsupported or missing languages see Language Selection (`/language`, English). The choice persists on the device in the `NEXT_LOCALE` cookie (1 year, `SameSite=Lax`); persistence on the account is `language-preference-account`. The 10 non-English message files are agent translations without native review (developer decision); only the automated parity test guards them.
+- Proxy decision: the browser calls the API through a same-origin route handler (`/api/*` to `API_INTERNAL_URL`) instead of CORS: no per-worktree origins, first-party cookies, one origin for the service worker and future auth. Not `rewrites`, because standalone output fixes them at build time. The native iOS client calls the API directly.
+- Typed client: `packages/api-client` (`openapi-fetch` 0.17.0 over `openapi-typescript` 7.13.0 output from a committed OpenAPI snapshot).
+- Installability is proven twice: CDP `Page.getInstallabilityErrors` returns `[]` in the Playwright E2E, and Lighthouse 11.7.1 (pinned; Lighthouse 12+ dropped the PWA category and `installable-manifest`) scores `installable-manifest` 1 with the Playwright image's Chromium 158.
 - **API**: NestJS, REST + OpenAPI, Prisma on PostgreSQL, SSE endpoints, in-process GPU job queue (decided in `gpu-job-broker`, see GPU Serialization).
 - **Identity**: Keycloak realm `BricoMission`, OIDC; roles `user`, `professional`, `admin`.
 - **LLM**: llama.cpp `llama-server` (OpenAI-compatible) running a medium MoE model (e.g. Qwen3-30B-A3B, Q4) with experts in system RAM (`--n-cpu-moe` / `-ot`). See ADR 0001.
@@ -73,7 +81,7 @@ See ADR 0002. LLM returns JSON Line Items (schema-constrained output) with sourc
 
 - Unit tests for budget math, penalty and commission computation, access rules.
 - API integration tests against the Compose stack (Postgres, Keycloak test realm).
-- E2E smoke of the demo path with Playwright on a mobile viewport.
+- E2E with Playwright on a mobile viewport (390x844): `pnpm test:e2e` runs the specs in `apps/web/e2e/` inside the pinned image `mcr.microsoft.com/playwright:v1.65.0-noble` (compose service `web-e2e`, profile `e2e`) against the running stack; no host browsers (`playwright install-deps` would need sudo and Debian/Ubuntu).
 - AI calls behind an interface with deterministic fakes in tests.
 
 ## Observability

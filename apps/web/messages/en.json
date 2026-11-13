@@ -1,0 +1,41 @@
+{
+  "meta": {
+    "title": "BricoMission",
+    "description": "Turn photos of your kitchen into photorealistic designs and a budget priced from real catalogs."
+  },
+  "home": {
+    "headline": "Design your new kitchen and know its price before you start.",
+    "valueProposition": "Upload photos and measurements of your kitchen. See photorealistic designs, get a budget priced from real store catalogs, then do it yourself or receive offers from validated professionals.",
+    "steps": {
+      "capture": {
+        "title": "1. Capture",
+        "description": "Photos of your kitchen and its measurements."
+      },
+      "design": {
+        "title": "2. Design",
+        "description": "Photorealistic designs that keep your room's layout."
+      },
+      "budget": {
+        "title": "3. Budget",
+        "description": "Four price levels from real catalogs. Do it yourself or get offers."
+      }
+    },
+    "cta": "Start your Kitchen Project",
+    "professionalLink": "Are you a professional?"
+  },
+  "language": {
+    "title": "Choose your language",
+    "helper": "We couldn't match your device language. You can change it later from any screen.",
+    "fieldLabel": "Language",
+    "continue": "Continue",
+    "sheetTitle": "Language",
+    "close": "Close",
+    "selectorLabel": "Language: {language}"
+  },
+  "status": {
+    "checking": "Checking service…",
+    "online": "Service available",
+    "degraded": "Some features are temporarily unavailable",
+    "offline": "You're offline or the service can't be reached"
+  }
+}

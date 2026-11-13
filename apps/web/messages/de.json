@@ -1,0 +1,41 @@
+{
+  "meta": {
+    "title": "BricoMission",
+    "description": "Verwandle Fotos deiner Küche in fotorealistische Entwürfe und ein Budget mit Preisen aus echten Katalogen."
+  },
+  "home": {
+    "headline": "Plane deine neue Küche und kenne ihren Preis, bevor du anfängst.",
+    "valueProposition": "Lade Fotos und Maße deiner Küche hoch. Sieh dir fotorealistische Entwürfe an, erhalte ein Budget mit Preisen aus echten Händlerkatalogen und mach es dann selbst oder erhalte Angebote von geprüften Fachbetrieben.",
+    "steps": {
+      "capture": {
+        "title": "1. Erfassen",
+        "description": "Fotos deiner Küche und ihre Maße."
+      },
+      "design": {
+        "title": "2. Entwerfen",
+        "description": "Fotorealistische Entwürfe, die den Grundriss deines Raums beibehalten."
+      },
+      "budget": {
+        "title": "3. Budget",
+        "description": "Vier Preisstufen aus echten Katalogen. Mach es selbst oder hol dir Angebote."
+      }
+    },
+    "cta": "Starte dein Küchenprojekt",
+    "professionalLink": "Bist du ein Fachbetrieb?"
+  },
+  "language": {
+    "title": "Wähle deine Sprache",
+    "helper": "Wir konnten die Sprache deines Geräts nicht zuordnen. Du kannst sie später auf jedem Bildschirm ändern.",
+    "fieldLabel": "Sprache",
+    "continue": "Weiter",
+    "sheetTitle": "Sprache",
+    "close": "Schließen",
+    "selectorLabel": "Sprache: {language}"
+  },
+  "status": {
+    "checking": "Dienst wird geprüft…",
+    "online": "Dienst verfügbar",
+    "degraded": "Einige Funktionen sind vorübergehend nicht verfügbar",
+    "offline": "Du bist offline oder der Dienst ist nicht erreichbar"
+  }
+}

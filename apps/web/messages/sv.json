@@ -1,0 +1,41 @@
+{
+  "meta": {
+    "title": "BricoMission",
+    "description": "Gör om foton av ditt kök till fotorealistiska designer och en budget med priser från riktiga kataloger."
+  },
+  "home": {
+    "headline": "Designa ditt nya kök och få veta priset innan du börjar.",
+    "valueProposition": "Ladda upp foton och mått på ditt kök. Se fotorealistiska designer, få en budget med priser från riktiga butikskataloger och gör sedan jobbet själv eller ta emot offerter från granskade yrkesproffs.",
+    "steps": {
+      "capture": {
+        "title": "1. Fånga",
+        "description": "Foton av ditt kök och dess mått."
+      },
+      "design": {
+        "title": "2. Designa",
+        "description": "Fotorealistiska designer som behåller rummets planlösning."
+      },
+      "budget": {
+        "title": "3. Budget",
+        "description": "Fyra prisnivåer från riktiga kataloger. Gör det själv eller få offerter."
+      }
+    },
+    "cta": "Starta ditt köksprojekt",
+    "professionalLink": "Är du yrkesverksam?"
+  },
+  "language": {
+    "title": "Välj ditt språk",
+    "helper": "Vi kunde inte matcha enhetens språk. Du kan ändra det senare från vilken skärm som helst.",
+    "fieldLabel": "Språk",
+    "continue": "Fortsätt",
+    "sheetTitle": "Språk",
+    "close": "Stäng",
+    "selectorLabel": "Språk: {language}"
+  },
+  "status": {
+    "checking": "Kontrollerar tjänsten…",
+    "online": "Tjänsten är tillgänglig",
+    "degraded": "Vissa funktioner är tillfälligt otillgängliga",
+    "offline": "Du är offline eller så går det inte att nå tjänsten"
+  }
+}

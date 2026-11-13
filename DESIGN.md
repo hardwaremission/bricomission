@@ -3,7 +3,7 @@ name: BricoMission
 description: Calm, airy, photo-first renovation planner. Apple-like restraint, IKEA-like warmth and clarity.
 designAssets:
   sourceOfTruth:
-    - design/openpencil/bricomission_B2C_app.fig (to be created per screen via open-pencil MCP)
+    - design/openpencil/bricomission_B2C_app.fig (page Home approved 2026-11-13; other screens added per screen via open-pencil MCP)
     - design/openpencil/bricomission_B2B_dashboard.fig (to be created)
     - design/openpencil/bricomission_admin.fig (to be created)
   generatedConcepts: []
@@ -96,7 +96,14 @@ Initial direction for BricoMission, written before any screen exists. Per-screen
 
 ## Existing Design Assets
 
-None yet. `design/openpencil/*.fig` files are created on demand (CLAUDE.md "No UI guessing" rule).
+`design/openpencil/*.fig` files are created on demand (CLAUDE.md "No UI guessing" rule).
+
+- `design/openpencil/bricomission_B2C_app.fig`, page **Home** (approved 2026-11-13, `web-pwa-shell`): frames Home (390x844, plus 360x780 and full-length checks), Language Selection, LanguageSelector open (bottom sheet), ServiceStatus (4 states) and App icon 512 (maskable). Read-back: `docs/design/web-pwa-shell.md`; JSX/SVG/PNG exports in `design/openpencil/web-pwa-shell/`.
+
+Rules:
+
+- Designs are English only. Every other locale comes from `apps/web/messages/<locale>.json`. Layouts must fit German and Finnish (~30 % longer): text wraps, the CTA is never truncated, no fixed-width text boxes.
+- Approved non-token values (implemented as designed): wordmark 22/28 bold (h2 size, weight 700); step and field-label titles 16/24 and 14/20 semibold; sheet title 18/24 semibold; 12 px gaps (hero, steps, bottom bar) and 12 px bottom-bar top padding; selector pill 44 high with 14 px side padding and 6 px gap; option rows 48 high with 12 px padding; globe badge 56; step icon circles 44 with 22 px icons; bottom-sheet overlay `#1C1C1E` at 40 %. Shadows and radii use the tokens (`elevation.card`, `elevation.sheet`, `rounded.*`).
 
 ## Generated Concept Images
 

@@ -2,10 +2,11 @@
 # Standard startup and verification path for BricoMission.
 # Status: bootstrapped. Checks host prerequisites and feature_list.json, runs the
 # pnpm workspace gate (frozen install, lint, test), then builds and starts the
-# detached compose stack (postgres, minio, mailpit, keycloak, api) with
-# `docker compose up -d --build --wait`, verifies GET /health reports database up and
-# that Keycloak serves realm BricoMission with the expected issuer.
-# Never runs foreground or long-running dev servers.
+# detached compose stack (6 services: postgres, minio, mailpit, keycloak, api, web) with
+# `docker compose up -d --build --wait`, verifies GET /health reports database up, that
+# Keycloak serves realm BricoMission with the expected issuer, and that the web PWA
+# serves a localized Home, Language Selection, its manifest and the /api proxy.
+# Never runs foreground or long-running dev servers, Playwright or Lighthouse.
 set -euo pipefail
 
 cd "$(dirname "$0")"
@@ -134,7 +135,34 @@ fi
 echo "  realm BricoMission issuer -> $kc_issuer"
 
 echo
+echo "Web:"
+web_fail() {
+  echo "ERROR: web check failed: $1" >&2
+  docker compose logs --tail 50 web >&2 || true
+  exit 1
+}
+web_port=$(docker compose port web 3000 2>/dev/null | awk -F: '{print $NF}' || true)
+[ -n "$web_port" ] || web_fail "compose service 'web' publishes no port"
+web_url="http://127.0.0.1:${web_port}"
+web_es=$(curl -sS --max-time 10 -H 'Accept-Language: es' -o - -w '\n%{http_code}' "${web_url}/" 2>/dev/null || true)
+[ "$(printf '%s' "$web_es" | tail -n1)" = "200" ] || web_fail "GET / (Accept-Language: es) did not return 200"
+grep -q 'lang="es"' <<<"$web_es" || web_fail 'GET / (Accept-Language: es) has no lang="es"'
+echo "  GET / (Accept-Language: es) -> 200, lang=\"es\""
+web_ja=$(curl -sS --max-time 10 -H 'Accept-Language: ja' -o /dev/null -w '%{http_code} %{redirect_url}' "${web_url}/" 2>/dev/null || true)
+case "$web_ja" in
+  "307 "*/language) echo "  GET / (Accept-Language: ja) -> $web_ja" ;;
+  *) web_fail "GET / (Accept-Language: ja) gave '${web_ja:-<none>}', expected 307 to /language" ;;
+esac
+web_manifest=$(curl -sS --max-time 10 -o /dev/null -w '%{http_code}' "${web_url}/manifest.webmanifest" 2>/dev/null || true)
+[ "$web_manifest" = "200" ] || web_fail "GET /manifest.webmanifest gave '${web_manifest:-<none>}'"
+echo "  GET /manifest.webmanifest -> 200"
+web_health=$(curl -sS --max-time 10 "${web_url}/api/health" 2>/dev/null || true)
+grep -q '"database":"up"' <<<"$web_health" || web_fail "GET /api/health (proxy) is '${web_health:-<empty>}', expected database up"
+echo "  GET /api/health (proxy) -> $web_health"
+
+echo
 echo "Stack is up and healthy (detached)."
+echo "  Web:      http://localhost:${web_port}/  (PWA; language from the browser or the NEXT_LOCALE cookie)"
 echo "  API:      http://127.0.0.1:${api_port}/health"
 echo "  API docs: http://127.0.0.1:${api_port}/docs  (OpenAPI JSON: /docs-json)"
 echo "  Keycloak: http://localhost:${kc_port}/admin  (master bootstrap admin, KEYCLOAK_ADMIN_*)"
@@ -143,7 +171,9 @@ echo "Next step: run /feature-flow on the first ready feature in feature_list.js
 echo "Useful commands:"
 echo "  ${PNPM[*]} -r lint && ${PNPM[*]} -r test  # workspace verification (no database needed)"
 echo "  ./scripts/keycloak-smoke.sh             # realm roles, API 401/403/200, Mailpit SMTP, email-code login"
-echo "  docker compose up -d --build --wait     # rebuild the api image after code changes"
+echo "  ${PNPM[*]} test:e2e                     # browser E2E (Playwright image, mobile 390x844) against the web service"
+echo "  bash scripts/web/lighthouse-pwa.sh      # Lighthouse 11 PWA installability (installable-manifest)"
+echo "  docker compose up -d --build --wait     # rebuild the api and web images after code changes"
 echo "  docker compose logs -f <service>        # follow one service's logs"
 echo "  docker compose down                     # stop the stack (keeps named volumes)"
 echo "Local AI (opt-in, GPU; never started by this script):"

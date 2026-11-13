@@ -8,6 +8,8 @@ onlyBuiltDependencies:
   - "@swc/core"
   - prisma
 
-# Install scripts deliberately skipped (swagger-ui-dist telemetry).
+# Install scripts deliberately skipped (swagger-ui-dist telemetry; @parcel/watcher,
+# pulled in by Tailwind's dev watcher, ships prebuilt binaries).
 ignoredBuiltDependencies:
+  - "@parcel/watcher"
   - "@scarf/scarf"

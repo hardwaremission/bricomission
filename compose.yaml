@@ -1,7 +1,9 @@
 # BricoMission local stack: core data services (infra-compose-core), Keycloak with
 # realm BricoMission (keycloak-realm-roles) and the NestJS API (api-skeleton), built
-# from apps/api/Dockerfile. Five core services: postgres, minio, mailpit, keycloak, api.
+# from apps/api/Dockerfile and the Next.js PWA (web-pwa-shell) from apps/web/Dockerfile.
+# Six core services: postgres, minio, mailpit, keycloak, api, web.
 # Start with: docker compose up -d --build --wait   (or ./init.sh)
+# Browser E2E (profile e2e, never started by ./init.sh): pnpm test:e2e
 # Local AI services (feature local-ai-gpu-spike) are opt-in, never started by ./init.sh:
 #   docker compose --profile ai-fetch run --rm ai-fetch   # one-time weight download into volumes
 #   docker compose --profile ai up -d --wait               # llama-server + comfyui on the GPU
@@ -152,6 +154,43 @@ services:
       timeout: 5s
       retries: 20
       start_period: 20s
+
+  web:
+    # Next.js standalone server (apps/web). Browsers call /api/* on this origin; the
+    # route handler proxies to API_INTERNAL_URL (no CORS). No depends_on: Home shows the
+    # API state itself (offline/degraded) instead of failing to start.
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    restart: unless-stopped
+    environment:
+      API_INTERNAL_URL: http://api:3000
+    ports:
+      - "127.0.0.1:${WEB_PORT:-3100}:3000"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/manifest.webmanifest').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
+
+  web-e2e:
+    # Pinned Playwright image (Chromium for E2E, Lighthouse and icon rendering); no host
+    # browsers needed. Digest (2026-11-13):
+    # sha256:9beb546099e11f52d62e505537914870e01a67e0e6b00ae41da4775324e73dbe
+    # Host network: installability needs the page on a localhost secure context.
+    image: mcr.microsoft.com/playwright:v1.65.0-noble
+    profiles: ["e2e"]
+    restart: "no"
+    network_mode: host
+    ipc: host
+    working_dir: /repo/apps/web
+    environment:
+      HOME: /tmp
+      CI: "1"
+      NEXT_TELEMETRY_DISABLED: "1"
+    volumes:
+      - .:/repo
 
   # --- Local AI (profile "ai"; see docs/spikes/local-ai-gpu-spike.md) ---
   llama-server:

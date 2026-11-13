@@ -1,0 +1,41 @@
+{
+  "meta": {
+    "title": "BricoMission",
+    "description": "Trasforma le foto della tua cucina in progetti fotorealistici e in un preventivo con prezzi da cataloghi reali."
+  },
+  "home": {
+    "headline": "Progetta la tua nuova cucina e scopri quanto costa prima di iniziare.",
+    "valueProposition": "Carica foto e misure della tua cucina. Guarda progetti fotorealistici, ottieni un preventivo con i prezzi di veri cataloghi dei negozi, poi fallo da te o ricevi offerte da professionisti verificati.",
+    "steps": {
+      "capture": {
+        "title": "1. Acquisisci",
+        "description": "Foto della tua cucina e le sue misure."
+      },
+      "design": {
+        "title": "2. Progetta",
+        "description": "Progetti fotorealistici che mantengono la disposizione della stanza."
+      },
+      "budget": {
+        "title": "3. Preventivo",
+        "description": "Quattro fasce di prezzo da cataloghi reali. Fai da te o ricevi offerte."
+      }
+    },
+    "cta": "Inizia il tuo progetto cucina",
+    "professionalLink": "Sei un professionista?"
+  },
+  "language": {
+    "title": "Scegli la tua lingua",
+    "helper": "Non siamo riusciti a riconoscere la lingua del tuo dispositivo. Puoi cambiarla in seguito da qualsiasi schermata.",
+    "fieldLabel": "Lingua",
+    "continue": "Continua",
+    "sheetTitle": "Lingua",
+    "close": "Chiudi",
+    "selectorLabel": "Lingua: {language}"
+  },
+  "status": {
+    "checking": "Verifica del servizio…",
+    "online": "Servizio disponibile",
+    "degraded": "Alcune funzioni sono temporaneamente non disponibili",
+    "offline": "Sei offline o il servizio non è raggiungibile"
+  }
+}

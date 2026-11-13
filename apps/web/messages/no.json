@@ -1,0 +1,41 @@
+{
+  "meta": {
+    "title": "BricoMission",
+    "description": "Gjør bilder av kjøkkenet ditt om til fotorealistiske design og et budsjett med priser fra ekte kataloger."
+  },
+  "home": {
+    "headline": "Design det nye kjøkkenet ditt og få vite prisen før du begynner.",
+    "valueProposition": "Last opp bilder og mål av kjøkkenet ditt. Se fotorealistiske design, få et budsjett med priser fra ekte butikkataloger, og gjør det selv eller motta tilbud fra godkjente fagfolk.",
+    "steps": {
+      "capture": {
+        "title": "1. Registrer",
+        "description": "Bilder av kjøkkenet ditt og målene."
+      },
+      "design": {
+        "title": "2. Design",
+        "description": "Fotorealistiske design som beholder planløsningen i rommet."
+      },
+      "budget": {
+        "title": "3. Budsjett",
+        "description": "Fire prisnivåer fra ekte kataloger. Gjør det selv eller få tilbud."
+      }
+    },
+    "cta": "Start kjøkkenprosjektet ditt",
+    "professionalLink": "Er du fagperson?"
+  },
+  "language": {
+    "title": "Velg språk",
+    "helper": "Vi fant ikke språket på enheten din. Du kan endre det senere fra hvilken som helst skjerm.",
+    "fieldLabel": "Språk",
+    "continue": "Fortsett",
+    "sheetTitle": "Språk",
+    "close": "Lukk",
+    "selectorLabel": "Språk: {language}"
+  },
+  "status": {
+    "checking": "Sjekker tjenesten…",
+    "online": "Tjenesten er tilgjengelig",
+    "degraded": "Noen funksjoner er midlertidig utilgjengelige",
+    "offline": "Du er frakoblet, eller tjenesten kan ikke nås"
+  }
+}

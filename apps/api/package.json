@@ -15,6 +15,7 @@
     "build": "CHECKPOINT_DISABLE=1 prisma generate && tsc -p tsconfig.build.json",
     "lint": "CHECKPOINT_DISABLE=1 prisma generate && eslint . && tsc --noEmit -p tsconfig.json",
     "test": "CHECKPOINT_DISABLE=1 prisma generate && vitest run --reporter=verbose",
+    "openapi:export": "CHECKPOINT_DISABLE=1 prisma generate && UPDATE_OPENAPI_SNAPSHOT=1 vitest run test/openapi-snapshot.spec.ts && pnpm --filter @bricomission/api-client generate",
     "start": "node dist/main.js",
     "generate:sample-catalog": "node scripts/generate-sample-catalog.ts ../../infra/catalog/samples",
     "ingest": "node dist/catalog/cli/ingest.js"

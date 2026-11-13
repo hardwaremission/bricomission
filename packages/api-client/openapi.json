@@ -1,0 +1,533 @@
+{
+  "openapi": "3.0.0",
+  "paths": {
+    "/me": {
+      "get": {
+        "operationId": "MeController_getMe",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MeDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid or expired bearer token"
+          },
+          "503": {
+            "description": "Keycloak signing keys unreachable"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "The authenticated caller (any realm role)",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/health": {
+      "get": {
+        "operationId": "HealthController_getHealth",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "API up and database reachable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Database unreachable or slower than 2 s",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "API liveness and database reachability",
+        "tags": [
+          "health"
+        ]
+      }
+    },
+    "/admin/ping": {
+      "get": {
+        "operationId": "AdminController_ping",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminPingDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid or expired bearer token"
+          },
+          "403": {
+            "description": "Caller lacks the admin realm role"
+          },
+          "503": {
+            "description": "Keycloak signing keys unreachable"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Admin-only liveness probe",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/ai/jobs/{id}": {
+      "get": {
+        "operationId": "GpuJobsController_getJob",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GpuJobViewDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed job id"
+          },
+          "404": {
+            "description": "Unknown or expired job"
+          }
+        },
+        "summary": "Current status of a GPU job",
+        "tags": [
+          "ai-jobs"
+        ]
+      }
+    },
+    "/ai/jobs/{id}/events": {
+      "get": {
+        "description": "Replays the history, then streams live events: `queued` (position updates), `running`, then one `done` or `failed`; the stream closes after the terminal event. SSE `id` is the per-job `seq`, `event` is the status, `data` is JSON.",
+        "operationId": "GpuJobsController_streamEvents",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Last-Event-ID",
+            "required": false,
+            "in": "header",
+            "description": "Only events with seq greater than this are sent",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Event stream",
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "$ref": "#/components/schemas/GpuJobEventDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed job id"
+          },
+          "404": {
+            "description": "Unknown or expired job"
+          }
+        },
+        "summary": "Server-sent status events of a GPU job",
+        "tags": [
+          "ai-jobs"
+        ]
+      }
+    },
+    "/catalog/search": {
+      "get": {
+        "operationId": "CatalogController_searchCatalog",
+        "parameters": [
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 20,
+              "default": 5
+            }
+          },
+          {
+            "name": "q",
+            "required": true,
+            "in": "query",
+            "description": "Search text, 1-500 characters, not blank",
+            "schema": {}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Most relevant chunks (empty when the index is empty)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CatalogSearchResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "q missing, blank or too long; limit outside 1-20"
+          },
+          "503": {
+            "description": "Embedding endpoint or database unreachable"
+          }
+        },
+        "summary": "Search Catalog chunks (RAG index) and return their document and page references",
+        "tags": [
+          "catalog"
+        ]
+      }
+    }
+  },
+  "info": {
+    "title": "BricoMission API",
+    "description": "REST API for the BricoMission PWA and future native clients.",
+    "version": "0.1.0",
+    "contact": {}
+  },
+  "tags": [],
+  "servers": [],
+  "components": {
+    "securitySchemes": {
+      "bearer": {
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "type": "http",
+        "description": "Keycloak access token (realm BricoMission)"
+      }
+    },
+    "schemas": {
+      "MeDto": {
+        "type": "object",
+        "properties": {
+          "sub": {
+            "type": "string",
+            "description": "Keycloak user id (sub)",
+            "example": "a3cea832-338d-44bb-8bd6-d71f603f4d3a"
+          },
+          "username": {
+            "type": "string",
+            "description": "Keycloak preferred_username",
+            "example": "bm-homeowner"
+          },
+          "email": {
+            "type": "string",
+            "nullable": true,
+            "example": "homeowner@bricomission.local"
+          },
+          "roles": {
+            "type": "array",
+            "example": [
+              "user"
+            ],
+            "items": {
+              "type": "string",
+              "enum": [
+                "user",
+                "professional",
+                "admin"
+              ]
+            }
+          }
+        },
+        "required": [
+          "sub",
+          "username",
+          "email",
+          "roles"
+        ]
+      },
+      "HealthDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "ok",
+              "error"
+            ],
+            "example": "ok"
+          },
+          "database": {
+            "type": "string",
+            "enum": [
+              "up",
+              "down"
+            ],
+            "example": "up"
+          }
+        },
+        "required": [
+          "status",
+          "database"
+        ]
+      },
+      "AdminPingDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "ok"
+            ],
+            "example": "ok"
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "GpuJobEventDto": {
+        "type": "object",
+        "properties": {
+          "jobId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "seq": {
+            "type": "number",
+            "description": "Per-job strictly increasing sequence, also the SSE id"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "queued",
+              "running",
+              "done",
+              "failed"
+            ]
+          },
+          "position": {
+            "type": "number",
+            "nullable": true
+          },
+          "waitingFor": {
+            "type": "string",
+            "enum": [
+              "image",
+              "llm"
+            ],
+            "nullable": true
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "errorCode": {
+            "type": "string",
+            "enum": [
+              "adapter_error",
+              "timeout"
+            ],
+            "nullable": true
+          }
+        },
+        "required": [
+          "jobId",
+          "seq",
+          "status",
+          "position",
+          "waitingFor",
+          "at",
+          "errorCode"
+        ]
+      },
+      "GpuJobViewDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "image",
+              "llm"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "queued",
+              "running",
+              "done",
+              "failed"
+            ]
+          },
+          "position": {
+            "type": "number",
+            "nullable": true,
+            "description": "1-based queue position while queued"
+          },
+          "waitingFor": {
+            "type": "string",
+            "enum": [
+              "image",
+              "llm"
+            ],
+            "nullable": true,
+            "description": "Kind of work the job waits behind while queued"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "startedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "finishedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "errorCode": {
+            "type": "string",
+            "enum": [
+              "adapter_error",
+              "timeout"
+            ],
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "status",
+          "position",
+          "waitingFor",
+          "createdAt",
+          "startedAt",
+          "finishedAt",
+          "errorCode"
+        ]
+      },
+      "CatalogSearchResultDto": {
+        "type": "object",
+        "properties": {
+          "chunkId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "documentId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "catalogName": {
+            "type": "string",
+            "example": "BricoMission Sample Kitchen Catalog (synthetic)"
+          },
+          "fileName": {
+            "type": "string",
+            "example": "bricomission-sample-catalog.pdf"
+          },
+          "pageNumber": {
+            "type": "number",
+            "minimum": 1,
+            "example": 3,
+            "description": "1-based page number in the source PDF"
+          },
+          "text": {
+            "type": "string",
+            "example": "BM-SYN-WTP-300 | Oak laminate worktop 300 cm / Encimera laminada roble 300 cm | unit | 189.90 EUR"
+          },
+          "score": {
+            "type": "number",
+            "example": 0.71,
+            "description": "Cosine similarity between query and chunk (higher is closer)"
+          },
+          "matchedSku": {
+            "type": "boolean",
+            "description": "Chunk contains a SKU-like query token verbatim; such chunks rank first"
+          }
+        },
+        "required": [
+          "chunkId",
+          "documentId",
+          "catalogName",
+          "fileName",
+          "pageNumber",
+          "text",
+          "score",
+          "matchedSku"
+        ]
+      },
+      "CatalogSearchResponseDto": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string",
+            "example": "oak laminate worktop"
+          },
+          "results": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CatalogSearchResultDto"
+            }
+          }
+        },
+        "required": [
+          "query",
+          "results"
+        ]
+      }
+    }
+  }
+}

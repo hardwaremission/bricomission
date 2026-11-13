@@ -1,0 +1,41 @@
+{
+  "meta": {
+    "title": "BricoMission",
+    "description": "Maak van foto's van je keuken fotorealistische ontwerpen en een begroting met prijzen uit echte catalogi."
+  },
+  "home": {
+    "headline": "Ontwerp je nieuwe keuken en ken de prijs voordat je begint.",
+    "valueProposition": "Upload foto's en afmetingen van je keuken. Bekijk fotorealistische ontwerpen, krijg een begroting met prijzen uit echte winkelcatalogi en doe het daarna zelf of ontvang offertes van gecontroleerde vakmensen.",
+    "steps": {
+      "capture": {
+        "title": "1. Vastleggen",
+        "description": "Foto's van je keuken en de afmetingen."
+      },
+      "design": {
+        "title": "2. Ontwerpen",
+        "description": "Fotorealistische ontwerpen die de indeling van je ruimte behouden."
+      },
+      "budget": {
+        "title": "3. Begroting",
+        "description": "Vier prijsniveaus uit echte catalogi. Doe het zelf of ontvang offertes."
+      }
+    },
+    "cta": "Start je keukenproject",
+    "professionalLink": "Ben je een vakman?"
+  },
+  "language": {
+    "title": "Kies je taal",
+    "helper": "We konden de taal van je apparaat niet herkennen. Je kunt deze later op elk scherm wijzigen.",
+    "fieldLabel": "Taal",
+    "continue": "Doorgaan",
+    "sheetTitle": "Taal",
+    "close": "Sluiten",
+    "selectorLabel": "Taal: {language}"
+  },
+  "status": {
+    "checking": "Service controleren…",
+    "online": "Service beschikbaar",
+    "degraded": "Sommige functies zijn tijdelijk niet beschikbaar",
+    "offline": "Je bent offline of de service is niet bereikbaar"
+  }
+}

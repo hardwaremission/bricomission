@@ -1,0 +1,41 @@
+{
+  "meta": {
+    "title": "BricoMission",
+    "description": "Muuta keittiösi valokuvat fotorealistisiksi suunnitelmiksi ja budjetiksi, jonka hinnat tulevat oikeista luetteloista."
+  },
+  "home": {
+    "headline": "Suunnittele uusi keittiösi ja tiedä sen hinta ennen kuin aloitat.",
+    "valueProposition": "Lataa keittiösi valokuvat ja mitat. Katso fotorealistisia suunnitelmia, saa budjetti, jonka hinnat perustuvat kauppojen oikeisiin tuoteluetteloihin, ja tee sitten itse tai vastaanota tarjouksia tarkistetuilta ammattilaisilta.",
+    "steps": {
+      "capture": {
+        "title": "1. Kuvaa",
+        "description": "Valokuvat keittiöstäsi ja sen mitat."
+      },
+      "design": {
+        "title": "2. Suunnittele",
+        "description": "Fotorealistiset suunnitelmat, jotka säilyttävät huoneesi pohjaratkaisun."
+      },
+      "budget": {
+        "title": "3. Budjetti",
+        "description": "Neljä hintatasoa oikeista luetteloista. Tee itse tai pyydä tarjouksia."
+      }
+    },
+    "cta": "Aloita keittiöprojektisi",
+    "professionalLink": "Oletko ammattilainen?"
+  },
+  "language": {
+    "title": "Valitse kieli",
+    "helper": "Emme tunnistaneet laitteesi kieltä. Voit vaihtaa sen myöhemmin miltä tahansa näytöltä.",
+    "fieldLabel": "Kieli",
+    "continue": "Jatka",
+    "sheetTitle": "Kieli",
+    "close": "Sulje",
+    "selectorLabel": "Kieli: {language}"
+  },
+  "status": {
+    "checking": "Tarkistetaan palvelua…",
+    "online": "Palvelu on käytettävissä",
+    "degraded": "Jotkin toiminnot eivät ole tilapäisesti käytettävissä",
+    "offline": "Olet offline-tilassa tai palveluun ei saada yhteyttä"
+  }
+}
