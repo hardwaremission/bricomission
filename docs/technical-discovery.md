@@ -10,7 +10,7 @@ Mobile-first PWA for Homeowners; the same PWA serves the B2B dashboard and the A
 
 - **Monorepo**: TypeScript, pnpm workspaces. `apps/web`, `apps/api`, shared `packages/` (types, API client generated from OpenAPI). See ADR 0003.
 - **Web**: Next.js (App Router) + Tailwind, client of the API only; i18n with 11 locales (en canonical); PWA manifest + service worker.
-- **API**: NestJS, REST + OpenAPI, Prisma on PostgreSQL, SSE endpoints, background job queue (BullMQ on Redis, or PostgreSQL-based; decide in the first feature spec).
+- **API**: NestJS, REST + OpenAPI, Prisma on PostgreSQL, SSE endpoints, in-process GPU job queue (decided in `gpu-job-broker`, see GPU Serialization).
 - **Identity**: Keycloak realm `BricoMission`, OIDC; roles `user`, `professional`, `admin`.
 - **LLM**: llama.cpp `llama-server` (OpenAI-compatible) running a medium MoE model (e.g. Qwen3-30B-A3B, Q4) with experts in system RAM (`--n-cpu-moe` / `-ot`). See ADR 0001.
 - **Embeddings / RAG**: small embedding model served locally; vectors in PostgreSQL (pgvector).
@@ -40,7 +40,7 @@ OIDC Authorization Code + PKCE from the PWA; the API validates Keycloak JWTs and
 
 ## Deployment and Operations
 
-- Single `compose.yaml` at repo root: postgres, keycloak, minio, mailpit, llama-server, comfyui, (redis), api, web. Pinned image tags, named volumes, healthchecks.
+- Single `compose.yaml` at repo root: postgres, keycloak, minio, mailpit, llama-server, comfyui, api, web (no Redis: the job queue is in-process). Pinned image tags, named volumes, healthchecks.
 - GPU passed to llama-server and ComfyUI via `/dev/kfd` and `/dev/dri` (ROCm) or `/dev/dri` (Vulkan). Measured setup (2026-11-12): both use ROCm, `group_add: [video, ${RENDER_GID:-987}]` (host `render` GID 987 owns `/dev/kfd`; `video` GID 983). ComfyUI also uses `ipc: host` and `seccomp=unconfined`.
 - The AI services are opt-in compose profiles: `ai` (`llama-server`, `comfyui`) and `ai-fetch` (one-shot weight download into the named volumes `llm-models`, `comfyui-models`, `comfyui-annotators`). `./init.sh` never starts them. Ports `LLAMA_PORT` (8080) and `COMFYUI_PORT` (8188) bind to 127.0.0.1. Measurements: `docs/spikes/local-ai-gpu-spike.md`.
 - `init.sh` brings the stack up and verifies health; works offline after the first pull.
@@ -48,8 +48,10 @@ OIDC Authorization Code + PKCE from the PWA; the API validates Keycloak JWTs and
 
 ## GPU Serialization
 
-- One GPU job broker in `apps/api`: image jobs run one at a time.
-- Before an SDXL job, the broker ensures VRAM headroom (MoE LLM uses little VRAM; if not enough, pause chat requests or unload the LLM).
+- One GPU job broker in `apps/api` (`src/ai/jobs/gpu-job-broker.service.ts`, built by `gpu-job-broker`): image jobs run one at a time, LLM jobs never run alongside an image job.
+- Queue decision (2026-11-13): in-process, in-memory FIFO scheduler. Rationale: one API instance and one physical GPU; jobs are short (render 8-20 s, chat seconds) and tied to a live client waiting on SSE; exact mutual exclusion with no extra service, no Redis port per worktree, no migration, works offline. Rejected: BullMQ + Redis (an extra container for durability/multi-instance support we do not need) and a PostgreSQL queue (first migration plus polling or LISTEN/NOTIFY for the same result). Trade-off: queued and running jobs are lost on API restart (clients get 404 and retry). Callers depend on the `GpuJobBroker` interface, so a durable backend can replace it.
+- Admission: one FIFO queue, head-of-line only (no look-ahead, so a queued image is never starved by later chat). An image head starts when nothing runs; an LLM head starts when no image runs and fewer than `GPU_BROKER_LLM_CONCURRENCY` (default 1) LLM jobs run. Per-kind timeouts abort the adapter and free the slot.
+- VRAM policy: serialization alone meets the measured constraint (LLM idle 3.2 GB and ComfyUI idle cache 7.4 GB coexist; only simultaneous compute overloads the card), so the broker does not unload models and avoids the 8-11 s reload. `GpuResidencyHook.beforeImage()/afterImage()` (no-op) runs around every image job; `controlnet-render` can plug ComfyUI `POST /free` or an LLM stop in there if real renders prove it necessary.
 - Measured 2026-11-12: serialization is required. The LLM holds about 3.2 GB. ComfyUI holds about 7.4 GB idle-cached and peaks at about 15 GB over the desktop baseline during a render, because it takes whatever VRAM is free. Running both at once did not OOM but cost about 25 % speed on each, so renders run alone and chat requests wait. Unload: ComfyUI `POST /free` (VRAM is released within about 3 s, and the next render adds about 8-11 s of reload). `docker compose stop llama-server` takes 0.6 s, and `up -d --wait` brings it back healthy in about 5.5 s.
 - Chat requests during a Render wait in the queue with a visible status.
 

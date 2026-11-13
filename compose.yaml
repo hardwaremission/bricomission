@@ -80,6 +80,13 @@ services:
     environment:
       PORT: 3000
       DATABASE_URL: postgresql://${POSTGRES_USER:-bricomission}:${POSTGRES_PASSWORD:-bricomission}@postgres:5432/${POSTGRES_DB:-bricomission}?schema=public
+      # AI layer (gpu-job-broker). fake = deterministic adapters, no GPU calls.
+      AI_ADAPTERS: ${AI_ADAPTERS:-fake}
+      LLM_BASE_URL: ${LLM_BASE_URL:-http://llama-server:8080}
+      COMFYUI_BASE_URL: ${COMFYUI_BASE_URL:-http://comfyui:8188}
+      GPU_BROKER_DEBUG_ENDPOINTS: ${GPU_BROKER_DEBUG_ENDPOINTS:-false}
+      GPU_BROKER_LLM_CONCURRENCY: ${GPU_BROKER_LLM_CONCURRENCY:-1}
+      GPU_BROKER_MAX_QUEUED: ${GPU_BROKER_MAX_QUEUED:-20}
     ports:
       - "127.0.0.1:${API_PORT:-3000}:3000"
     healthcheck:
