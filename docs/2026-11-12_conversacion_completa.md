@@ -1,6 +1,6 @@
 # Registro de conversación con Claude Code · 2026-11-12
 
-_Actualizado: 2026-11-12 23:04_
+_Actualizado: 2026-11-13 06:51_
 
 
 ---
@@ -1384,3 +1384,590 @@ Si has cambiado el usuario o la base de datos en tu `.env`, usa esos valores en 
 **Commit:** `3ca11e3 chore: complete infra-compose-core`. Es local, sin push.
 
 **Siguiente:** `local-ai-gpu-spike`, la prueba de GPU del primer día. Hay que empezar por el planner. `api-skeleton` también está lista para empezar.
+
+
+### 🧑 **Juan Miguel** · 2026-11-12 23:04:03
+
+commit y push
+
+
+### 🤖 **Claude** · 2026-11-12 23:04:06
+
+> 🔧 **Bash**: `{"command": "git status --short; if [ -n \"$(git status --porcelain)\" ]; then git add -A && git commit -q -m \"docs: update conversation log\" -m \"Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\" && git log -1 --format='%h %s'; fi; set -a && . ./.env && set +a && GIT_TERMINAL_PROMPT=0 git`
+
+
+### 🤖 **Claude** · 2026-11-12 23:04:12
+
+Push hecho: `origin/main` pasa de `273c9ff` a `9248c52`.
+
+He subido dos commits:
+- `3ca11e3 chore: complete infra-compose-core`
+- `9248c52 docs: update conversation log`, con el log de conversación actualizado.
+
+Lo siguiente es `local-ai-gpu-spike`.
+
+
+### 🧑 **Juan Miguel** · 2026-11-12 23:06:28
+
+Hemos comprobado que la skill feature-flow funciona pero vamos a lanzar ahora github-flow para automatizar todo el proceso incluidas subidas a git
+
+
+### 🤖 **Claude** · 2026-11-12 23:06:34
+
+> 🔧 **Skill**: `{"skill": "github-flow", "args": "plan"}`
+
+
+### 🤖 **Claude** · 2026-11-12 23:06:39
+
+> 🔧 **Bash**: `{"command": "git remote get-url origin; git status --porcelain; git rev-parse main; git worktree list; git branch --list 'feature/*'; echo \"PAT env len: ${#BRICOMISSION_GITHUB_PAT}\"; python3 -I -c \"\nimport json;f=json.load(open('feature_list.json'));st={x['id']:x['status'] for x in f}\nprint('re`
+
+
+### 🤖 **Claude** · 2026-11-12 23:06:39
+
+> 🔧 **ToolSearch**: `{"query": "+github get_me", "max_results": 3}`
+
+
+### 🤖 **Claude** · 2026-11-12 23:06:56
+
+**github-flow plan:** este plan es solo de lectura y no he cambiado nada. Hay un **bloqueo** antes de poder pasar a `execute`.
+
+**Cabecera**
+- Modo: `plan`.
+- Repositorio: `hardwaremission/bricomission`.
+- Rama base: `main`.
+- SHA base previsto: `9248c52`.
+- Permiso de push: **no concedido** (todavía no lo has dado para esta ejecución).
+- Elementos reutilizados o creados: ninguno. No hay worktrees ni ramas `feature/*`, y los issues y PR no se han podido consultar.
+
+| feature | session | branch | status | commit | evidence | pr |
+| --- | --- | --- | --- | --- | --- | --- |
+| `local-ai-gpu-spike` | none | `feature/local-ai-gpu-spike @ 9248c52` | blocked (precondición 3) | none | dependencia `infra-compose-core` aceptada ✔ | none |
+| `api-skeleton` | none | `feature/api-skeleton @ 9248c52` | blocked (precondición 3) | none | dependencia `infra-compose-core` aceptada ✔ | none |
+
+El resto de features no están listas porque dependen de features aún no aceptadas.
+
+**Precondiciones**
+1. Dependencias aceptadas: ✔ para las dos.
+2. Rama base limpia: ✔. Solo está modificado el log de conversación, que no bloquea.
+3. Permisos: ✘.
+   - El **MCP de GitHub no conecta** (`Authorization header is badly formatted`) y no hay herramientas `mcp__github__*` en esta sesión.
+   - `BRICOMISSION_GITHUB_PAT` no existe en el entorno: la longitud es 0. Solo está en `.env`.
+   - Falta que concedas el permiso de push.
+4. Entornos independientes: ⚠ con riesgos (abajo).
+
+**Para desbloquearlo:**
+1. Exporta el token en fish. Esto lo guarda en `~/.config/fish/fish_variables`, en texto plano, igual que `.env`:
+   ```fish
+   set -Ux BRICOMISSION_GITHUB_PAT (string replace 'BRICOMISSION_GITHUB_PAT=' '' (grep '^BRICOMISSION_GITHUB_PAT=' ~/Proyectos/hardwaremission.bricomission/.env))
+   ```
+2. Cierra Claude Code por completo y vuelve a abrirlo en una terminal nueva. El MCP tiene que conectar.
+3. Pide `execute` diciendo qué features y si concedes el push.
+
+**Riesgos de lanzar sesiones automáticas en paralelo**
+- **Puertos:** cada worktree usa su propio proyecto de compose, pero los puertos del host son fijos (5432, 9000, 9001, 8025, 1025). Dos stacks a la vez chocarían salvo que cada worktree los cambie por variables de entorno.
+- **GPU:** `local-ai-gpu-spike` usa la GPU y descarga decenas de GB de modelos. Puede ir en paralelo con `api-skeleton`, que no usa GPU, pero no con otra feature de IA.
+- **Sesiones automáticas sin interacción:**
+  - No pueden cumplir la regla de diseño en OpenPencil, que necesita que abras el `.fig` y apruebes el diseño. Las features con pantallas tendrán que hacerse con `feature-flow` interactivo.
+  - Tampoco pueden pedirte sudo.
+  - Las sesiones de Claude abiertas antes de que tu usuario entrara en el grupo `docker` necesitan `newgrp docker` para usar Docker.
+
+Mi recomendación es usar `execute` con `local-ai-gpu-spike` y `api-skeleton` en paralelo, dando a `api-skeleton` puertos distintos, y `publish` con push a medida que se acepten.
+
+
+### 🧑 **Juan Miguel** · 2026-11-12 23:10:52
+
+Ya he exportado el token y reiniciado, lanza execute
+
+
+### 🤖 **Claude** · 2026-11-12 23:10:55
+
+> 🔧 **Bash**: `{"command": "echo \"len=${#BRICOMISSION_GITHUB_PAT}\"; printf '%s' \"$BRICOMISSION_GITHUB_PAT\" | head -c 11; echo; printf '%s' \"$BRICOMISSION_GITHUB_PAT\" | od -c | tail -3 | head -2; cat /home/juanmi/Proyectos/hardwaremission.bricomission/.mcp.json", "description": "Check token env var shape and `
+
+
+### 🤖 **Claude** · 2026-11-12 23:11:05
+
+> 🔧 **Bash**: `{"command": "v=\"$BRICOMISSION_GITHUB_PAT\"; echo \"len=${#v}\"; [[ \"$v\" =~ [[:space:]] ]] && echo \"has whitespace\" || echo \"no whitespace\"; [[ \"$v\" == *\\\"* || \"$v\" == *\\'* ]] && echo \"has quotes\" || echo \"no quotes\"; [[ \"$v\" == github_pat_* ]] && echo \"prefix github_pat_ ok\" ||`
+
+
+### 🤖 **Claude** · 2026-11-12 23:11:11
+
+> 🔧 **Bash**: `{"command": "fish -c 'if set -q BRICOMISSION_GITHUB_PAT; echo \"fish var set, scope:\"; set -S BRICOMISSION_GITHUB_PAT 2>/dev/null | grep -E \"set in|exported\" | head -3; echo \"len:\" (string length -- $BRICOMISSION_GITHUB_PAT); else; echo \"fish var NOT set\"; end'; echo \"claude parent shell: $(`
+
+
+### 🤖 **Claude** · 2026-11-12 23:11:15
+
+> 🔧 **Bash**: `{"command": "sed -E 's/=.*/=<redacted>/' .env", "description": "Show .env key names with values redacted"}`
+
+
+### 🤖 **Claude** · 2026-11-12 23:11:25
+
+No puedo lanzar `execute`. El MCP de GitHub sigue sin conectar con el mismo error (`Authorization header is badly formatted`), porque **`BRICOMISSION_GITHUB_PAT` no está definida**:
+- En el entorno de esta sesión de Claude su longitud es 0, aunque Claude se lanzó desde fish.
+- En fish tampoco existe como variable universal (`set -q BRICOMISSION_GITHUB_PAT` da falso). El `set -Ux` no llegó a guardarse.
+- `.env` sí tiene la clave con el formato correcto (`BRICOMISSION_GITHUB_PAT=…`).
+
+Haz esto en orden, **en una terminal fish**:
+
+1. Exporta la variable:
+   ```fish
+   cd ~/Proyectos/hardwaremission.bricomission
+   set -Ux BRICOMISSION_GITHUB_PAT (string replace 'BRICOMISSION_GITHUB_PAT=' '' (grep '^BRICOMISSION_GITHUB_PAT=' .env))
+   ```
+2. Comprueba que ha quedado guardada (no muestra el token):
+   ```fish
+   set -q BRICOMISSION_GITHUB_PAT; and string length -- $BRICOMISSION_GITHUB_PAT
+   ```
+   Debe imprimir `93`.
+3. Abre una terminal fish nueva y arranca `claude` desde ella. Con `/mcp`, `github` debe aparecer como conectado.
+
+Si en el paso 2 no sale `93`, pásame la salida (sin el token) y lo miramos.
+
+Cuando conecte, lanzo `execute` con `local-ai-gpu-spike` y `api-skeleton`. Para ello confírmame:
+- si concedes el **push** en esta ejecución;
+- si las dos features van **en paralelo** (`api-skeleton` usaría puertos del host distintos) o una detrás de otra.
+
+
+### 🧑 **Juan Miguel** · 2026-11-12 23:13:55
+
+
+
+<pasted_content id="509f">
+~/Proyectos/hardwaremission.bricomission main*
+❯ set -Ux BRICOMISSION_GITHUB_PAT (string replace 'BRICOMISSION_GITHUB_PAT=' '' (grep '^BRICOMISSION_GITHUB_PAT=' .env))
+
+~/Proyectos/hardwaremission.bricomission main*
+❯ set -q BRICOMISSION_GITHUB_PAT; and string length -- $BRICOMISSION_GITHUB_PAT
+95
+</pasted_content id="509f">
+
+
+
+### 🤖 **Claude** · 2026-11-12 23:14:00
+
+> 🔧 **Bash**: `{"command": "v=$(sed -n 's/^BRICOMISSION_GITHUB_PAT=//p' .env); echo \"raw len=${#v}\"; case \"$v\" in \\\"*\\\") echo \"wrapped in double quotes\";; \\'*\\') echo \"wrapped in single quotes\";; *) echo \"not quoted\";; esac; [[ \"$v\" == *$'\\r'* ]] && echo \"has CR\" || echo \"no CR\"", "descripti`
+
+
+### 🤖 **Claude** · 2026-11-12 23:14:06
+
+Encontrado el problema. En `.env` el token está entre comillas dobles (`"…"`). bash quita las comillas al cargar el archivo (por eso el push funcionaba con 93 caracteres), pero fish las ha guardado tal cual: 95 = 93 + 2 comillas. Con las comillas, la cabecera `Authorization` queda mal formada.
+
+Haz esto en orden, en fish:
+
+1. Corrige la variable:
+   ```fish
+   set -Ux BRICOMISSION_GITHUB_PAT (string trim -c '"' -- $BRICOMISSION_GITHUB_PAT)
+   string length -- $BRICOMISSION_GITHUB_PAT   # debe dar 93
+   ```
+2. Abre una terminal fish nueva, arranca `claude` y comprueba con `/mcp` que `github` sale como conectado.
+
+Después dime si concedes el **push** y si las dos features van **en paralelo** o **en serie**, y lanzo `execute`.
+
+
+### 🧑 **Juan Miguel** · 2026-11-12 23:15:11
+
+hecho, concedo push
+
+
+### 🤖 **Claude** · 2026-11-12 23:15:14
+
+> 🔧 **ToolSearch**: `{"query": "select:mcp__github__get_me,mcp__github__search_repositories,mcp__github__search_issues,mcp__github__issue_write,mcp__github__list_pull_requests,mcp__github__add_issue_comment", "max_results": 6}`
+
+
+### 🤖 **Claude** · 2026-11-12 23:15:16
+
+> 🔧 **mcp__github__get_me**: `{}`
+
+
+### 🤖 **Claude** · 2026-11-12 23:15:16
+
+> 🔧 **mcp__github__search_repositories**: `{"query": "repo:hardwaremission/bricomission", "minimal_output": false}`
+
+
+### 🤖 **Claude** · 2026-11-12 23:15:17
+
+> 🔧 **mcp__github__list_pull_requests**: `{"owner": "hardwaremission", "repo": "bricomission", "state": "all", "fields": ["number", "title", "state", "head"]}`
+
+
+### 🤖 **Claude** · 2026-11-12 23:15:18
+
+> 🔧 **Bash**: `{"command": "git status --porcelain; git worktree list; git branch --list 'feature/*'; echo \"PAT len: ${#BRICOMISSION_GITHUB_PAT}\"; command -v claude", "description": "Check base state, worktrees, token length, claude CLI"}`
+
+
+### 🤖 **Claude** · 2026-11-12 23:15:25
+
+> 🔧 **Bash**: `{"command": "grep -E '^[A-Z_]+=' .env.example | sed -E 's/=.*//' ; docker compose ps --format '{{.Service}} {{.Status}}' 2>&1 | head; nproc; df -h / | tail -1", "description": "List compose env vars and running stack status"}`
+
+
+### 🤖 **Claude** · 2026-11-12 23:15:37
+
+> 🔧 **Bash**: `{"command": "set -a && . ./.env && set +a && GIT_TERMINAL_PROMPT=0 git fetch origin main 2>&1 | tail -1; git rev-parse origin/main", "description": "Fetch origin main and fix base SHA"}`
+
+
+### 🤖 **Claude** · 2026-11-12 23:15:38
+
+> 🔧 **mcp__github__search_issues**: `{"owner": "hardwaremission", "repo": "bricomission", "query": "local-ai-gpu-spike api-skeleton", "fields": ["number", "title", "state"]}`
+
+
+### 🤖 **Claude** · 2026-11-12 23:15:45
+
+> 🔧 **mcp__github__issue_write**: `{"method": "create", "owner": "hardwaremission", "repo": "bricomission", "title": "[local-ai-gpu-spike] Local MoE LLM and SDXL ControlNet run on the GPU in containers", "body": "**Feature:** `local-ai-gpu-spike` (see `feature_list.json`)\n\n**Behavior:** llama-server (MoE model, experts in RAM) and `
+
+
+### 🤖 **Claude** · 2026-11-12 23:15:48
+
+> 🔧 **mcp__github__issue_write**: `{"method": "create", "owner": "hardwaremission", "repo": "bricomission", "title": "[api-skeleton] NestJS API answers health and exposes OpenAPI", "body": "**Feature:** `api-skeleton` (see `feature_list.json`)\n\n**Behavior:** pnpm monorepo with `apps/api` (NestJS + Prisma on PostgreSQL) runs in comp`
+
+
+### 🤖 **Claude** · 2026-11-12 23:15:52
+
+> 🔧 **Bash**: `{"command": "R=../hardwaremission.bricomission-worktrees && mkdir -p $R && for f in local-ai-gpu-spike api-skeleton; do git worktree add -q $R/$f -b feature/$f 9248c52fed102e3cf622a8f0d6152a24c9daa2ed; done; git worktree list", "description": "Create worktrees and feature branches from base SHA"}`
+
+
+### 🤖 **Claude** · 2026-11-12 23:16:08
+
+> 🔧 **Bash**: `{"command": "S=/tmp/claude-1000/-home-juanmi-Proyectos-hardwaremission-bricomission/f43e4370-93ae-4d11-927d-b8255aa114d7/scratchpad/ghflow; mkdir -p $S\nW=/home/juanmi/Proyectos/hardwaremission.bricomission-worktrees\nmk() { # id pg minio_api minio_console mail_ui mail_smtp extra\ncat > $S/run-$1.sh`
+
+
+### 🤖 **Claude** · 2026-11-12 23:16:11
+
+> 🔧 **Bash**: `{"command": "printf 'bash /tmp/claude-1000/-home-juanmi-Proyectos-hardwaremission-bricomission/f43e4370-93ae-4d11-927d-b8255aa114d7/scratchpad/ghflow/run-local-ai-gpu-spike.sh\\n' | newgrp docker", "description": "Run headless feature-flow session for local-ai-gpu-spike", "run_in_background": true}`
+
+
+### 🤖 **Claude** · 2026-11-12 23:16:13
+
+> 🔧 **Bash**: `{"command": "printf 'bash /tmp/claude-1000/-home-juanmi-Proyectos-hardwaremission-bricomission/f43e4370-93ae-4d11-927d-b8255aa114d7/scratchpad/ghflow/run-api-skeleton.sh\\n' | newgrp docker", "description": "Run headless feature-flow session for api-skeleton", "run_in_background": true}`
+
+
+### 🤖 **Claude** · 2026-11-12 23:16:21
+
+> 🔧 **Bash**: `{"command": "pgrep -af 'claude -p' | cut -c1-120; ls -la /tmp/claude-1000/-home-juanmi-Proyectos-hardwaremission-bricomission/f43e4370-93ae-4d11-927d-b8255aa114d7/scratchpad/ghflow/*.log 2>&1", "description": "Confirm both headless sessions are running"}`
+
+
+### 🤖 **Claude** · 2026-11-12 23:16:27
+
+`execute` está en marcha: las dos sesiones automáticas trabajan en paralelo con el grupo `docker` activo.
+
+| feature | issue | worktree | puertos host |
+| --- | --- | --- | --- |
+| `local-ai-gpu-spike` | [#1](https://github.com/hardwaremission/bricomission/issues/1) | `../hardwaremission.bricomission-worktrees/local-ai-gpu-spike` | pg 5533, minio 9100/9101, mailpit 8125/1125 |
+| `api-skeleton` | [#2](https://github.com/hardwaremission/bricomission/issues/2) | `../hardwaremission.bricomission-worktrees/api-skeleton` | pg 5534, minio 9200/9201, mailpit 8225/1225, API 3200 |
+
+- **Base:** `9248c52`. Las dos ramas `feature/<id>` salen de ahí.
+- **Push:** concedido para `publish`. Las sesiones solo hacen commits locales y la publicación la hago yo cuando se acepte cada feature.
+- **Logs:** `/tmp/claude-1000/-home-juanmi-Proyectos-hardwaremission-bricomission/f43e4370-93ae-4d11-927d-b8255aa114d7/scratchpad/ghflow/<feature>.log`.
+
+La prueba de GPU descargará decenas de GB de modelos y tardará. Cuando termine cada sesión, leo su veredicto, actualizo el issue y, si es `accept`, la publico: push de la rama y PR con `Closes #N`, sin merge.
+
+Para que Docker funcione sin `newgrp`, cierra la sesión del escritorio y vuelve a entrar cuando puedas.
+
+
+### 🧑 **Juan Miguel** · 2026-11-12 23:20:51
+
+¿puedes verificar que se están ejecutando? No veo ningún proceso que consuma recursos en mi equipo
+
+
+### 🤖 **Claude** · 2026-11-12 23:20:55
+
+> 🔧 **Bash**: `{"command": "S=/tmp/claude-1000/-home-juanmi-Proyectos-hardwaremission-bricomission/f43e4370-93ae-4d11-927d-b8255aa114d7/scratchpad/ghflow; date; pgrep -af 'claude -p' | cut -c1-80; for p in $(pgrep -f 'claude -p'); do ps -o pid,etime,%cpu,rss,stat -p $p --no-headers; done; ls -la $S/*.log; tail -c `
+
+
+### 🤖 **Claude** · 2026-11-12 23:21:01
+
+Sí, se están ejecutando. El poco consumo es normal: ahora mismo trabaja el planner, que redacta la spec con llamadas a la API de Claude en remoto y casi no usa CPU local.
+
+- **Procesos:** `claude -p` PID 63344 (`local-ai-gpu-spike`) y PID 63357 (`api-skeleton`), activos desde hace 4:40, con un 1,5 % de CPU y unos 350 MB de RAM cada uno.
+- **Progreso:** cada worktree ya tiene su spec escrita (`docs/specs/<feature>.md`) y `feature_list.json` modificado, así que el planner ha terminado o casi.
+- **Logs vacíos:** `claude -p` en modo texto solo escribe el informe final al terminar.
+
+El consumo grande llegará con el implementer:
+- **Spike:** descarga de modelos de decenas de GB, y luego GPU y CPU con llama.cpp y ComfyUI.
+- **api-skeleton:** `pnpm install` y los contenedores.
+
+Para verlo en directo:
+```bash
+docker ps                                   # aparecerán contenedores local-ai-gpu-spike-* y api-skeleton-*
+watch -n2 'git -C ../hardwaremission.bricomission-worktrees/local-ai-gpu-spike status --short'
+```
+
+Te aviso cuando termine cada sesión.
+
+
+### 🧑 **Juan Miguel** · 2026-11-12 23:22:22
+
+no he especificado ningún API key de claude y no debo usarlo ya que me cobran los tokens fuera de mi plan pro
+
+
+### 🤖 **Claude** · 2026-11-12 23:22:29
+
+> 🔧 **Bash**: `{"command": "for v in ANTHROPIC_API_KEY ANTHROPIC_AUTH_TOKEN CLAUDE_CODE_USE_BEDROCK CLAUDE_CODE_USE_VERTEX; do eval \"x=\\${$v-}\"; echo \"$v len=${#x}\"; done; for p in $(pgrep -f 'claude -p'); do echo \"pid $p:\"; tr '\\0' '\\n' < /proc/$p/environ | grep -E '^(ANTHROPIC_API_KEY|ANTHROPIC_AUTH_TOK`
+
+
+### 🤖 **Claude** · 2026-11-12 23:22:40
+
+> 🔧 **AskUserQuestion**: `{"questions": [{"question": "Las dos sesiones automáticas consumen del límite de tu plan Pro (no de una API key). ¿Qué hago con ellas?", "header": "Sesiones", "multiSelect": false, "options": [{"label": "Dejar solo una (Recomendado)", "description": "Paro api-skeleton y dejo seguir local-ai-gpu-spik`
+
+
+### 🤖 **Claude** · 2026-11-12 23:22:58
+
+Las dos sesiones siguen en marcha. Te aviso cuando termine cada una.
+
+
+### 🧑 **Juan Miguel** · 2026-11-12 23:34:21
+
+<task-notification>
+<task-id>bi7l9zo3g</task-id>
+<tool-use-id>toolu_01M4Zv1eM39NcqQvRV44h3Lc</tool-use-id>
+<output-file>/tmp/claude-1000/-home-juanmi-Proyectos-hardwaremission-bricomission/f43e4370-93ae-4d11-927d-b8255aa114d7/tasks/bi7l9zo3g.output</output-file>
+<status>completed</status>
+<summary>Background command "Run headless feature-flow session for api-skeleton" completed (exit code 0)</summary>
+</task-notification>
+
+
+### 🤖 **Claude** · 2026-11-12 23:34:25
+
+> 🔧 **Bash**: `{"command": "S=/tmp/claude-1000/-home-juanmi-Proyectos-hardwaremission-bricomission/f43e4370-93ae-4d11-927d-b8255aa114d7/scratchpad/ghflow; tail -c 4000 $S/api-skeleton.log; W=/home/juanmi/Proyectos/hardwaremission.bricomission-worktrees/api-skeleton; echo; echo \"== git\"; git -C $W status --short `
+
+
+### 🤖 **Claude** · 2026-11-12 23:34:28
+
+`api-skeleton` aceptada (`a855be4`). Publico: push de la rama y PR.
+
+
+### 🤖 **Claude** · 2026-11-12 23:34:29
+
+> 🔧 **Bash**: `{"command": "cd /home/juanmi/Proyectos/hardwaremission.bricomission-worktrees/api-skeleton && ls ../../hardwaremission.bricomission/.github 2>&1 | head -2; GIT_TERMINAL_PROMPT=0 git push -u origin feature/api-skeleton 2>&1 | tail -3", "description": "Push feature/api-skeleton branch to origin"}`
+
+
+### 🤖 **Claude** · 2026-11-12 23:34:30
+
+> 🔧 **ToolSearch**: `{"query": "select:mcp__github__create_pull_request", "max_results": 1}`
+
+
+### 🤖 **Claude** · 2026-11-12 23:34:42
+
+> 🔧 **mcp__github__create_pull_request**: `{"owner": "hardwaremission", "repo": "bricomission", "title": "[api-skeleton] NestJS API answers health and exposes OpenAPI", "head": "feature/api-skeleton", "base": "main", "body": "Closes #2\n\n## Summary\n- pnpm monorepo (pnpm 10.34.9 pinned via `packageManager`, committed lockfile) with `apps/ap`
+
+
+### 🤖 **Claude** · 2026-11-12 23:34:48
+
+> 🔧 **mcp__github__add_issue_comment**: `{"owner": "hardwaremission", "repo": "bricomission", "issue_number": 2, "body": "Status: **accepted** by the independent validator (first pass). Local commit `a855be4 feat: complete api-skeleton` pushed to `feature/api-skeleton`; published as PR #3 (not merged)."}`
+
+
+### 🤖 **Claude** · 2026-11-12 23:34:55
+
+`api-skeleton` está **publicada**. Fue aceptada por el validador a la primera, sin vueltas de corrección.
+
+| campo | valor |
+| --- | --- |
+| feature | `api-skeleton` |
+| session | `claude -p` en `../hardwaremission.bricomission-worktrees/api-skeleton` (terminó con código 0) |
+| branch | `feature/api-skeleton @ 9248c52`, ya subida a GitHub |
+| status | published |
+| commit | `a855be4 feat: complete api-skeleton` |
+| evidence | 7 tests en verde; `/health` da 200 `up` y 503 `down` con postgres parado; OpenAPI 3.0.0 en `/docs-json`; `init.sh` termina con código 0; puerto solo en 127.0.0.1 |
+| pr | https://github.com/hardwaremission/bricomission/pull/3 (`Closes #2`, sin merge) |
+
+**Cómo probarlo:**
+```bash
+API_PORT=3200 ./init.sh
+curl http://127.0.0.1:3200/health
+```
+Swagger está en `http://127.0.0.1:3200/docs`.
+
+**Ten en cuenta:**
+- La sesión creó un acceso a pnpm en `~/.local/bin`, que apunta a la caché de npx (sin sudo). Si se borra esa caché, `init.sh` indica cómo restaurarlo.
+- El stack `api-skeleton` sigue levantado en los puertos 5534/9200/9201/8225/1225/3200.
+
+`local-ai-gpu-spike` sigue en marcha.
+
+
+### 🧑 **Juan Miguel** · 2026-11-12 23:44:17
+
+¿debo hacer yo el merge de cada pr que me confirmes que está publicada?
+
+
+### 🤖 **Claude** · 2026-11-12 23:44:27
+
+Sí, el merge lo haces tú. La regla del proyecto es que los agentes nunca hacen merge, para que tengas siempre la última palabra sobre lo que entra en `main`. Antes de hacerlo, revisa el diff del PR en GitHub.
+
+**Cuándo hacerlo:** cuanto antes, para cada PR publicado, porque:
+- Las ramas de las siguientes features salen de `main`. Mientras PR #3 no esté en `main`, en `main` `api-skeleton` sigue como `not_started` y las features que dependen de ella (`web-pwa-shell`, `keycloak-realm-roles`…) no pueden empezar.
+- Habrá **conflictos**. `local-ai-gpu-spike` también toca `feature_list.json`, `PROGRESS.md`, `compose.yaml` e `init.sh`. Cuando hagas merge de #3, el PR de la prueba de GPU chocará en esos archivos. Si me lo pides, los resuelvo yo en su rama antes de publicarla.
+
+**Cómo hacerlo:**
+1. En PR #3 pulsa **"Create a merge commit"**, que conserva el commit `feat: complete api-skeleton`, o "Squash and merge". Cualquiera de los dos sirve.
+2. El issue #2 se cierra solo, por el `Closes #2`.
+3. Avísame. Yo actualizo `main` en local (`git pull`) y lo tengo en cuenta para la siguiente tanda de `execute`.
+
+Los worktrees y las ramas los dejo como están: la skill no borra nada. Cuando hayas hecho merge, puedes limpiarlos tú o pedirme que te diga cómo.
+
+
+### 🧑 **Juan Miguel** · 2026-11-12 23:49:11
+
+ya he hecho merge de #3, cuando termine la prueba de GPU resuelve conflictos en su rama
+
+
+### 🤖 **Claude** · 2026-11-12 23:49:13
+
+> 🔧 **Bash**: `{"command": "GIT_TERMINAL_PROMPT=0 git pull --ff-only origin main 2>&1 | tail -2; git log --oneline -3", "description": "Fast-forward local main to include merged PR #3"}`
+
+
+### 🤖 **Claude** · 2026-11-12 23:49:18
+
+`main` local está actualizada a `72dcc55` (merge de #3). Cuando termine `local-ai-gpu-spike` haré esto, por orden:
+1. Integrar `origin/main` en su rama y resolver los conflictos (`feature_list.json`, `PROGRESS.md`, `compose.yaml`, `init.sh`).
+2. Comprobar que `init.sh` sigue pasando.
+3. Publicar: push de la rama y PR con `Closes #1`.
+
+
+### 🧑 **Juan Miguel** · 2026-11-12 23:50:24
+
+¿como va la ejecución de local-ai-gpu-spike?
+
+
+### 🤖 **Claude** · 2026-11-12 23:50:29
+
+> 🔧 **Bash**: `{"command": "W=/home/juanmi/Proyectos/hardwaremission.bricomission-worktrees/local-ai-gpu-spike; date; p=$(pgrep -f 'claude -p Use feature-flow for local-ai-gpu-spike'); [ -n \"$p\" ] && ps -o pid,etime,%cpu -p $p --no-headers || echo \"session not running\"; git -C $W status --short; git -C $W log `
+
+
+### 🤖 **Claude** · 2026-11-12 23:50:32
+
+> 🔧 **Bash**: `{"command": "pgrep -af 'claude -p' | cut -c1-70; for p in $(pgrep -f 'for local-ai-gpu-spike'); do ps -o pid=,etime=,%cpu= -p \"$p\"; done; ls -la /home/juanmi/Proyectos/hardwaremission.bricomission-worktrees/local-ai-gpu-spike/docs/spikes/ 2>&1 | tail -3", "description": "Confirm spike session proc`
+
+
+### 🤖 **Claude** · 2026-11-12 23:50:38
+
+`local-ai-gpu-spike` va bien. Lleva 34 minutos y está en la fase del **implementer**, midiendo con los modelos ya cargados.
+
+- **Sesión:** `claude -p` (PID 63344) sigue activa.
+- **LLM:** `llama-server` está corriendo con `Qwen3-30B-A3B-Instruct-2507-Q4_K_M.gguf` y con todas las capas en GPU (`-ngl 99`). Usa unos 18 GB de RAM: son los expertos del MoE en memoria del sistema, como prevé ADR 0001. Ahora mismo gasta mucha CPU (~860 %).
+- **ComfyUI:** está activo en el puerto 8188.
+- **GPU:** 4,2 GB de VRAM usados, 13 % de uso en el momento de la consulta.
+- **Disco:** 104 GB usados, unos 90 GB más que antes, por las descargas de modelos e imágenes. Quedan 357 GB libres.
+- **Archivos creados en el worktree:** `infra/ai/`, `infra/comfyui/`, `scripts/ai-spike/`, `docs/spikes/assets/` y cambios en `compose.yaml`.
+- **Estado:** sigue `in_progress` y todavía no hay commit ni evidencias registradas.
+
+Faltan las mediciones (VRAM, tokens/s, segundos por render), luego el validator, y después el merge de `main` y el PR.
+
+
+### 🧑 **Juan Miguel** · 2026-11-12 23:51:40
+
+como puedo visualizar el uso de GPU con alguna aplicación de bash?
+
+
+### 🤖 **Claude** · 2026-11-12 23:51:48
+
+> 🔧 **Bash**: `{"command": "for t in nvtop amdgpu_top radeontop btop; do printf '%s: ' $t; command -v $t || echo no; done; pacman -Si amdgpu_top nvtop 2>/dev/null | grep -E '^(Repo|Name|Version)' | paste - - -", "description": "Check installed and available GPU monitors"}`
+
+
+### 🤖 **Claude** · 2026-11-12 23:51:55
+
+Tienes dos opciones:
+
+**`amdgpu_top`** (recomendada para tu RX 9070 XT): muestra VRAM, GTT, uso de GPU, consumo, temperatura y uso por proceso, así que verás `llama-server` y ComfyUI por separado. Está en el repositorio `cachyos-extra-v3`:
+```bash
+sudo pacman -S amdgpu_top
+amdgpu_top          # interfaz de texto
+amdgpu_top --smi    # vista compacta tipo nvidia-smi
+```
+
+**`nvtop`**: está en `extra` y muestra una gráfica de uso y VRAM:
+```bash
+sudo pacman -S nvtop
+nvtop
+```
+
+Sin instalar nada, este comando lee los datos del driver cada segundo:
+```bash
+watch -n1 'd=/sys/class/drm/card1/device; echo "GPU $(cat $d/gpu_busy_percent)%  VRAM $(( $(cat $d/mem_info_vram_used)/1048576 ))/$(( $(cat $d/mem_info_vram_total)/1048576 )) MiB  GTT $(( $(cat $d/mem_info_gtt_used)/1048576 )) MiB"'
+```
+
+`btop` ya está instalado, pero para ver una GPU AMD necesita la librería `rocm-smi`, que no tienes.
+
+
+### 🧑 **Juan Miguel** · 2026-11-12 23:57:11
+
+¿dónde se han descargado los modelos? se perderán una vez terminado el worktree?
+
+
+### 🤖 **Claude** · 2026-11-12 23:57:18
+
+> 🔧 **Bash**: `{"command": "S=/tmp/claude-1000/-home-juanmi-Proyectos-hardwaremission-bricomission/f43e4370-93ae-4d11-927d-b8255aa114d7/scratchpad/ghflow; cat > $S/vols.sh <<'EOF'\ndocker volume ls --format '{{.Name}}' | while read v; do printf '%-55s %s\\n' \"$v\" \"$(docker run --rm -v \"$v\":/v alpine:3.20 du -`
+
+
+### 🤖 **Claude** · 2026-11-12 23:57:36
+
+Los modelos están en **volúmenes de Docker**, fuera del repositorio, en `/var/lib/docker/volumes/` del disco del sistema:
+
+| Volumen | Tamaño | Contenido |
+| --- | --- | --- |
+| `local-ai-gpu-spike_llm-models` | 17,3 GB | GGUF de Qwen3-30B-A3B (llama-server, solo lectura) |
+| `local-ai-gpu-spike_comfyui-models` | 11,1 GB | SDXL + ControlNet (ComfyUI) |
+| `local-ai-gpu-spike_comfyui-annotators` | 95 MB | Preprocesadores Depth/Canny |
+
+Docker ocupa ahora mismo **~150 GB**: 75 GB de imágenes, 31 GB de volúmenes y 46 GB de caché de build.
+
+**¿Se pierden al borrar el worktree?** No. Ni `git worktree remove` ni borrar la carpeta tocan los volúmenes. Solo se borrarían con `docker compose down -v` o `docker volume rm`.
+
+**Pero hay un problema:** el nombre de cada volumen empieza por el nombre del proyecto de compose. En el checkout principal ese prefijo es `hardwaremissionbricomission_`, no `local-ai-gpu-spike_`. Así que, después del merge, el `init.sh` de `main` (y cada worktree futuro) crearía volúmenes nuevos y **volvería a descargar ~28 GB**.
+
+**Solución:** al resolver los conflictos de esta rama, dar a esos volúmenes un nombre fijo en `compose.yaml`, igual para todos los proyectos:
+```yaml
+volumes:
+  llm-models:
+    name: bricomission_llm-models
+  comfyui-models:
+    name: bricomission_comfyui-models
+  comfyui-annotators:
+    name: bricomission_comfyui-annotators
+```
+Después, para no descargar de nuevo, copio los datos ya descargados a esos volúmenes con un contenedor auxiliar. Así todos los checkouts comparten los modelos y las bases de datos siguen separadas por proyecto.
+
+¿Lo incluyo en la integración de la rama de la prueba de GPU?
+
+
+### 🧑 **Juan Miguel** · 2026-11-12 23:59:29
+
+sí
+
+
+### 🤖 **Claude** · 2026-11-12 23:59:32
+
+Hecho: lo incluiré en la integración. Cuando termine la sesión de `local-ai-gpu-spike`, haré esto por orden:
+
+1. Integrar `origin/main` en `feature/local-ai-gpu-spike` y resolver los conflictos.
+2. Dar a los tres volúmenes un nombre fijo en `compose.yaml` (`bricomission_llm-models`, `bricomission_comfyui-models`, `bricomission_comfyui-annotators`).
+3. Copiar los ~28 GB ya descargados a los volúmenes nuevos con un contenedor auxiliar, sin volver a descargar.
+4. Comprobar que `init.sh` sigue pasando y que llama-server y ComfyUI arrancan con los volúmenes compartidos.
+5. Hacer commit, push y PR con `Closes #1`.
+
+
+### 🧑 **Juan Miguel** · 2026-11-12 23:59:45
+
+<task-notification>
+<task-id>b0udz8mic</task-id>
+<tool-use-id>toolu_01ALY6KU3Go89BfgQpC8ME3j</tool-use-id>
+<output-file>/tmp/claude-1000/-home-juanmi-Proyectos-hardwaremission-bricomission/f43e4370-93ae-4d11-927d-b8255aa114d7/tasks/b0udz8mic.output</output-file>
+<status>completed</status>
+<summary>Background command "Run headless feature-flow session for local-ai-gpu-spike" completed (exit code 0)</summary>
+</task-notification>
+
+
+### 🤖 **Claude** · 2026-11-12 23:59:48
+
+> 🔧 **Bash**: `{"command": "S=/tmp/claude-1000/-home-juanmi-Proyectos-hardwaremission-bricomission/f43e4370-93ae-4d11-927d-b8255aa114d7/scratchpad/ghflow; tail -c 5000 $S/local-ai-gpu-spike.log; W=/home/juanmi/Proyectos/hardwaremission.bricomission-worktrees/local-ai-gpu-spike; echo; echo \"== git\"; git -C $W sta`
+
+
+### 🤖 **Claude** · 2026-11-12 23:59:50
+
+Spike aceptada (`9b91ffc`). Integro `origin/main` en su rama.
+
+
+### 🤖 **Claude** · 2026-11-12 23:59:52
+
+> 🔧 **Bash**: `{"command": "cd /home/juanmi/Proyectos/hardwaremission.bricomission-worktrees/local-ai-gpu-spike && GIT_TERMINAL_PROMPT=0 git fetch -q origin main && git merge --no-ff --no-commit origin/main 2>&1 | tail -8; git status --short | grep -E '^(UU|AA|DU|UD)'", "description": "Merge origin/main into spike`
+
+
+### 🤖 **Claude** · 2026-11-12 23:59:58
+
+> 🔧 **Bash**: `{"command": "cd /home/juanmi/Proyectos/hardwaremission.bricomission-worktrees/local-ai-gpu-spike && for f in .env.example compose.yaml; do echo \"######## $f\"; awk '/^<<<<<<<|^=======|^>>>>>>>/{print NR\": \"$0; next} 1' $f | sed -n \"$(grep -n '^<<<<<<<' $f | head -1 | cut -d: -f1 | awk '{print ($`
