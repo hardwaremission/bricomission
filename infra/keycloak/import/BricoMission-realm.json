@@ -1,0 +1,202 @@
+{
+  "realm": "BricoMission",
+  "displayName": "BricoMission",
+  "enabled": true,
+  "sslRequired": "external",
+  "registrationAllowed": false,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "resetPasswordAllowed": false,
+  "accessTokenLifespan": 300,
+  "roles": {
+    "realm": [
+      {
+        "name": "user",
+        "description": "Homeowner (B2C): owns Projects, budgets and dossiers."
+      },
+      {
+        "name": "professional",
+        "description": "Professional (B2B) of a Company: bids on published dossiers once validated."
+      },
+      {
+        "name": "admin",
+        "description": "Administrator: back-office only, never acts as a Homeowner."
+      }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "bricomission-api",
+      "name": "BricoMission API",
+      "description": "Audience of the REST API access tokens. No login flow is enabled.",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "bearerOnly": true,
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false
+    },
+    {
+      "clientId": "bricomission-dev-cli",
+      "name": "BricoMission dev CLI",
+      "description": "Public client for local development and smoke tests only.",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": false,
+      "redirectUris": [
+        "http://localhost/dev-callback"
+      ],
+      "webOrigins": [],
+      "attributes": {
+        "pkce.code.challenge.method": "S256"
+      },
+      "protocolMappers": [
+        {
+          "name": "bricomission-api audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.client.audience": "bricomission-api",
+            "access.token.claim": "true",
+            "id.token.claim": "false",
+            "introspection.token.claim": "true"
+          }
+        }
+      ]
+    }
+  ],
+  "users": [
+    {
+      "username": "bm-admin",
+      "email": "admin@bricomission.local",
+      "emailVerified": true,
+      "firstName": "Ada",
+      "lastName": "Admin",
+      "enabled": true,
+      "realmRoles": [
+        "admin"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "${BM_SEED_ADMIN_PASSWORD}",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "bm-homeowner",
+      "email": "homeowner@bricomission.local",
+      "emailVerified": true,
+      "firstName": "Hugo",
+      "lastName": "Homeowner",
+      "enabled": true,
+      "realmRoles": [
+        "user"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "${BM_SEED_HOMEOWNER_PASSWORD}",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "bm-professional",
+      "email": "professional@bricomission.local",
+      "emailVerified": true,
+      "firstName": "Paula",
+      "lastName": "Professional",
+      "enabled": true,
+      "realmRoles": [
+        "professional"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "${BM_SEED_PROFESSIONAL_PASSWORD}",
+          "temporary": false
+        }
+      ]
+    }
+  ],
+  "smtpServer": {
+    "host": "mailpit",
+    "port": "1025",
+    "from": "noreply@bricomission.local",
+    "fromDisplayName": "BricoMission",
+    "auth": "false",
+    "ssl": "false",
+    "starttls": "false"
+  },
+  "browserFlow": "browser-email-otp",
+  "authenticationFlows": [
+    {
+      "alias": "browser-email-otp",
+      "description": "Browser login: SSO cookie, or password followed by an email one-time code.",
+      "providerId": "basic-flow",
+      "topLevel": true,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "authenticator": "auth-cookie",
+          "authenticatorFlow": false,
+          "requirement": "ALTERNATIVE",
+          "priority": 10,
+          "userSetupAllowed": false
+        },
+        {
+          "flowAlias": "browser-email-otp forms",
+          "authenticatorFlow": true,
+          "requirement": "ALTERNATIVE",
+          "priority": 20,
+          "userSetupAllowed": false
+        }
+      ]
+    },
+    {
+      "alias": "browser-email-otp forms",
+      "description": "Username and password, then a 6-digit code sent to the account email.",
+      "providerId": "basic-flow",
+      "topLevel": false,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "authenticator": "auth-username-password-form",
+          "authenticatorFlow": false,
+          "requirement": "REQUIRED",
+          "priority": 10,
+          "userSetupAllowed": false
+        },
+        {
+          "authenticator": "email-authenticator-no-enrollment",
+          "authenticatorConfig": "email-otp-6-digits",
+          "authenticatorFlow": false,
+          "requirement": "REQUIRED",
+          "priority": 20,
+          "userSetupAllowed": false
+        }
+      ]
+    }
+  ],
+  "authenticatorConfig": [
+    {
+      "alias": "email-otp-6-digits",
+      "config": {
+        "length": "6",
+        "ttl": "300",
+        "maxAttempts": "5",
+        "emailProviderType": "KEYCLOAK",
+        "simulationMode": "false"
+      }
+    }
+  ]
+}

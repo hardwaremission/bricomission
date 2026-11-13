@@ -38,6 +38,14 @@ Mobile-first PWA for Homeowners; the same PWA serves the B2B dashboard and the A
 
 OIDC Authorization Code + PKCE from the PWA; the API validates Keycloak JWTs and enforces resource rules from `docs/user-and-access-model.md`. Re-authentication (`max_age`/`prompt=login`) before Electronic Acceptance.
 
+Built in `keycloak-realm-roles` (2026-11-13):
+
+- Keycloak 26.8.2 runs in compose with `start-dev` and `KC_DB=dev-file`. That is H2 in the `keycloak-data` named volume, not PostgreSQL, a deliberate local-only choice: no shared-DB bootstrap, and each worktree gets an isolated realm. Production would use a Postgres-backed Keycloak (non-goal for the MVP).
+- The realm is imported from a versioned JSON on first start and skipped on later starts. Seed passwords are `${BM_SEED_*}` placeholders that Keycloak resolves from env at import time.
+- Fixed issuer `http://localhost:$KEYCLOAK_PORT/realms/BricoMission` (`KC_HOSTNAME`) for browser, CLI and API alike. The API fetches the JWKS over the compose backchannel (`http://keycloak:8080`, `KC_HOSTNAME_BACKCHANNEL_DYNAMIC`).
+- Access tokens carry `aud: bricomission-api` through an audience mapper on the client. The API checks RS256 signature, `iss`, `aud` and `exp`, and authorizes on `realm_access.roles`.
+- Email OTP: core Keycloak 26.8.2 has no email-code login authenticator, so the image adds the Apache-2.0 provider `mesutpiskin/keycloak-2fa-email-authenticator` v26.7.2. It uses authenticator `email-authenticator-no-enrollment`, a 6-digit code with 300 s TTL and 5 attempts, sent through the realm SMTP, which is Mailpit (`mailpit:1025`, from `noreply@bricomission.local`). The browser flow `browser-email-otp` runs cookie, then password, then the email code. The direct grant flow stays default (no code) for the dev-only CLI client.
+
 ## Deployment and Operations
 
 - Single `compose.yaml` at repo root: postgres, keycloak, minio, mailpit, llama-server, comfyui, (redis), api, web. Pinned image tags, named volumes, healthchecks.

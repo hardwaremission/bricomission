@@ -11,6 +11,20 @@ Identity, roles, and sessions are owned by Keycloak (realm `BricoMission`). The 
 | Professional | `professional` | Self-registration with corporate email, Company legal name, Tax ID (CIF/NIF); starts `pending_validation` |
 | Administrator | `admin` | Seeded in the realm; no self-registration |
 
+## Seeded Accounts (local realm)
+
+The realm import (`infra/keycloak/import/BricoMission-realm.json`) seeds one account per role. Passwords come from env vars with dev defaults in `.env.example`:
+
+| Username | Email | Realm role |
+| --- | --- | --- |
+| `bm-admin` | `admin@bricomission.local` | `admin` only (never `user` or `professional`) |
+| `bm-homeowner` | `homeowner@bricomission.local` | `user` |
+| `bm-professional` | `professional@bricomission.local` | `professional` |
+
+Browser password login requires a second step for every realm user: a 6-digit code sent by email (Mailpit offline). Google SSO arrives with `google-sso-login`.
+
+The API is default-deny. Every route needs a valid Keycloak access token unless it is marked public (`/health`, `/docs`). Role checks return 403. Resource-level rules (ownership, Company scoping) arrive with the features that own those resources.
+
 ## Roles
 
 - **Homeowner**: owns Kitchen Projects.
