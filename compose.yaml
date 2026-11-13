@@ -77,12 +77,13 @@ services:
       start_period: 10s
 
   keycloak:
-    # Pinned upstream quay.io/keycloak/keycloak:26.8.2 plus the email-OTP provider jar
+    # Pinned upstream quay.io/keycloak/keycloak:26.8.2 plus the email-OTP provider jar and the
+    # bricomission login/email theme
     # (see infra/keycloak/Dockerfile). Realm BricoMission is imported from the versioned
     # JSON on first start; later starts skip it (IGNORE_EXISTING) and keep the volume state.
     build:
       context: ./infra/keycloak
-    image: bricomission/keycloak:26.8.2-emailotp26.7.2
+    image: bricomission/keycloak:26.8.2-emailotp26.7.2-theme1
     restart: unless-stopped
     command: ["start-dev", "--import-realm"]
     depends_on:

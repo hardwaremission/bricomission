@@ -1,0 +1,448 @@
+/*
+ * BricoMission Keycloak login theme (feature keycloak-login-theme).
+ * Built from the approved OpenPencil design (docs/design/keycloak-login-theme.md) and the
+ * DESIGN.md tokens. The theme extends `base`, so this is the only stylesheet on the pages.
+ * Inter (variable, latin + latin-ext) is self-hosted from @fontsource-variable/inter 5.3.0
+ * (SIL OFL 1.1, see ../fonts/OFL.txt). No remote resources.
+ */
+
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url('../fonts/inter-latin-ext-wght-normal.woff2') format('woff2-variations');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url('../fonts/inter-latin-wght-normal.woff2') format('woff2-variations');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+:root {
+  --bm-primary: #1f4e79;
+  --bm-primary-hover: #173b5c;
+  --bm-secondary: #e8dcc8;
+  --bm-background: #fafaf8;
+  --bm-surface: #ffffff;
+  --bm-surface-muted: #f2f1ed;
+  --bm-border: #e2e0da;
+  --bm-text: #1c1c1e;
+  --bm-text-muted: #6b6b70;
+  --bm-warning: #b7791f;
+  --bm-danger: #c0392b;
+  --bm-focus: #2f80ed;
+  --bm-rounded-md: 12px;
+  --bm-rounded-pill: 999px;
+  --bm-font: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body.bm-body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--bm-background);
+  color: var(--bm-text);
+  font-family: var(--bm-font);
+  font-size: 14px;
+  line-height: 20px;
+  overflow-wrap: anywhere;
+}
+
+.bm-page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+/* Header: full width, h 64, px 16, wordmark 22/28 bold primary. */
+.bm-header {
+  display: flex;
+  align-items: center;
+  height: 64px;
+  padding: 0 16px;
+}
+
+.bm-wordmark {
+  margin: 0;
+  color: var(--bm-primary);
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 28px;
+}
+
+/* Content: column, gap 24, pt 32, px 16, pb 24 (32 on Create account). */
+.bm-content {
+  display: flex;
+  flex: 1 0 auto;
+  flex-direction: column;
+  gap: 24px;
+  padding: 32px 16px 24px;
+}
+
+.bm-content--register {
+  padding-bottom: 32px;
+}
+
+/* Intro: gap 8 (12 with a badge). */
+.bm-intro {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.bm-intro--badge {
+  gap: 12px;
+}
+
+.bm-title {
+  margin: 0;
+  color: var(--bm-text);
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 34px;
+}
+
+.bm-helper {
+  margin: 0;
+  color: var(--bm-text-muted);
+  font-size: 16px;
+  line-height: 24px;
+}
+
+.bm-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: var(--bm-rounded-pill);
+  background: var(--bm-secondary);
+  color: var(--bm-primary);
+}
+
+.bm-badge--danger {
+  color: var(--bm-danger);
+}
+
+.bm-badge--warning {
+  color: var(--bm-warning);
+}
+
+.bm-icon {
+  flex: none;
+  display: block;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* Form: column, gap 16. */
+.bm-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin: 0;
+}
+
+.bm-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.bm-label {
+  color: var(--bm-text);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 20px;
+}
+
+/* Input row: h 52, px 16, surfaceMuted fill, 1 px border, radius 12, value 16/24. */
+.bm-input-row {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: 52px;
+  border: 1px solid var(--bm-border);
+  border-radius: var(--bm-rounded-md);
+  background: var(--bm-surface-muted);
+}
+
+.bm-input-row--password {
+  padding-right: 4px;
+}
+
+.bm-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  width: 100%;
+  height: 50px;
+  margin: 0;
+  padding: 0 16px;
+  border: 0;
+  border-radius: var(--bm-rounded-md);
+  background: transparent;
+  color: var(--bm-text);
+  font-family: inherit;
+  font-size: 16px;
+  line-height: 24px;
+  outline: none;
+}
+
+/* Focus: 2 px focus stroke on the input row (same footprint as the 1 px border + 1 px inset). */
+.bm-input-row:focus-within {
+  border-color: var(--bm-focus);
+  box-shadow: inset 0 0 0 1px var(--bm-focus);
+}
+
+/* Error: 2 px danger stroke. */
+.bm-input-row--error,
+.bm-input-row--error:focus-within {
+  border-color: var(--bm-danger);
+  box-shadow: inset 0 0 0 1px var(--bm-danger);
+}
+
+/* Email code input: h 56, centered value 28/34 semibold, letter spacing 8. */
+.bm-input-row--code {
+  min-height: 56px;
+}
+
+.bm-input--code {
+  height: 54px;
+  text-align: center;
+  font-size: 28px;
+  font-weight: 600;
+  line-height: 34px;
+  letter-spacing: 8px;
+  font-variant-numeric: tabular-nums;
+}
+
+.bm-input:disabled {
+  color: var(--bm-text-muted);
+  cursor: not-allowed;
+}
+
+/* Show/hide toggle: 44x44, eye 20 textMuted. */
+.bm-toggle {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: var(--bm-rounded-pill);
+  background: transparent;
+  color: var(--bm-text-muted);
+  cursor: pointer;
+}
+
+.bm-toggle .bm-icon--hide,
+.bm-toggle[aria-pressed='true'] .bm-icon--show {
+  display: none;
+}
+
+.bm-toggle[aria-pressed='true'] .bm-icon--hide {
+  display: block;
+}
+
+.bm-hint {
+  margin: 0;
+  color: var(--bm-text-muted);
+  font-size: 14px;
+  line-height: 20px;
+}
+
+/* Field error: row, gap 6, icon 16 + text 14/20 danger. */
+.bm-field-error {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  color: var(--bm-danger);
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.bm-field-error .bm-icon {
+  margin-top: 2px;
+}
+
+/* Alert: row, gap 12, p 16, surface, radius 12, 1 px stroke in the state color. */
+.bm-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--bm-danger);
+  border-radius: var(--bm-rounded-md);
+  background: var(--bm-surface);
+  color: var(--bm-text);
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.bm-alert__text {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.bm-alert--error .bm-icon {
+  color: var(--bm-danger);
+}
+
+.bm-alert--warning {
+  border-color: var(--bm-warning);
+}
+
+.bm-alert--warning .bm-icon {
+  color: var(--bm-warning);
+}
+
+.bm-alert--info {
+  border-color: var(--bm-primary);
+}
+
+.bm-alert--info .bm-icon {
+  color: var(--bm-primary);
+}
+
+/* Buttons: full width, h 52, pill, label 16/24 semibold. */
+.bm-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 52px;
+  margin: 0;
+  padding: 12px 24px;
+  border: 1px solid transparent;
+  border-radius: var(--bm-rounded-pill);
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 24px;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.bm-button--primary {
+  background: var(--bm-primary);
+  color: #ffffff;
+}
+
+.bm-button--primary:hover {
+  background: var(--bm-primary-hover);
+}
+
+.bm-button--secondary {
+  border-color: var(--bm-border);
+  background: var(--bm-surface);
+  color: var(--bm-primary);
+}
+
+/* Links: h 44 touch rows, 14/20 medium primary, underlined. */
+.bm-links,
+.bm-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.bm-actions {
+  gap: 8px;
+}
+
+.bm-link-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-height: 44px;
+  color: var(--bm-text-muted);
+  text-align: center;
+}
+
+.bm-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 44px;
+  min-height: 44px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--bm-primary);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+  text-align: center;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* Visible 2 px focus ring on every interactive element. */
+.bm-button:focus-visible,
+.bm-link:focus-visible,
+.bm-toggle:focus-visible {
+  outline: 2px solid var(--bm-focus);
+  outline-offset: 2px;
+}
+
+.bm-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Fallback for base templates this theme does not override (kc*Class mapped in theme.properties). */
+.bm-generic-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.bm-generic-group input[type='text'],
+.bm-generic-group input[type='password'],
+.bm-generic-group input[type='email'] {
+  min-height: 52px;
+  padding: 0 16px;
+  border: 1px solid var(--bm-border);
+  border-radius: var(--bm-rounded-md);
+  background: var(--bm-surface-muted);
+  font-family: inherit;
+  font-size: 16px;
+}

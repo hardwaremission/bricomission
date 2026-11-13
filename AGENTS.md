@@ -54,9 +54,11 @@ Before writing code:
   - `bm-professional` (`professional`, `BM_SEED_PROFESSIONAL_PASSWORD`)
   - Master console admin: `KEYCLOAK_ADMIN_USERNAME` / `KEYCLOAK_ADMIN_PASSWORD`.
 - Browser login asks for the password, then a 6-digit code sent by email (read it in Mailpit). Password grants on the dev-only client `bricomission-dev-cli` skip the code.
+- Anyone can create an account on the Keycloak sign-in page ("Create account"). A new account gets exactly realm role `user` (default role) and must enter the email code before it is signed in.
+- Keycloak pages and the code email use the theme in `infra/keycloak/themes/bricomission/` (11 locales, chosen by the client's `ui_locales`). Keycloak stores no `locale` on accounts: never set that attribute, since it would override `ui_locales`. Theme changes need `docker compose up -d --build --wait keycloak`, not a realm reset.
 - `./scripts/keycloak-smoke.sh` checks role tokens, API 401/403/200, SMTP to Mailpit and the email-code login against the running stack.
 - The API is default-deny. A new route is protected unless it is explicitly `@Public()`. Restrict it by role with `@Roles(...)`.
-- The realm is imported only once per `keycloak-data` volume. After editing the realm JSON or the seed passwords, reset the realm: `docker compose rm -sf keycloak && docker volume rm ${COMPOSE_PROJECT_NAME}_keycloak-data`, then `docker compose up -d --build --wait`. Confirm the project name first; without `COMPOSE_PROJECT_NAME` it is the directory name.
+- The realm is imported only once per `keycloak-data` volume. After editing the realm JSON or the seed passwords, reset the realm: `docker compose rm -sf keycloak && docker volume rm ${COMPOSE_PROJECT_NAME}_keycloak-data`, then `docker compose up -d --build --wait`. Confirm the project name first; without `COMPOSE_PROJECT_NAME` it is the directory name. A realm volume older than `keycloak-login-theme` needs this reset; `./init.sh` detects it (no theme on the sign-in page) and prints the command.
 
 ## AI Services
 

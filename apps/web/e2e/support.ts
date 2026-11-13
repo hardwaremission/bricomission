@@ -1,6 +1,7 @@
+import { createHash, randomBytes } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import type { BrowserContext, Page } from '@playwright/test';
+import type { APIRequestContext, BrowserContext, Page } from '@playwright/test';
 
 export const LOCALES = ['en', 'es', 'fr', 'de', 'it', 'pt', 'nl', 'sv', 'no', 'da', 'fi'] as const;
 export type Locale = (typeof LOCALES)[number];
@@ -48,4 +49,124 @@ export async function smallTargets(page: Page) {
       .filter(({ box }) => box.width < 44 || box.height < 44)
       .map(({ el, box }) => `${el.tagName.toLowerCase()}[${el.dataset.testid ?? el.textContent?.trim()}] ${box.width}x${box.height}`),
   );
+}
+
+// --- Keycloak theme E2E (feature keycloak-login-theme) ---
+
+export function keycloakURL(): string {
+  return process.env.E2E_KEYCLOAK_URL ?? 'http://localhost:8180';
+}
+
+export function mailpitURL(): string {
+  return process.env.E2E_MAILPIT_URL ?? 'http://localhost:8025';
+}
+
+export function homeownerPassword(): string {
+  return process.env.E2E_SEED_HOMEOWNER_PASSWORD ?? 'bm-homeowner-dev';
+}
+
+export const KC_REALM_PATH = '/realms/BricoMission';
+export const DEV_CLIENT = 'bricomission-dev-cli';
+export const DEV_REDIRECT = 'http://localhost/dev-callback';
+
+export interface Pkce {
+  verifier: string;
+  challenge: string;
+}
+
+export function newPkce(): Pkce {
+  const verifier = randomBytes(48).toString('base64url');
+  return { verifier, challenge: createHash('sha256').update(verifier).digest('base64url') };
+}
+
+/** Authorization Code + PKCE URL of the dev client, with ui_locales and optional extra params. */
+export function keycloakAuthUrl(locale: string, pkce: Pkce, extra: Record<string, string> = {}): string {
+  const url = new URL(`${keycloakURL()}${KC_REALM_PATH}/protocol/openid-connect/auth`);
+  const params = {
+    client_id: DEV_CLIENT,
+    redirect_uri: DEV_REDIRECT,
+    response_type: 'code',
+    scope: 'openid',
+    code_challenge: pkce.challenge,
+    code_challenge_method: 'S256',
+    ui_locales: locale,
+    ...extra,
+  };
+  for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v);
+  return url.toString();
+}
+
+/**
+ * Localhost-only request guard: every browser request in the context must go to one of the
+ * allowed origins; anything else is aborted and recorded (the caller asserts the list is empty).
+ */
+export async function guardLocalhost(context: BrowserContext, allowedOrigins: string[]): Promise<string[]> {
+  const blocked: string[] = [];
+  await context.route('**/*', async (route) => {
+    const url = route.request().url();
+    if (url.startsWith('data:') || allowedOrigins.includes(new URL(url).origin)) return route.continue();
+    blocked.push(url);
+    return route.abort('blockedbyclient');
+  });
+  return blocked;
+}
+
+/** Messages of the Keycloak theme (login or email set), MessageFormat-unescaped. */
+export function kcMessages(set: 'login' | 'email', locale: string): Record<string, string> {
+  const file = fileURLToPath(new URL(`../../../infra/keycloak/themes/bricomission/${set}/messages/messages_${locale}.properties`, import.meta.url));
+  const out: Record<string, string> = {};
+  for (const raw of readFileSync(file, 'utf8').split('\n')) {
+    const line = raw.trim();
+    if (!line || line.startsWith('#')) continue;
+    const eq = line.indexOf('=');
+    out[line.slice(0, eq)] = line.slice(eq + 1).replaceAll("''", "'");
+  }
+  return out;
+}
+
+/** Fills MessageFormat arguments {0}, {1}, ... */
+export function fmt(message: string, ...args: Array<string | number>): string {
+  return message.replace(/\{(\d+)\}/g, (_, i: string) => String(args[Number(i)]));
+}
+
+export interface MailpitMessage {
+  id: string;
+  subject: string;
+  text: string;
+  html: string;
+  code: string;
+}
+
+async function mailpitSearch(request: APIRequestContext, email: string) {
+  const res = await request.get(`${mailpitURL()}/api/v1/search?query=${encodeURIComponent(`to:${email}`)}`);
+  return ((await res.json()) as { messages: Array<{ ID: string }> }).messages;
+}
+
+/**
+ * Deletes the Mailpit messages for `email`, runs `trigger`, then polls up to 15 s for the new
+ * code email and parses its 6-digit code (the code is on its own line in the text part).
+ */
+export async function mailpitCode(request: APIRequestContext, email: string, trigger: () => Promise<unknown>): Promise<MailpitMessage> {
+  await request.delete(`${mailpitURL()}/api/v1/search?query=${encodeURIComponent(`to:${email}`)}`);
+  await trigger();
+  for (let i = 0; i < 30; i++) {
+    const [first] = await mailpitSearch(request, email);
+    if (first) {
+      const msg = (await (await request.get(`${mailpitURL()}/api/v1/message/${first.ID}`)).json()) as { ID: string; Subject: string; Text: string; HTML: string };
+      const code = /^(\d{6})\s*$/m.exec(msg.Text)?.[1];
+      if (!code) throw new Error(`Mailpit message ${msg.ID} has no 6-digit code line`);
+      return { id: msg.ID, subject: msg.Subject, text: msg.Text, html: msg.HTML, code };
+    }
+    await new Promise((r) => setTimeout(r, 500));
+  }
+  throw new Error(`no email to ${email} in Mailpit within 15 s`);
+}
+
+/** Number of Mailpit messages for `email` right now. */
+export async function mailpitCount(request: APIRequestContext, email: string): Promise<number> {
+  return (await mailpitSearch(request, email)).length;
+}
+
+export async function mailpitClear(request: APIRequestContext, email: string) {
+  await request.delete(`${mailpitURL()}/api/v1/search?query=${encodeURIComponent(`to:${email}`)}`);
 }

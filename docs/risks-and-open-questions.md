@@ -12,6 +12,7 @@ None. Discovery is sufficient to derive the harness (`/harness-starter`).
 
 ## Resolved
 
+- Keycloak locale precedence (2026-11-13, `keycloak-login-theme`, developer decision: option a). A stored Keycloak account `locale` beats `ui_locales` and `kc_locale` on `/auth`, so the theme's register page stores no locale and new accounts never get one; `ui_locales` (the app language) decides every Keycloak page and the code email. The per-account preference lives in the app (`language-preference-account`), which must not write the Keycloak `locale` attribute. Rejected: syncing the attribute from the app (b), a custom `LocaleSelectorProvider` (c).
 - Embedding model for the RAG index (2026-11-13, `catalog-rag-ingestion`): `Qwen/Qwen3-Embedding-0.6B-GGUF` Q8_0, 1024 dimensions, CPU-only in the llama.cpp `server-b12316` image (no VRAM use). bge-m3 Q8_0 is the same-dimension fallback. See ADR 0004.
 - LLM model and quantization (2026-11-12, `local-ai-gpu-spike`): `unsloth/Qwen3-30B-A3B-Instruct-2507-GGUF` Q4_K_M, all experts in RAM (`--n-cpu-moe 48`). 3.2 GB VRAM peak, 25.5 tok/s generation, 3/3 valid schema-constrained JSON. See `docs/spikes/local-ai-gpu-spike.md`.
 - llama.cpp backend (2026-11-12, `local-ai-gpu-spike`): ROCm image `server-rocm-b12316`, native gfx1201. Vulkan works too, but prompt processing is half as fast (358 vs 771 tok/s).
@@ -49,6 +50,8 @@ None. Discovery is sufficient to derive the harness (`/harness-starter`).
 | Local LLM produces invalid JSON | Broken budget flow | Schema-constrained decoding (llama.cpp JSON schema / grammar), retries |
 | Keycloak + Google SSO setup time | Delay | Password login first; Google SSO late feature |
 | In-memory GPU jobs lost on API restart (`gpu-job-broker`) | Queued/running Renders or chat answers vanish; clients get 404 | Accepted for the single-instance MVP: clients retry on 404; product features persist their own outputs. Swap the `GpuJobBroker` implementation for a durable queue if restarts become common |
+| Keycloak theme overrides Keycloak and provider templates (`keycloak-login-theme`) | A Keycloak or email-OTP provider upgrade changes template variables or message keys; pages break or show English | Recheck `infra/keycloak/themes/bricomission` on every upgrade: run `pnpm test:e2e` (keycloak-theme spec) and `./scripts/keycloak-smoke.sh`. The theme also overrides the generic Keycloak key `expiredActionTokenSessionExistsMessage` with the expired-code copy (no action-token flows are enabled today) |
+| Default role `user` on every self-registered account | When `professional-registration` adds Professional sign-up, those accounts would also get `user` | That feature must use its own registration path or remove `user` for Professionals; seeded accounts are unaffected (imports do not apply default roles) |
 | Disk space for models | Stack fails | Optional: move Docker data-root and model weights to a data NVMe (see docs/technical-discovery.md); otherwise monitor free space on the 465 GB system disk |
 
 ## Research Tasks

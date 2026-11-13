@@ -23,6 +23,8 @@ The realm import (`infra/keycloak/import/BricoMission-realm.json`) seeds one acc
 
 Browser password login requires a second step for every realm user: a 6-digit code sent by email (Mailpit offline). Google SSO arrives with `google-sso-login`.
 
+Homeowner self-registration (`keycloak-login-theme`): the Keycloak sign-in page links to "Create account" (first name, last name, email, username, password, confirm password). The new account gets exactly realm role `user` through the default role and must enter the 6-digit email code before it is signed in (registration flow `registration-email-otp`). Seeded accounts keep only their listed role. Usernames and emails are unique; a taken username or email is reported on the field. Keycloak pages and the code email use the app's current language (`ui_locales`); Keycloak stores no language on the account. Keycloak SSO sessions end after 8 h idle (max 10 h). Professional self-registration with Tax ID is a separate feature (`professional-registration`); until then every self-registered account is a Homeowner.
+
 The API is default-deny. Every route needs a valid Keycloak access token unless it is marked public (`/health`, `/docs`). Role checks return 403. Resource-level rules (ownership, Company scoping) arrive with the features that own those resources.
 
 ## Roles
