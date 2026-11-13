@@ -4,13 +4,13 @@
 
 - Repository root: `/home/juanmi/Proyectos/hardwaremission.bricomission`
 - Standard startup path: `./init.sh`
-- Standard verification path: `./init.sh` (bootstrapped variant since `api-skeleton`) checks host prerequisites, validates `feature_list.json`, runs the workspace gate (`pnpm install --frozen-lockfile`, `pnpm -r lint`, `pnpm -r test`), then the compose gate (`docker compose up -d --build --wait`; postgres, minio, mailpit, api healthy) and requires `GET /health` to report `database: up`. Without Docker it skips the compose gate after the pnpm steps and exits 0; with an unreachable daemon, an unhealthy stack or API health not up it exits 1; without pnpm it exits 1 with no-sudo guidance.
-- Last accepted features: `api-skeleton` and `local-ai-gpu-spike` (validator ACCEPT, 2026-11-12), both run in parallel by github-flow `execute`
+- Standard verification path: `./init.sh` (bootstrapped variant since `api-skeleton`) checks host prerequisites, validates `feature_list.json`, runs the workspace gate (`pnpm install --frozen-lockfile`, `pnpm -r lint`, `pnpm -r test`), then the compose gate (`docker compose up -d --build --wait`; postgres, minio, mailpit, keycloak, api healthy). It requires `GET /health` to report `database: up` and, since `keycloak-realm-roles`, the realm `BricoMission` discovery issuer to equal `http://localhost:$KEYCLOAK_PORT/realms/BricoMission` ("Keycloak:" step). Real Keycloak behavior: `./scripts/keycloak-smoke.sh`. Without Docker it skips the compose gate after the pnpm steps and exits 0; with an unreachable daemon, an unhealthy stack or API health not up it exits 1; without pnpm it exits 1 with no-sudo guidance.
+- Last accepted features: `gpu-job-broker` (PR #8) and `keycloak-realm-roles` (PR #9), both merged; `catalog-rag-ingestion` (validator ACCEPT, 2026-11-13). Earlier `api-skeleton` and `local-ai-gpu-spike` (2026-11-12). The global default-deny `AuthGuard` protects `/ai/jobs/*` and `/catalog/search`.
 - Current next ready features: see `feature_list.json` (dependency-ready after these two)
-- `catalog-rag-ingestion`: `passing` (implemented and self-verified 2026-11-13, awaiting independent validation). Opt-in compose profiles `rag` (`embedder`, CPU-only) and `rag-fetch` (weights into `bricomission_embedding-models`); the api applies Prisma migrations best-effort on start.
+- Catalog RAG: Opt-in compose profiles `rag` (`embedder`, CPU-only) and `rag-fetch` (weights into `bricomission_embedding-models`); the api applies Prisma migrations best-effort on start.
 - Local AI stack: opt-in compose profiles `ai` (`llama-server`, `comfyui`) and `ai-fetch` (weights). Both run on the RX 9070 XT with ROCm in Docker. GPU jobs must be serialized (see `docs/spikes/local-ai-gpu-spike.md`). Weight volumes have fixed names (`bricomission_*`) shared by all checkouts.
 - Current blockers: none. pnpm 10.34.9 (pinned in `packageManager`) resolves through a corepack shim in `~/.local/bin` (host Node 26 has no bundled corepack). Agent shells started before the docker group was added must run docker through `newgrp docker` (no `sg` on this host).
-- Last verified at: 2026-11-12 (`./init.sh` exit 0 with the stack healthy; feature list valid)
+- Last verified at: 2026-11-13 (`./init.sh` exit 0 with the stack healthy; feature list valid; catalog-rag-ingestion validator ACCEPT)
 
 ## Session Log
 
@@ -80,6 +80,49 @@
 ### Session 005
 
 - Date: 2026-11-13
+- Goal: implement `gpu-job-broker` (spec `docs/specs/gpu-job-broker.md`), headless, in worktree `../hardwaremission.bricomission-worktrees/gpu-job-broker` (`COMPOSE_PROJECT_NAME=gpu-job-broker`, `API_PORT=3400`).
+- Completed:
+  - `packages/shared-types`: `GpuJobKind`, `GpuJobStatus`, `GpuJobErrorCode`, `GpuJobView`, `GpuJobEvent`.
+  - `apps/api/src/ai/`: `AiModule.register()` (dynamic; debug controller only with `GPU_BROKER_DEBUG_ENDPOINTS=true`), tokens, env-backed `AiEndpointsProvider`, adapter interfaces, deterministic fakes (`fake-adapter.support.ts` shared helper), `LlamaServerLlmAdapter`, `AiBackendError`; `jobs/`: `GpuJobBrokerService` (in-memory FIFO, head-of-line admission, image exclusive, LLM concurrency, per-kind timeouts with abort, codes-only errors, queue cap, retention, per-job event history + replay), errors, options (env parsing), no-op `GpuResidencyHook`, `GET /ai/jobs/:id`, SSE `GET /ai/jobs/:id/events`, debug `POST /ai/jobs`, DTOs.
+  - Tests: `test/gpu-job-broker.service.spec.ts`, `gpu-jobs.http.spec.ts`, `fake-adapters.spec.ts`, `llama-server-llm.adapter.spec.ts`, helper `gpu-test-helpers.ts`.
+  - `compose.yaml` api env (6 vars, defaults), `.env.example`, `ARCHITECTURE.md`, `docs/technical-discovery.md` (queue decision, VRAM policy), `docs/risks-and-open-questions.md` (queue resolved, restart-loss risk), `AGENTS.md` (AI_ADAPTERS line).
+- Verification run: frozen install (lockfile unchanged); `pnpm -r lint` exit 0; `pnpm -r test` 35 passed; compose up 4 healthy, `/health` up, POST flag off 404; compose SSE check with the debug flag (llm behind two images: queued pos 2 image, queued pos 1 image, running, done; stream closed; Last-Event-ID; unknown 404), flag restored; optional real-LLM smoke under `flock` (llama-server, `AI_ADAPTERS=local`: queued, running, done), llama-server stopped and api restored; `./init.sh` exit 0. Details in `feature_list.json` evidence.
+- Deviations from the spec: (1) `queued` events are re-emitted when the position *or* `waitingFor` changes (spec: position); (2) extra env `AI_FAKE_IMAGE_DELAY_MS` (3000) / `AI_FAKE_LLM_DELAY_MS` (500), code defaults only, so the running API's fakes take time and queueing is observable over SSE (tests override the adapters with gated fakes); (3) extra helper files `src/ai/adapters/fake-adapter.support.ts` and `test/gpu-test-helpers.ts`; (4) `position` is 1-based (spec Scenario 1 "position 1"); (5) the image slot is released only after `GpuResidencyHook.afterImage()` resolves.
+- Known risks: in-memory jobs are lost on API restart (documented in risks). Job endpoints have no auth yet (127.0.0.1 only, UUID v4 ids). The timeout/retention envs are not passed through compose (code defaults).
+- Not run: no persistent E2E harness yet. No commit.
+- Status: `passing`, ready for independent validation.
+- Next best step: validator on `gpu-job-broker`, then `controlnet-render`.
+- Independent validation: ACCEPT (2026-11-13). Published as PR #8 and merged.
+
+### Session 006
+
+- Date: 2026-11-13
+- Goal: implement `keycloak-realm-roles` (spec `docs/specs/keycloak-realm-roles.md`) headless in worktree `feature/keycloak-realm-roles` (`COMPOSE_PROJECT_NAME=keycloak-realm-roles`, `KEYCLOAK_PORT=8390`, `API_PORT=3300`).
+- Completed:
+  - Compose `keycloak` service. It is built from `infra/keycloak/Dockerfile`: `quay.io/keycloak/keycloak:26.8.2` plus the Apache-2.0 email-OTP provider jar, sha256-checked. It runs `start-dev --import-realm` with dev-file H2 in the `keycloak-data` volume, fixed issuer `KC_HOSTNAME`, a dynamic backchannel, a bash `/dev/tcp` healthcheck on the management port, and `127.0.0.1:${KEYCLOAK_PORT:-8180}`.
+  - Realm `infra/keycloak/import/BricoMission-realm.json`: roles `user`/`professional`/`admin`; clients `bricomission-api` (audience only) and `bricomission-dev-cli` (public, PKCE S256, audience mapper); seeded `bm-admin`/`bm-homeowner`/`bm-professional` with `${BM_SEED_*}` passwords; SMTP to Mailpit; browser flow `browser-email-otp` (cookie, then password, then email code).
+  - API `src/auth/`: `TokenVerifier` (`jose` 6.2.17), global default-deny `AuthGuard` (401/503), `RolesGuard` (403), and the `@Public()`, `@Roles()` and `@CurrentUser()` decorators. Routes `GET /me` and `src/admin/` `GET /admin/ping`. `/health` is `@Public()`. Swagger declares the bearer scheme. Shared types `RealmRole`, `MeResponse`, `AdminPingResponse`.
+  - Tests `test/auth.http.spec.ts`, `test/token-verifier.spec.ts` and `test/support/tokens.ts` use a local JWKS. Smoke script `scripts/keycloak-smoke.sh`.
+  - `init.sh` "Keycloak:" step and hints. Updated `.env.example`, `ARCHITECTURE.md`, `AGENTS.md` ("Identity"), `docs/technical-discovery.md`, `docs/user-and-access-model.md` and `docs/risks-and-open-questions.md`, plus the spec's Implementation Notes.
+- Verification run: frozen install, `pnpm -r lint` and `pnpm -r test` (36 passed, including the 7 pre-existing); `docker compose config -q`; pin awk check; fresh-volume `up --wait` (5 healthy) and realm import log; `restart` and `down`/`up` both skip the import; `./scripts/keycloak-smoke.sh` exit 0 (23 ok) on 3 runs; `ss -ltn` shows 127.0.0.1 only and no published 9000; cleartext grep finds nothing; `bash -n`; `./init.sh` exit 0; Keycloak step failure path exits 1. Details are in the `feature_list.json` evidence.
+- Deviations from the spec (recorded in the spec's Implementation Notes):
+  - The realm file must be named `BricoMission-realm.json`.
+  - The audience mapper sits on the client instead of in a custom default client scope, because defining `clientScopes` drops Keycloak's built-in scopes.
+  - The email-OTP fallback image was needed. Its jar is fetched in a `node:26.13.1-bookworm-slim` stage because the Keycloak image has no curl.
+  - The 503 mapping also covers the generic `JOSEError` and `JWKSInvalid` (JWKS failures).
+- Known risks:
+  - The email-OTP provider implements Keycloak internal SPIs (warnings at boot), so recheck it on every Keycloak upgrade.
+  - Password grants on `bricomission-dev-cli` skip the email code. That is acceptable only because the client is local and dev-only.
+  - Realm JSON or seed password changes need a realm volume reset (AGENTS.md "Identity").
+  - Future OIDC clients must add the `bricomission-api` audience mapper.
+- Not run: no persistent E2E harness yet (Playwright arrives with `web-pwa-shell`). No GPU. No commit.
+- State left: worktree stack running and healthy (5 services).
+- Independent validation: ACCEPT (2026-11-13). Validator re-ran lint/test (36/36), `./init.sh`, the smoke (23 ok), a fresh-volume import plus restart in a throwaway project, port, secret and checksum checks, and hostile-JWT probes (all 401, no token leakage). Non-blocking notes: `init.sh` port parsing with `cut -d: -f2` breaks on IPv6 output (smoke uses `awk -F: '{print $NF}'`); `@Public()` wins over `@Roles()` on the same route. Status `accepted`.
+- Next best step: publish via github-flow; then the next dependency-ready feature in `feature_list.json`.
+
+### Session 007
+
+- Date: 2026-11-13
 - Goal: implement `catalog-rag-ingestion` (spec `docs/specs/catalog-rag-ingestion.md`), headless, in worktree `feature/catalog-rag-ingestion` (`COMPOSE_PROJECT_NAME=catalog-rag-ingestion`, `API_PORT=3500`, `EMBEDDING_PORT=8591`).
 - Completed:
   - `compose.yaml`: `embedder` (profile `rag`; `llama.cpp:server-b12316` CPU, no devices; `--embeddings --pooling last -ngl 0`; 127.0.0.1:`EMBEDDING_PORT`) and `embedder-fetch` (profile `rag-fetch`). Volume `bricomission_embedding-models`. api env `EMBEDDING_URL`, `EMBEDDING_MODEL`, `EMBEDDING_QUERY_INSTRUCTION`.
@@ -100,7 +143,7 @@
 - State left: core stack healthy, embedder stopped, sample Catalog indexed in this worktree's database. Weights stay in `bricomission_embedding-models` (639 MB).
 - Known risks:
   - Future schema changes must keep the hand-written HNSW index and the extension in the SQL, because Prisma does not model them (`migrate dev` would see drift).
-  - `/catalog/search` is unauthenticated until `keycloak-realm-roles`.
+  - `/catalog/search` requires a valid Bearer token since the merge with `keycloak-realm-roles` (global default-deny `AuthGuard`).
   - The api image is larger now that the Prisma CLI is a runtime dependency.
 - Independent validation: ACCEPT (2026-11-13). Validator re-ran S1-S8 on the live stack: generator sha256 stable, embedder CPU-only (no devices) with 1024 dims on 127.0.0.1, ingest report with the page 5 no-text-layer warning, en/es/SKU search top hit page 3 with 189.90, re-run `unchanged` with identical id hashes, edition-2 replacement verified and restored, failure paths (exit 1/2, HTTP 503/400), 70 tests, `./init.sh` exit 0. Low non-blocking notes: SKU boost is case-sensitive; the embedder fetch checks size, not sha256 (sha256 recorded in ADR 0004); a mid-directory embedder failure loses earlier report lines. Status `accepted`.
 - Next best step: next dependency-ready feature in `feature_list.json`.

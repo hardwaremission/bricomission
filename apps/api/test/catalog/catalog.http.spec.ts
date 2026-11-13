@@ -12,7 +12,9 @@ import { CatalogIngestionService } from '../../src/catalog/catalog-ingestion.ser
 import { CATALOG_REPOSITORY } from '../../src/catalog/catalog.repository.js';
 import { EMBEDDER, EmbeddingUnavailableError } from '../../src/catalog/embedding/embedder.js';
 import { FakeEmbedder } from '../../src/catalog/embedding/fake.embedder.js';
+import { KEY_RESOLVER } from '../../src/auth/token-verifier.service.js';
 import { PrismaService } from '../../src/prisma/prisma.service.js';
+import { createTestKeys, signToken } from '../support/tokens.js';
 import { InMemoryCatalogRepository, tempDir } from './helpers.js';
 
 // DB-free, model-free HTTP tests: fake embedder + in-memory repository.
@@ -20,8 +22,14 @@ describe('HTTP GET /catalog/search', () => {
   let app: INestApplication;
   const embedder = new FakeEmbedder();
   const repo = new InMemoryCatalogRepository();
+  let token: string;
+  // AppModule includes the global default-deny AuthGuard (keycloak-realm-roles): requests carry a
+  // Bearer token signed by a local JWKS that stands in for Keycloak.
+  const api = () => request.agent(app.getHttpServer()).set('Authorization', `Bearer ${token}`);
 
   beforeAll(async () => {
+    const keys = await createTestKeys('kc-test-key');
+    token = await signToken(keys, { roles: ['user'] });
     const dir = await tempDir();
     await writeFile(join(dir, SAMPLE_CATALOG_FILE_NAME), await buildSampleCatalog());
     await new CatalogIngestionService(repo, embedder).ingestDirectory(dir);
@@ -33,6 +41,8 @@ describe('HTTP GET /catalog/search', () => {
       .useValue(embedder)
       .overrideProvider(CATALOG_REPOSITORY)
       .useValue(repo)
+      .overrideProvider(KEY_RESOLVER)
+      .useValue(keys.resolver)
       .compile();
     app = configureApp(moduleRef.createNestApplication({ logger: false }));
     await app.init();
@@ -43,8 +53,13 @@ describe('HTTP GET /catalog/search', () => {
     await app.close();
   });
 
+  it('401 without a token', async () => {
+    const res = await request(app.getHttpServer()).get('/catalog/search').query({ q: 'oak' });
+    expect(res.status).toBe(401);
+  });
+
   it('200 with document and page references', async () => {
-    const res = await request(app.getHttpServer()).get('/catalog/search').query({ q: 'oak laminate worktop', limit: 5 });
+    const res = await api().get('/catalog/search').query({ q: 'oak laminate worktop', limit: 5 });
     expect(res.status).toBe(200);
     expect(res.body.query).toBe('oak laminate worktop');
     const [top] = res.body.results;
@@ -58,7 +73,7 @@ describe('HTTP GET /catalog/search', () => {
   });
 
   it('200 with the SKU chunk first for a SKU query', async () => {
-    const res = await request(app.getHttpServer()).get('/catalog/search?q=BM-SYN-WTP-300');
+    const res = await api().get('/catalog/search?q=BM-SYN-WTP-300');
     expect(res.status).toBe(200);
     expect(res.body.results[0]).toMatchObject({ pageNumber: 3, matchedSku: true });
     expect(res.body.results.length).toBeLessThanOrEqual(5);
@@ -67,7 +82,7 @@ describe('HTTP GET /catalog/search', () => {
   it.each(['/catalog/search', '/catalog/search?q=%20%20', '/catalog/search?q=oak&limit=0', '/catalog/search?q=oak&limit=21', `/catalog/search?q=${'a'.repeat(501)}`])(
     '400 for %s',
     async (url) => {
-      const res = await request(app.getHttpServer()).get(url);
+      const res = await api().get(url);
       expect(res.status).toBe(400);
     },
   );
@@ -76,7 +91,7 @@ describe('HTTP GET /catalog/search', () => {
     vi.spyOn(embedder, 'embedQuery').mockRejectedValueOnce(
       new EmbeddingUnavailableError('embedding endpoint unreachable (http://embedder:8080 secret)'),
     );
-    const res = await request(app.getHttpServer()).get('/catalog/search?q=oak');
+    const res = await api().get('/catalog/search?q=oak');
     expect(res.status).toBe(503);
     expect(res.body.message).toBe('Catalog search is temporarily unavailable');
     expect(res.text).not.toMatch(/embedder:8080|secret/);
@@ -84,13 +99,13 @@ describe('HTTP GET /catalog/search', () => {
 
   it('503 when the database is unreachable', async () => {
     vi.spyOn(repo, 'searchByVector').mockRejectedValueOnce(new Error('connect ECONNREFUSED postgres:5432 password=x'));
-    const res = await request(app.getHttpServer()).get('/catalog/search?q=oak');
+    const res = await api().get('/catalog/search?q=oak');
     expect(res.status).toBe(503);
     expect(res.text).not.toContain('ECONNREFUSED');
   });
 
   it('/docs-json documents /catalog/search with 200, 400 and 503', async () => {
-    const res = await request(app.getHttpServer()).get('/docs-json');
+    const res = await api().get('/docs-json');
     const op = res.body.paths['/catalog/search'].get;
     expect(Object.keys(op.responses)).toEqual(expect.arrayContaining(['200', '400', '503']));
     expect(op.parameters.map((p: { name: string }) => p.name)).toEqual(expect.arrayContaining(['q', 'limit']));

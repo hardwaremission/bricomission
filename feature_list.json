@@ -112,13 +112,25 @@
     "title": "Keycloak realm issues tokens the API authorizes by role",
     "user_visible_behavior": "Keycloak runs in compose with realm BricoMission (roles user, professional, admin, seeded admin and demo accounts); API endpoints reject requests without a valid token or with the wrong role.",
     "depends_on": ["api-skeleton"],
-    "status": "not_started",
+    "status": "accepted",
     "verification": [
       "Realm is imported from a versioned JSON on container start",
       "API test: request without token -> 401, user token on admin route -> 403, admin token -> 200",
       "Email OTP configured with Mailpit as SMTP"
     ],
-    "evidence": [],
+    "evidence": [
+      "2026-11-13 implementer (headless, worktree COMPOSE_PROJECT_NAME=keycloak-realm-roles, KEYCLOAK_PORT=8390, API_PORT=3300). Spec docs/specs/keycloak-realm-roles.md (Implementation Notes list deviations).",
+      "Image: quay.io/keycloak/keycloak:26.8.2 (digest sha256:c68e286cacd87b942ac1939a0a1481461109d6acd3a57dc496969a319a76bbf0), built locally as bricomission/keycloak:26.8.2-emailotp26.7.2 via infra/keycloak/Dockerfile.",
+      "Email OTP: core 26.8.2 has no email-code authenticator (AuthenticatorFactory scan + /authentication/authenticator-providers). Fallback jar mesutpiskin/keycloak-2fa-email-authenticator v26.7.2 (KC26.8.2 build), Apache-2.0, sha256 0e3dd714f0f20e7a1cd26cbe721fc12bef3be64c4c0abb221d9521d5331061fc, provider id email-authenticator-no-enrollment (6 digits, ttl 300 s, 5 attempts).",
+      "jose 6.2.17 (exact). pnpm install --frozen-lockfile, pnpm -r lint: exit 0. pnpm -r test: 4 files, 36 tests passed (7 pre-existing + 12 token-verifier + 17 auth.http covering every Scenario 4 case: 401 + WWW-Authenticate, 403 user/professional, 200 admin, /me, expired/wrong iss/wrong aud/foreign key/alg none/malformed/non-Bearer -> 401, JWKS timeout/unreachable -> 503 without details, /health public, docs-json bearer security on /me and /admin/ping).",
+      "S1: fresh keycloak-data volume -> docker compose up -d --build --wait: 5 services healthy; discovery issuer http://localhost:8390/realms/BricoMission; log 'Importing from directory /opt/keycloak/bin/../data/import' + \"Realm 'BricoMission' imported\".",
+      "S2: docker compose restart keycloak and down/up: healthy again, log \"Realm 'BricoMission' already exists. Import skipped\"; smoke re-run exit 0 both times.",
+      "S3/S5/S6/S7: ./scripts/keycloak-smoke.sh exit 0, 23 [ok], 0 [fail] (3 runs). Tokens: realm_access.roles exactly [admin]/[user]/[professional], aud bricomission-api. API: no token 401, homeowner 403, professional 403, admin 200, /me username bm-homeowner. Mailpit: 'Verify email' from noreply@bricomission.local; email-code login: password -> code form (HTTP 200), 6-digit code mail received, wrong code -> form again, right code -> 302 http://localhost/dev-callback?code=..., PKCE exchange -> role user.",
+      "Extra: keycloak stopped -> /health 200; /admin/ping with unknown kid -> 503 after the 3 s JWKS timeout, api log 'Token verification unavailable (JWKSTimeout)'.",
+      "Ports: ss -ltn shows 127.0.0.1:8390 only; keycloak publishes no 9000 (docker ps: 9000/tcp internal). Pin awk check exit 0. git grep '\"value\": *\"[^$]' infra/keycloak: no matches. bash -n init.sh scripts/keycloak-smoke.sh: ok.",
+      "./init.sh exit 0 (fresh realm volume): 5 healthy services, 'Keycloak:' step 'realm BricoMission issuer -> http://localhost:8390/realms/BricoMission'. Failure path: the Keycloak step run with a wrong port exits 1 and prints the issuer mismatch plus docker compose logs --tail 50 keycloak.",
+      "2026-11-13 independent validator ACCEPT: re-ran pnpm lint/test (36/36), ./init.sh exit 0 (5 healthy), keycloak-smoke.sh 23 ok / 0 fail, fresh-volume import + restart skip in throwaway project, 127.0.0.1-only bindings, jar sha256 match, hostile-JWT probes all 401 without token leakage."
+    ],
     "notes": "docs/user-and-access-model.md. Secrets via .env (git-ignored) with .env.example committed. Google SSO is a later feature."
   },
   {
@@ -183,14 +195,26 @@
     "title": "API serializes GPU jobs and streams their status",
     "user_visible_behavior": "AI requests go through one API job broker: image jobs run one at a time, chat waits while the GPU is busy, and clients receive queued/running/done status over SSE.",
     "depends_on": ["local-ai-gpu-spike", "api-skeleton"],
-    "status": "not_started",
+    "status": "accepted",
     "verification": [
       "Test with fake AI adapters: two image jobs never overlap; chat request during an image job is queued then served",
       "SSE endpoint emits ordered status events for a job",
       "AI adapters are behind interfaces with deterministic fakes"
     ],
-    "evidence": [],
-    "notes": "docs/technical-discovery.md GPU Serialization. Queue technology (BullMQ+Redis vs Postgres) decided in the spec. Endpoints read from platform settings (default: compose service URLs)."
+    "evidence": [
+      "2026-11-13 implementer: pnpm install --frozen-lockfile exit 0, pnpm-lock.yaml unchanged (no new dependency)",
+      "pnpm -r lint exit 0; pnpm -r test exit 0, 35 passed (5 files; 28 new)",
+      "broker tests (11): two image jobs never overlap (maxActive 1, submission order); llm submitted during image is queued with waitingFor image, then served; queued image blocks later llm (FIFO); llm concurrency 2 runs two llm jobs together but never with image; adapter error -> failed adapter_error, next job starts; timeout aborts signal -> failed timeout, slot freed, late settle ignored; timeout aborts a fake adapter through its signal; queue full throws; retention evicts finished jobs; events have strictly increasing seq and end with one terminal event; residency hook wraps every image job",
+      "HTTP tests (9): debug POST 404 flag off; GET job 404/400; SSE 404 unknown; /docs-json has /ai/jobs/{id} and /ai/jobs/{id}/events (text/event-stream) and no POST when off; POST 202 + GET 200 + invalid body 400; live SSE queued,queued,running,done with increasing ids and stream end, late replay equal, Last-Event-ID 2 -> ids 3,4; failed stream ends with failed adapter_error, no adapter text; POST 202/429 documented; 429 with GPU_BROKER_MAX_QUEUED=1",
+      "adapter tests (8): fakes deterministic, overlap tracking, abort; llama adapter sends response_format json_schema (name out, strict) and maps usage against a node:http stub; non-2xx -> AiBackendError(500) without body; malformed body -> AiBackendError",
+      "grep setTimeout apps/api/test/gpu-*: no matches (timeouts are 5-10 ms option values; completion driven by gates)",
+      "compose (COMPOSE_PROJECT_NAME=gpu-job-broker, API_PORT=3400): config -q exit 0; up -d --build --wait exit 0, 4 healthy; /health {status:ok,database:up}; POST /ai/jobs flag off -> 404; /docs-json paths [/health, /ai/jobs/{id}, /ai/jobs/{id}/events]",
+      "compose SSE check (GPU_BROKER_DEBUG_ENDPOINTS=true, fake delays 3000/500 ms): POST image, image, llm -> llm view queued position 2 waitingFor image; curl -sN events: queued(id 1, pos 2, image), queued(id 2, pos 1, image), running(id 3), done(id 4), stream ended after 6.5 s, curl exit 0; Last-Event-ID 2 -> ids 3,4; unknown id -> 404; flag restored (api env GPU_BROKER_DEBUG_ENDPOINTS=false, AI_ADAPTERS=fake)",
+      "optional real-LLM smoke under flock /tmp/bricomission-gpu.lock: llama-server up healthy, api AI_ADAPTERS=local + debug: POST llm 'Say OK' -> events queued,running,done in 0.34 s; image adapter fake warning logged once; llama-server stopped afterwards, api restored to fake/false",
+      "./init.sh exit 0 (workspace gate + compose gate, /health database up)",
+      "2026-11-13 independent validator ACCEPT: re-ran frozen install (lockfile unchanged), lint 0, test 35/35 (x6 stable), ./init.sh 0 (ports 5404/9400/9401/8425/1425/3400), compose SSE check queued(2,image)/queued(1,image)/running/done + Last-Event-ID replay + unknown 404 / invalid 400, debug flag restored"
+    ],
+    "notes": "Spec: docs/specs/gpu-job-broker.md. docs/technical-discovery.md GPU Serialization. Queue decided: in-process in-memory FIFO scheduler (single API instance, no Redis, no migrations; jobs lost on restart). Endpoints via an env-backed AiEndpointsProvider (default: compose service URLs) that admin-service-endpoints later backs with Platform Settings. Image adapter fake only here; real ComfyUI adapter in controlnet-render."
   },
   {
     "id": "controlnet-render",

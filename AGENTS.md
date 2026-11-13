@@ -25,9 +25,9 @@ Before writing code:
 1. Confirm the working directory with `pwd`.
 2. Read `PROGRESS.md` for current verified state and next step.
 3. Read `feature_list.json` and pick the first ready unfinished feature in list order (all `depends_on` accepted).
-4. Run `./init.sh`. It runs the workspace gate (`pnpm install --frozen-lockfile`, `pnpm -r lint`, `pnpm -r test`), then the compose gate (`docker compose up -d --build --wait`, then `/health` must report `database: up`). If it reports Docker missing or the daemon unreachable, ask the developer to run `./scripts/install-host-prereqs.sh` in their own terminal (it uses sudo) and re-login. Agents never run the install mode or `sudo`; they only run `./scripts/install-host-prereqs.sh --check`.
+4. Run `./init.sh`. It runs the workspace gate (`pnpm install --frozen-lockfile`, `pnpm -r lint`, `pnpm -r test`), then the compose gate (`docker compose up -d --build --wait`, then `/health` must report `database: up` and Keycloak must serve realm `BricoMission` with issuer `http://localhost:$KEYCLOAK_PORT/realms/BricoMission`). If it reports Docker missing or the daemon unreachable, ask the developer to run `./scripts/install-host-prereqs.sh` in their own terminal (it uses sudo) and re-login. Agents never run the install mode or `sudo`; they only run `./scripts/install-host-prereqs.sh --check`.
    - pnpm (version pinned in `package.json` `packageManager`) must be resolvable as `pnpm` or `corepack pnpm`. Without sudo: `corepack enable --install-directory "$HOME/.local/bin" pnpm`, or `npx --yes corepack@0.36.0 enable --install-directory "$HOME/.local/bin" pnpm`, or `npm install --prefix "$HOME/.local" pnpm@<pinned>`. Set `COREPACK_ENABLE_DOWNLOAD_PROMPT=0` in headless shells.
-   - Baseline commands: `pnpm -r lint` and `pnpm -r test` (no database needed). Parallel worktrees set `COMPOSE_PROJECT_NAME` and the port env vars (including `API_PORT`) before any `docker compose` command.
+   - Baseline commands: `pnpm -r lint` and `pnpm -r test` (no database needed). Parallel worktrees set `COMPOSE_PROJECT_NAME` and the port env vars (including `API_PORT` and `KEYCLOAK_PORT`) before any `docker compose` command.
 5. If baseline verification fails, fix the baseline before adding new feature work.
 
 ## Working Rules
@@ -42,6 +42,19 @@ Before writing code:
 - Do not mark a feature done just because code exists. Do not silently change verification rules.
 - Git: repository-local identity only, never `gh`, never merge PRs. Subagents never commit.
 
+## Identity
+
+- Keycloak realm `BricoMission` comes from `infra/keycloak/import/BricoMission-realm.json`. Its realm roles are `user`, `professional` and `admin`.
+- Seeded accounts (passwords from env, defaults in `.env.example`):
+  - `bm-admin` (`admin`, `BM_SEED_ADMIN_PASSWORD`)
+  - `bm-homeowner` (`user`, `BM_SEED_HOMEOWNER_PASSWORD`)
+  - `bm-professional` (`professional`, `BM_SEED_PROFESSIONAL_PASSWORD`)
+  - Master console admin: `KEYCLOAK_ADMIN_USERNAME` / `KEYCLOAK_ADMIN_PASSWORD`.
+- Browser login asks for the password, then a 6-digit code sent by email (read it in Mailpit). Password grants on the dev-only client `bricomission-dev-cli` skip the code.
+- `./scripts/keycloak-smoke.sh` checks role tokens, API 401/403/200, SMTP to Mailpit and the email-code login against the running stack.
+- The API is default-deny. A new route is protected unless it is explicitly `@Public()`. Restrict it by role with `@Roles(...)`.
+- The realm is imported only once per `keycloak-data` volume. After editing the realm JSON or the seed passwords, reset the realm: `docker compose rm -sf keycloak && docker volume rm ${COMPOSE_PROJECT_NAME}_keycloak-data`, then `docker compose up -d --build --wait`. Confirm the project name first; without `COMPOSE_PROJECT_NAME` it is the directory name.
+
 ## AI Services
 
 - The local AI stack is opt-in and GPU-bound, so `./init.sh` never starts it.
@@ -50,6 +63,7 @@ Before writing code:
   - Stop: `docker compose --profile ai stop llama-server comfyui` (name the services: a bare `--profile ai stop/down` also stops the core stack).
 - Measured on 2026-11-12: serialization required. The LLM uses about 3.2 GB of VRAM; ComfyUI fills the card (about 15 GB) during a render. Run renders alone. Free VRAM with ComfyUI `POST /free` or `docker compose stop llama-server`. Numbers: `docs/spikes/local-ai-gpu-spike.md`.
 - Spike tools: `scripts/ai-spike/{llm-bench,comfy-run,vram-sample}.sh`.
+- The API reaches llama-server only with `AI_ADAPTERS=local`; the default `fake` uses deterministic adapters and never touches the GPU.
 - Catalog RAG embedder (ADR 0004). It is CPU-only: do not add GPU devices, `group_add` or `-ngl` > 0 to it.
   - Download the weights once: `docker compose --profile rag-fetch run --rm embedder-fetch` (about 640 MB into `bricomission_embedding-models`; idempotent).
   - Start: `docker compose --profile rag up -d --wait embedder` (`EMBEDDING_PORT` 8090 on 127.0.0.1). Stop: `docker compose --profile rag stop embedder` (name the service).

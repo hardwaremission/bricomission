@@ -2,8 +2,9 @@
 # Standard startup and verification path for BricoMission.
 # Status: bootstrapped. Checks host prerequisites and feature_list.json, runs the
 # pnpm workspace gate (frozen install, lint, test), then builds and starts the
-# detached compose stack (postgres, minio, mailpit, api) with
-# `docker compose up -d --build --wait` and verifies GET /health reports database up.
+# detached compose stack (postgres, minio, mailpit, keycloak, api) with
+# `docker compose up -d --build --wait`, verifies GET /health reports database up and
+# that Keycloak serves realm BricoMission with the expected issuer.
 # Never runs foreground or long-running dev servers.
 set -euo pipefail
 
@@ -120,12 +121,28 @@ fi
 echo "  GET /health -> $health (database: up)"
 
 echo
+echo "Keycloak:"
+kc_port=$(docker compose port keycloak 8080 | cut -d: -f2)
+kc_expected="http://localhost:${kc_port}/realms/BricoMission"
+kc_issuer=$(curl -sS --max-time 10 "http://127.0.0.1:${kc_port}/realms/BricoMission/.well-known/openid-configuration" 2>/dev/null |
+  python3 -c "import json,sys; print(json.load(sys.stdin).get('issuer',''))" 2>/dev/null || true)
+if [ "$kc_issuer" != "$kc_expected" ]; then
+  echo "ERROR: realm BricoMission discovery issuer is '${kc_issuer:-<none>}', expected '$kc_expected'" >&2
+  docker compose logs --tail 50 keycloak >&2 || true
+  exit 1
+fi
+echo "  realm BricoMission issuer -> $kc_issuer"
+
+echo
 echo "Stack is up and healthy (detached)."
 echo "  API:      http://127.0.0.1:${api_port}/health"
 echo "  API docs: http://127.0.0.1:${api_port}/docs  (OpenAPI JSON: /docs-json)"
+echo "  Keycloak: http://localhost:${kc_port}/admin  (master bootstrap admin, KEYCLOAK_ADMIN_*)"
+echo "  Account:  http://localhost:${kc_port}/realms/BricoMission/account  (bm-homeowner / bm-professional / bm-admin; email code in Mailpit)"
 echo "Next step: run /feature-flow on the first ready feature in feature_list.json."
 echo "Useful commands:"
 echo "  ${PNPM[*]} -r lint && ${PNPM[*]} -r test  # workspace verification (no database needed)"
+echo "  ./scripts/keycloak-smoke.sh             # realm roles, API 401/403/200, Mailpit SMTP, email-code login"
 echo "  docker compose up -d --build --wait     # rebuild the api image after code changes"
 echo "  docker compose logs -f <service>        # follow one service's logs"
 echo "  docker compose down                     # stop the stack (keeps named volumes)"
