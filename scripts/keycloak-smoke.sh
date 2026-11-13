@@ -178,11 +178,12 @@ else
   else
     fail "expected the email code form after the password (HTTP $pw_status)"
   fi
-  code_msg=$(mailpit_wait "'access code' in m['Subject'].lower()")
+  # Code email of the bricomission email theme (en: bm-homeowner has no stored locale).
+  code_msg=$(mailpit_wait "m['Subject'] == 'Your BricoMission code'")
   otp=""
   if [ -n "$code_msg" ]; then
     otp=$(curl -s --max-time 5 "$MAILPIT/api/v1/message/$code_msg" |
-      json "__import__('re').search(r'Access code: (\d+)', d['Text']).group(1)")
+      json "__import__('re').search(r'^(\d{6})\s*$', d['Text'], __import__('re').M).group(1)")
   fi
   if [ -n "$otp" ]; then
     ok "Mailpit received the login code email (id $code_msg, ${#otp} digits)"

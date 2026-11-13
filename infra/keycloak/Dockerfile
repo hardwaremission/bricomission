@@ -1,4 +1,5 @@
-# BricoMission Keycloak image: pinned upstream Keycloak plus one email-OTP provider.
+# BricoMission Keycloak image: pinned upstream Keycloak plus one email-OTP provider and the
+# BricoMission theme (infra/keycloak/themes/bricomission).
 # Keycloak 26.8.2 core ships no email-code login authenticator (probed 2026-11-13:
 # no such AuthenticatorFactory in /opt/keycloak/lib/lib/main), so the browser flow
 # uses mesutpiskin/keycloak-2fa-email-authenticator (Apache-2.0), provider id
@@ -18,6 +19,9 @@ RUN node -e "fetch(process.argv[1]).then(async (r) => { if (!r.ok) throw new Err
 
 FROM quay.io/keycloak/keycloak:26.8.2
 COPY --from=fetch --chown=1000:0 /fetch/email-otp.jar /opt/keycloak/providers/keycloak-2fa-email-authenticator.jar
+# BricoMission login + email theme (feature keycloak-login-theme): realm loginTheme/emailTheme
+# `bricomission`. Copied from the build context, so offline rebuilds keep working.
+COPY --chown=1000:0 themes/bricomission /opt/keycloak/themes/bricomission
 # Pre-register the provider; start-dev re-augments for its dev profile on boot anyway.
 # The h2 directory must exist (owned by the keycloak user) so a fresh named volume
 # mounted there inherits writable ownership.

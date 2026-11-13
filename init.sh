@@ -4,7 +4,8 @@
 # pnpm workspace gate (frozen install, lint, test), then builds and starts the
 # detached compose stack (6 services: postgres, minio, mailpit, keycloak, api, web) with
 # `docker compose up -d --build --wait`, verifies GET /health reports database up, that
-# Keycloak serves realm BricoMission with the expected issuer, and that the web PWA
+# Keycloak serves realm BricoMission with the expected issuer and the bricomission login
+# theme (stale realm volumes get the reset command), and that the web PWA
 # serves a localized Home, Language Selection, its manifest and the /api proxy.
 # Never runs foreground or long-running dev servers, Playwright or Lighthouse.
 set -euo pipefail
@@ -123,7 +124,7 @@ echo "  GET /health -> $health (database: up)"
 
 echo
 echo "Keycloak:"
-kc_port=$(docker compose port keycloak 8080 | cut -d: -f2)
+kc_port=$(docker compose port keycloak 8080 | awk -F: '{print $NF}')
 kc_expected="http://localhost:${kc_port}/realms/BricoMission"
 kc_issuer=$(curl -sS --max-time 10 "http://127.0.0.1:${kc_port}/realms/BricoMission/.well-known/openid-configuration" 2>/dev/null |
   python3 -c "import json,sys; print(json.load(sys.stdin).get('issuer',''))" 2>/dev/null || true)
@@ -133,6 +134,23 @@ if [ "$kc_issuer" != "$kc_expected" ]; then
   exit 1
 fi
 echo "  realm BricoMission issuer -> $kc_issuer"
+# Theme check (keycloak-login-theme): the dev client's sign-in page must load the bricomission
+# login theme. A realm imported before that feature (old keycloak-data volume) still uses the
+# default theme, because the import runs only once per volume.
+kc_login=$(curl -sS --max-time 10 -G "http://127.0.0.1:${kc_port}/realms/BricoMission/protocol/openid-connect/auth" \
+  --data-urlencode client_id=bricomission-dev-cli --data-urlencode redirect_uri=http://localhost/dev-callback \
+  --data-urlencode response_type=code --data-urlencode scope=openid --data-urlencode ui_locales=en \
+  --data-urlencode code_challenge=init-sh-theme-check-init-sh-theme-check-0000 \
+  --data-urlencode code_challenge_method=S256 2>/dev/null || true)
+if ! grep -qE '/resources/[^"/]+/login/bricomission/' <<<"$kc_login"; then
+  kc_project=${COMPOSE_PROJECT_NAME:-$(docker compose config --format json 2>/dev/null | python3 -c "import json,sys; print(json.load(sys.stdin)['name'])" 2>/dev/null || basename "$(pwd)")}
+  echo "ERROR: the Keycloak sign-in page does not use the bricomission theme (stale realm volume)." >&2
+  echo "  The realm JSON is imported only once per keycloak-data volume. Reset the realm (project '$kc_project'):" >&2
+  echo "    docker compose rm -sf keycloak && docker volume rm ${kc_project}_keycloak-data" >&2
+  echo "    docker compose up -d --build --wait   (or re-run ./init.sh)" >&2
+  exit 1
+fi
+echo "  sign-in page (dev client) -> theme bricomission"
 
 echo
 echo "Web:"

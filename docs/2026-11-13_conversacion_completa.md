@@ -1,6 +1,6 @@
 # Registro de conversación con Claude Code · 2026-11-13
 
-_Actualizado: 2026-11-13 07:50_
+_Actualizado: 2026-11-13 21:37_
 
 
 ---
@@ -1974,3 +1974,762 @@ El implementer ha terminado `web-pwa-shell` y la ha marcado `passing`, con todas
 Ahora el **validator** lo está verificando de forma independiente. Antes de lanzarlo he corregido dos líneas de la spec que aún decían que el enlace de profesionales no se mostraba.
 
 Ya puedes probarlo en http://localhost:3100/. El stack está levantado.
+
+
+### 🤖 **Claude** · 2026-11-13 07:50:26
+
+El validator ha dado **accept**. Marco la feature como `accepted`, corrijo la línea obsoleta de `newgrp` en `PROGRESS.md` y publico:
+
+
+### 🤖 **Claude** · 2026-11-13 07:50:32
+
+> 🔧 **Bash**: `{"command": "python3 -I - <<'EOF'\nimport re,json\np='feature_list.json'; s=open(p).read()\ni=s.index('\"id\": \"web-pwa-shell\"'); j=s.index('\"status\": \"passing\"',i); assert j-i<2000\ns=s[:j]+'\"status\": \"accepted\"'+s[j+len('\"status\": \"passing\"'):]\nk=s.index('\"evidence\": [',i); k=s.in`
+
+
+### 🤖 **Claude** · 2026-11-13 07:50:36
+
+> 🔧 **Bash**: `{"command": "python3 -I -c \"import json;print([x['status'] for x in json.load(open('feature_list.json')) if x['id']=='web-pwa-shell'])\"; git add -A && git status --short | awk '{print $2}' | cut -d/ -f1-3 | sort | uniq -c | sort -rn | head -40; git diff --cached --stat | tail -1; git diff --cached`
+
+
+### 🤖 **Claude** · 2026-11-13 07:50:44
+
+> 🔧 **Bash**: `{"command": "git commit -q -F - <<'EOF'\nfeat: complete web-pwa-shell\n\n- apps/web: Next 16 App Router + Tailwind 4 PWA with DESIGN.md tokens and\n  self-hosted Inter (latin + latin-ext). Home, /language, language\n  selector bottom sheet and the 4 service-status states, built from the\n  approved `
+
+
+### 🤖 **Claude** · 2026-11-13 07:51:02
+
+> 🔧 **mcp__github__create_pull_request**: `{"owner": "hardwaremission", "repo": "bricomission", "title": "[web-pwa-shell] Installable PWA shell with design tokens and 11-locale i18n", "head": "feature/web-pwa-shell", "base": "main", "body": "Closes #11\n\n## Summary\n- **`apps/web`**: Next 16 App Router + React 19 + Tailwind 4 PWA with every`
+
+
+### 🤖 **Claude** · 2026-11-13 07:51:03
+
+> 🔧 **mcp__github__add_issue_comment**: `{"owner": "hardwaremission", "repo": "bricomission", "issue_number": 11, "body": "Status: **accepted** by the independent validator. Commit `c40adca feat: complete web-pwa-shell` pushed to `feature/web-pwa-shell`; published as PR #12 (not merged)."}`
+
+
+### 🤖 **Claude** · 2026-11-13 07:51:14
+
+`web-pwa-shell` está **publicada**: PR **#12**, que cierra el issue #11.
+
+**Qué se ha hecho**
+- **PWA instalable** en `apps/web`, con los tokens de `DESIGN.md` y la fuente Inter servida en local.
+- **Pantallas** construidas a partir del diseño aprobado en OpenPencil:
+  - Home, con el selector de idioma, los 3 pasos, el enlace "Are you a professional?" y el botón principal;
+  - `/language`;
+  - la hoja inferior con los 11 idiomas;
+  - los 4 estados del servicio.
+- **Los 11 idiomas desde el principio:** se toma el idioma del navegador y, si no está soportado, se redirige a `/language`. El idioma elegido se guarda en una cookie.
+- **Proxy `/api`** en el propio origen, cliente de la API generado desde el OpenAPI y servicio `web` en compose (puerto 3100).
+- **Replanificación:** `i18n-all-locales` pasa a ser `language-preference-account` (guardar el idioma en la cuenta, depende del login). El MCP `open-pencil` queda configurado en `.mcp.json`.
+
+**Cómo probarlo**
+```bash
+./init.sh
+# abre http://localhost:3100/  (idioma según el navegador)
+curl -i -H 'Accept-Language: ja' http://127.0.0.1:3100/   # 307 -> /language
+pnpm test:e2e
+bash scripts/web/lighthouse-pwa.sh
+```
+
+**Validación:** accept, sin hallazgos críticos, altos ni medios.
+- api 130, api-client 3 y web 122 tests.
+- 45 E2E de Playwright.
+- Lighthouse instalable.
+- `init.sh` termina con código 0.
+- El proxy y el cambio de idioma pasan las pruebas de seguridad.
+
+**Commit:** `c40adca feat: complete web-pwa-shell`, ya en `feature/web-pwa-shell`.
+
+**Siguiente:** haz merge de **#12**. Después quedarán listas `homeowner-password-login`, `kitchen-capture-draft` y otras. Las lanzaré una a una con `github-flow`.
+
+
+### 🧑 **Juan Miguel** · 2026-11-13 20:08:27
+
+Continua con al siguiente feature
+
+
+### 🤖 **Claude** · 2026-11-13 20:08:32
+
+> 🔧 **Bash**: `{"command": "GIT_TERMINAL_PROMPT=0 git fetch -q origin && git log --oneline -1 origin/main && (git merge-base --is-ancestor feature/web-pwa-shell origin/main && echo \"PR #12 merged\" || echo \"PR #12 NOT merged\"); git status --short | head", "description": "Check whether PR #12 is merged into main`
+
+
+### 🤖 **Claude** · 2026-11-13 20:08:38
+
+> 🔧 **Bash**: `{"command": "git stash -q && git checkout -q main && GIT_TERMINAL_PROMPT=0 git pull -q --ff-only origin main && git stash pop -q; git branch -d feature/web-pwa-shell | tail -1; git log --oneline -1; python3 -I -c \"\nimport json;f=json.load(open('feature_list.json'));st={x['id']:x['status'] for x in`
+
+
+### 🤖 **Claude** · 2026-11-13 20:08:45
+
+> 🔧 **Bash**: `{"command": "git checkout -q -b feature/homeowner-password-login && git branch --show-current && git rev-parse --short HEAD", "description": "Create feature branch from updated main"}`
+
+
+### 🤖 **Claude** · 2026-11-13 20:08:48
+
+> 🔧 **mcp__github__issue_write**: `{"method": "create", "owner": "hardwaremission", "repo": "bricomission", "title": "[homeowner-password-login] Homeowner signs in with password and email OTP", "body": "**Feature:** `homeowner-password-login` (see `feature_list.json`)\n\n**Behavior:** From the PWA a Homeowner registers or signs in th`
+
+
+### 🤖 **Claude** · 2026-11-13 20:09:03
+
+> 🔧 **Agent**: `{"description": "Plan homeowner-password-login spec", "subagent_type": "planner", "prompt": "Repository: /home/juanmi/Proyectos/hardwaremission.bricomission (branch feature/homeowner-password-login, base 9a0a528; work in this checkout).\nSelected feature id: homeowner-password-login\nRole: planner. `
+
+
+### 🤖 **Claude** · 2026-11-13 20:09:08
+
+Siguiente feature en marcha: **`homeowner-password-login`**, con el issue [#13](https://github.com/hardwaremission/bricomission/issues/13) y la rama `feature/homeowner-password-login` creada desde `9a0a528`.
+
+El **planner** está escribiendo la spec. Le he pedido que decida y justifique:
+- **Flujo de autenticación:** OIDC con PKCE y login alojado en Keycloak, con un tema que use los tokens de `DESIGN.md` y los 11 idiomas.
+- **Dónde guardar los tokens:** sesión en el servidor web con cookie httpOnly, y cómo el proxy `/api` añade el token.
+- **Refresco de sesión, logout y cómo se ve que el usuario ha iniciado sesión.** No incluye el Login Gate, que es otra feature.
+- **Brief de diseño solo en inglés:** login, registro, código OTP, estados de error e indicador de sesión.
+
+Cuando termine, abre OpenPencil (con `PATH` y el shim, como la otra vez) y diseñamos juntos.
+
+
+### 🤖 **Claude** · 2026-11-13 20:15:04
+
+El planner ha terminado la spec (`docs/specs/homeowner-password-login.md`, 10 escenarios). Es una feature grande: tema de Keycloak para los 11 idiomas más autenticación en el servidor web. Antes de diseñar necesito que confirmes cuatro decisiones:
+
+
+### 🤖 **Claude** · 2026-11-13 20:15:16
+
+> 🔧 **AskUserQuestion**: `{"questions": [{"question": "¿Cómo se autentica la PWA? (decisión principal de arquitectura de login)", "header": "Auth", "multiSelect": false, "options": [{"label": "BFF + login de Keycloak (Recomendado)", "description": "El servidor Next es cliente OIDC confidencial (Authorization Code + PKCE). La`
+
+
+### 🤖 **Claude** · 2026-11-13 20:21:11
+
+> 🔧 **Bash**: `{"command": "git branch -m feature/keycloak-login-theme && git branch --show-current", "description": "Rename branch for the first split feature"}`
+
+
+### 🤖 **Claude** · 2026-11-13 20:21:21
+
+> 🔧 **SendMessage**: `{"to": "a8e6596363b8149b0", "summary": "Split feature and apply developer decisions", "message": "Developer decisions (2026-11-13) on homeowner-password-login. The checkout branch is now feature/keycloak-login-theme (renamed; same base 9a0a528).\n\n1. CONFIRMED: BFF with a confidential client + Keyc`
+
+
+### 🤖 **Claude** · 2026-11-13 20:21:27
+
+> 🔧 **mcp__github__issue_write**: `{"method": "create", "owner": "hardwaremission", "repo": "bricomission", "title": "[keycloak-login-theme] Keycloak sign-in, registration and email-code pages follow the BricoMission design in 11 languages", "body": "**Feature:** `keycloak-login-theme` (split from `homeowner-password-login` by develo`
+
+
+### 🤖 **Claude** · 2026-11-13 20:21:28
+
+> 🔧 **mcp__github__add_issue_comment**: `{"owner": "hardwaremission", "repo": "bricomission", "issue_number": 13, "body": "Developer decision (2026-11-13): this feature is split. The Keycloak side moves to `keycloak-login-theme` (#14), which goes first. This issue keeps the web/BFF side (OIDC confidential client, sessions stored in Postgre`
+
+
+### 🤖 **Claude** · 2026-11-13 20:21:36
+
+Cambios aplicados:
+- **Rama:** renombrada a `feature/keycloak-login-theme`.
+- **Issue nuevo [#14](https://github.com/hardwaremission/bricomission/issues/14), `keycloak-login-theme`:** va primero. Cubre el tema de Keycloak (login, registro, código por email, 11 idiomas) y los cambios del realm.
+- **Issue [#13](https://github.com/hardwaremission/bricomission/issues/13):** he añadido un comentario explicando la división. Se queda con la parte web: BFF, sesiones en PostgreSQL, proxy y "Sign in" en la cabecera. Empezará después del merge de #14.
+
+El planner está reescribiendo las dos specs y `feature_list.json`. Cuando termine diseñamos en OpenPencil las pantallas de Keycloak (login, registro, código, mensajes y email), solo en inglés. Ten abierto OpenPencil con `bricomission_B2C_app.fig` y lanzado con el shim de `node`:
+
+```fish
+env PATH=$HOME/.local/share/openpencil-node-shim:(string join : $PATH) ~/Descargas/OpenPencil_0.16.0_amd64.AppImage &
+```
+
+
+### 🧑 **Juan Miguel** · 2026-11-13 20:23:50
+
+No estoy físicamente delante del equipo pero dejé openpencil abierto. No recuerdo haberlo lanzado con el shim de node. Prueba lo que tengas que probar y si no consigues hacer la tarea que quieres tienes mi permiso para cerrar la instancia de openpencil y lanzarla tú mismo cuando la necesites
+
+
+### 🤖 **Claude** · 2026-11-13 20:23:51
+
+> 🔧 **mcp__open-pencil__list_documents**: `{}`
+
+
+### 🤖 **Claude** · 2026-11-13 20:23:56
+
+El MCP de OpenPencil responde y el documento `bricomission_B2C_app.fig` está abierto, así que **no hace falta reiniciarlo**. Espero a que termine el planner para tener el brief definitivo de `keycloak-login-theme` y entonces diseño.
+
+
+### 🤖 **Claude** · 2026-11-13 20:25:46
+
+El usuario no está delante: diseño las pantallas de `keycloak-login-theme` y las dejo listas para su aprobación. Creo una página nueva en el `.fig`:
+
+
+### 🤖 **Claude** · 2026-11-13 20:25:46
+
+> 🔧 **mcp__open-pencil__create_page**: `{"name": "Auth – Keycloak"}`
+
+
+### 🤖 **Claude** · 2026-11-13 20:25:47
+
+> 🔧 **mcp__open-pencil__fetch_icons**: `{"names": ["lucide:circle-alert", "lucide:eye", "lucide:mail", "lucide:info", "lucide:clock", "lucide:arrow-left", "lucide:triangle-alert"]}`
+
+
+### 🤖 **Claude** · 2026-11-13 20:25:48
+
+> 🔧 **Bash**: `{"command": "awk '/Design Brief/{p=1} p' docs/specs/keycloak-login-theme.md | sed -n 1,45p", "description": "Read the keycloak-login-theme design brief"}`
+
+
+### 🤖 **Claude** · 2026-11-13 20:25:52
+
+Antes de diseñar compruebo si el plugin de código por email permite reenviar el código, porque la spec lo deja abierto:
+
+
+### 🤖 **Claude** · 2026-11-13 20:25:56
+
+> 🔧 **Bash**: `{"command": "cd /tmp && img=$(docker images --format '{{.Repository}}:{{.Tag}}' | grep -m1 '^bricomission/keycloak'); echo \"$img\"; cid=$(docker create \"$img\"); docker cp $cid:/opt/keycloak/providers /tmp/claude-1000/-home-juanmi-Proyectos-hardwaremission-bricomission/f43e4370-93ae-4d11-927d-b825`
+
+
+### 🤖 **Claude** · 2026-11-13 20:26:00
+
+> 🔧 **Bash**: `{"command": "cd /tmp/claude-1000/-home-juanmi-Proyectos-hardwaremission-bricomission/f43e4370-93ae-4d11-927d-b8255aa114d7/scratchpad/kcprov && unzip -p keycloak-2fa-email-authenticator.jar theme-resources/templates/email-code-form.ftl | grep -iE 'resend|cancel|name=|value=' | head; unzip -p keycloak`
+
+
+### 🤖 **Claude** · 2026-11-13 20:26:11
+
+El plugin permite reenviar el código ("Resend Code", con espera mínima entre envíos) y cancelar, así que el diseño los incluirá. Dibujo **Sign in**:
+
+
+### 🤖 **Claude** · 2026-11-13 20:26:19
+
+> 🔧 **mcp__open-pencil__render**: `{"page_id": "1325410829:386", "x": 0, "y": 0, "jsx": "<Frame name=\"Sign in\" w={390} h={844} bg=\"#FAFAF8\" flex=\"col\">\n  <Frame name=\"Header\" w=\"fill\" h={64} flex=\"row\" items=\"center\" px={16}><Text name=\"Wordmark\" size={22} weight={700} color=\"#1F4E79\" lineHeight={28}>BricoMission</`
+
+
+### 🤖 **Claude** · 2026-11-13 20:26:22
+
+> 🔧 **mcp__open-pencil__find_nodes**: `{"name": "slot", "page_id": "1325410829:386"}`
+
+
+### 🤖 **Claude** · 2026-11-13 20:26:22
+
+> 🔧 **mcp__open-pencil__find_nodes**: `{"name": "Show password toggle", "page_id": "1325410829:386"}`
+
+
+### 🤖 **Claude** · 2026-11-13 20:26:25
+
+> 🔧 **mcp__open-pencil__insert_icon**: `{"name": "lucide:eye", "parent_id": "1325410829:404", "color": "#6B6B70", "size": 20}`
+
+
+### 🤖 **Claude** · 2026-11-13 20:26:26
+
+> 🔧 **mcp__open-pencil__insert_icon**: `{"name": "lucide:arrow-left", "parent_id": "1325410829:412", "color": "#1F4E79", "size": 16}`
+
+
+### 🤖 **Claude** · 2026-11-13 20:26:27
+
+> 🔧 **mcp__open-pencil__delete_node**: `{"id": "1325410829:394", "page_id": "1325410829:386"}`
+
+
+### 🤖 **Claude** · 2026-11-13 20:26:27
+
+> 🔧 **mcp__open-pencil__export_image**: `{"ids": ["1325410829:387"], "page_id": "1325410829:386", "maxEdge": 800}`
+
+
+### 🤖 **Claude** · 2026-11-13 20:26:32
+
+Sign in quedó bien. Ahora la variante **invalid credentials**, con el aviso de error y el campo de contraseña enfocado:
+
+
+### 🤖 **Claude** · 2026-11-13 20:26:33
+
+> 🔧 **mcp__open-pencil__clone_node**: `{"id": "1325410829:387", "page_id": "1325410829:386"}`
+
+
+### 🤖 **Claude** · 2026-11-13 20:26:35
+
+> 🔧 **mcp__open-pencil__update_node**: `{"id": "1325410829:421", "page_id": "1325410829:386", "name": "Sign in – invalid credentials (password focused)", "x": 470, "y": 0}`
+
+
+### 🤖 **Claude** · 2026-11-13 20:26:36
+
+> 🔧 **mcp__open-pencil__get_page_tree**: `{"root_id": "1325410829:421", "depth": 4, "page_id": "1325410829:386"}`
+
+
+### 🤖 **Claude** · 2026-11-13 20:26:40
+
+> 🔧 **mcp__open-pencil__render**: `{"page_id": "1325410829:386", "parent_id": "1325410829:424", "insert_index": 1, "jsx": "<Frame name=\"Alert error\" w=\"fill\" flex=\"row\" gap={12} p={16} bg=\"#FFFFFF\" rounded={12} stroke=\"#C0392B\"><Frame name=\"Alert icon slot\" w={20} h={20} /><Text name=\"Alert text\" grow={1} size={14} colo`
+
+
+### 🤖 **Claude** · 2026-11-13 20:26:40
+
+> 🔧 **mcp__open-pencil__get_page_tree**: `{"root_id": "1325410829:433", "page_id": "1325410829:386"}`
+
+
+### 🤖 **Claude** · 2026-11-13 20:26:44
+
+> 🔧 **ToolSearch**: `{"query": "select:mcp__open-pencil__set_stroke", "max_results": 1}`
+
+
+### 🤖 **Claude** · 2026-11-13 20:26:45
+
+> 🔧 **mcp__open-pencil__insert_icon**: `{"name": "lucide:circle-alert", "parent_id": "1325410829:453", "color": "#C0392B", "size": 20}`
+
+
+### 🤖 **Claude** · 2026-11-13 20:26:45
+
+> 🔧 **mcp__open-pencil__set_text**: `{"id": "1325410829:436", "text": "|", "page_id": "1325410829:386"}`
+
+
+### 🤖 **Claude** · 2026-11-13 20:26:48
+
+> 🔧 **mcp__open-pencil__set_stroke**: `{"id": "1325410829:435", "color": "#2F80ED", "weight": 2, "page_id": "1325410829:386"}`
+
+
+### 🤖 **Claude** · 2026-11-13 20:26:49
+
+> 🔧 **mcp__open-pencil__export_image**: `{"ids": ["1325410829:421"], "page_id": "1325410829:386", "maxEdge": 800}`
+
+
+### 🤖 **Claude** · 2026-11-13 20:26:55
+
+Ahora **Create account**. Es un formulario largo, así que lo dibujo a altura completa (en el móvil se desplaza):
+
+
+### 🤖 **Claude** · 2026-11-13 20:27:07
+
+> 🔧 **mcp__open-pencil__render**: `{"page_id": "1325410829:386", "x": 940, "y": 0, "jsx": "<Frame name=\"Create account (full length, scrolls)\" w={390} bg=\"#FAFAF8\" flex=\"col\">\n  <Frame name=\"Header\" w=\"fill\" h={64} flex=\"row\" items=\"center\" px={16}><Text name=\"Wordmark\" size={22} weight={700} color=\"#1F4E79\" lineHe`
+
+
+### 🤖 **Claude** · 2026-11-13 20:27:08
+
+> 🔧 **mcp__open-pencil__find_nodes**: `{"name": "Show password toggle", "page_id": "1325410829:386"}`
+
+
+### 🤖 **Claude** · 2026-11-13 20:27:11
+
+> 🔧 **mcp__open-pencil__insert_icon**: `{"name": "lucide:eye", "parent_id": "1325410829:488", "color": "#6B6B70", "size": 20}`
+
+
+### 🤖 **Claude** · 2026-11-13 20:27:12
+
+> 🔧 **mcp__open-pencil__insert_icon**: `{"name": "lucide:eye", "parent_id": "1325410829:493", "color": "#6B6B70", "size": 20}`
+
+
+### 🤖 **Claude** · 2026-11-13 20:27:12
+
+> 🔧 **mcp__open-pencil__clone_node**: `{"id": "1325410829:460", "page_id": "1325410829:386"}`
+
+
+### 🤖 **Claude** · 2026-11-13 20:27:16
+
+> 🔧 **mcp__open-pencil__update_node**: `{"id": "1325410829:506", "page_id": "1325410829:386", "name": "Create account – field errors", "x": 1410, "y": 0}`
+
+
+### 🤖 **Claude** · 2026-11-13 20:27:17
+
+> 🔧 **mcp__open-pencil__get_page_tree**: `{"root_id": "1325410829:506", "depth": 4, "node_types": ["FRAME"], "page_id": "1325410829:386"}`
+
+
+### 🤖 **Claude** · 2026-11-13 20:27:21
+
+> 🔧 **mcp__open-pencil__set_text**: `{"id": "1325410829:517", "text": " ", "page_id": "1325410829:386"}`
+
+
+### 🤖 **Claude** · 2026-11-13 20:27:22
+
+> 🔧 **mcp__open-pencil__set_text**: `{"id": "1325410829:525", "text": "maria@example", "page_id": "1325410829:386"}`
+
+
+### 🤖 **Claude** · 2026-11-13 20:27:23
+
+> 🔧 **mcp__open-pencil__set_stroke**: `{"id": "1325410829:516", "color": "#C0392B", "weight": 2, "page_id": "1325410829:386"}`
+
+
+### 🤖 **Claude** · 2026-11-13 20:27:24
+
+> 🔧 **mcp__open-pencil__set_stroke**: `{"id": "1325410829:524", "color": "#C0392B", "weight": 2, "page_id": "1325410829:386"}`
+
+
+### 🤖 **Claude** · 2026-11-13 20:27:25
+
+> 🔧 **mcp__open-pencil__set_stroke**: `{"id": "1325410829:528", "color": "#C0392B", "weight": 2, "page_id": "1325410829:386"}`
+
+
+### 🤖 **Claude** · 2026-11-13 20:27:26
+
+> 🔧 **mcp__open-pencil__set_stroke**: `{"id": "1325410829:540", "color": "#C0392B", "weight": 2, "page_id": "1325410829:386"}`
+
+
+### 🤖 **Claude** · 2026-11-13 20:27:27
+
+> 🔧 **mcp__open-pencil__render**: `{"page_id": "1325410829:386", "parent_id": "1325410829:514", "jsx": "<Frame name=\"Field error\" w=\"fill\" flex=\"row\" gap={6} items=\"start\"><Frame name=\"Error icon slot\" w={16} h={20} flex=\"row\" items=\"center\" /><Text name=\"Error text\" grow={1} size={14} color=\"#C0392B\" lineHeight={20`
+
+
+### 🤖 **Claude** · 2026-11-13 20:27:29
+
+> 🔧 **mcp__open-pencil__render**: `{"page_id": "1325410829:386", "parent_id": "1325410829:522", "jsx": "<Frame name=\"Field error\" w=\"fill\" flex=\"row\" gap={6} items=\"start\"><Frame name=\"Error icon slot\" w={16} h={20} flex=\"row\" items=\"center\" /><Text name=\"Error text\" grow={1} size={14} color=\"#C0392B\" lineHeight={20`
+
+
+### 🤖 **Claude** · 2026-11-13 20:27:30
+
+> 🔧 **mcp__open-pencil__render**: `{"page_id": "1325410829:386", "parent_id": "1325410829:526", "jsx": "<Frame name=\"Field error\" w=\"fill\" flex=\"row\" gap={6} items=\"start\"><Frame name=\"Error icon slot\" w={16} h={20} flex=\"row\" items=\"center\" /><Text name=\"Error text\" grow={1} size={14} color=\"#C0392B\" lineHeight={20`
+
+
+### 🤖 **Claude** · 2026-11-13 20:27:31
+
+> 🔧 **mcp__open-pencil__render**: `{"page_id": "1325410829:386", "parent_id": "1325410829:538", "jsx": "<Frame name=\"Field error\" w=\"fill\" flex=\"row\" gap={6} items=\"start\"><Frame name=\"Error icon slot\" w={16} h={20} flex=\"row\" items=\"center\" /><Text name=\"Error text\" grow={1} size={14} color=\"#C0392B\" lineHeight={20`
+
+
+### 🤖 **Claude** · 2026-11-13 20:27:35
+
+> 🔧 **mcp__open-pencil__insert_icon**: `{"name": "lucide:circle-alert", "parent_id": "1325410829:553", "color": "#C0392B", "size": 16}`
+
+
+### 🤖 **Claude** · 2026-11-13 20:27:35
+
+> 🔧 **mcp__open-pencil__insert_icon**: `{"name": "lucide:circle-alert", "parent_id": "1325410829:556", "color": "#C0392B", "size": 16}`
+
+
+### 🤖 **Claude** · 2026-11-13 20:27:36
+
+> 🔧 **mcp__open-pencil__insert_icon**: `{"name": "lucide:circle-alert", "parent_id": "1325410829:559", "color": "#C0392B", "size": 16}`
+
+
+### 🤖 **Claude** · 2026-11-13 20:27:37
+
+> 🔧 **mcp__open-pencil__insert_icon**: `{"name": "lucide:circle-alert", "parent_id": "1325410829:562", "color": "#C0392B", "size": 16}`
+
+
+### 🤖 **Claude** · 2026-11-13 20:27:38
+
+> 🔧 **mcp__open-pencil__export_image**: `{"ids": ["1325410829:460", "1325410829:506"], "page_id": "1325410829:386", "maxEdge": 1200}`
+
+
+### 🤖 **Claude** · 2026-11-13 20:27:43
+
+Create account queda bien con sus errores por campo, y el texto rojo tiene contraste AA. Ahora **Email code**:
+
+
+### 🤖 **Claude** · 2026-11-13 20:27:50
+
+> 🔧 **mcp__open-pencil__render**: `{"page_id": "1325410829:386", "x": 1880, "y": 0, "jsx": "<Frame name=\"Email code\" w={390} h={844} bg=\"#FAFAF8\" flex=\"col\">\n  <Frame name=\"Header\" w=\"fill\" h={64} flex=\"row\" items=\"center\" px={16}><Text name=\"Wordmark\" size={22} weight={700} color=\"#1F4E79\" lineHeight={28}>BricoMis`
+
+
+### 🤖 **Claude** · 2026-11-13 20:27:51
+
+> 🔧 **mcp__open-pencil__find_nodes**: `{"name": "Mail badge", "page_id": "1325410829:386"}`
+
+
+### 🤖 **Claude** · 2026-11-13 20:27:53
+
+Ahora los estados del código (incorrecto, caducado, demasiados intentos), en un panel con los avisos que van encima del formulario:
+
+
+### 🤖 **Claude** · 2026-11-13 20:27:54
+
+> 🔧 **mcp__open-pencil__insert_icon**: `{"name": "lucide:mail", "parent_id": "1325410829:583", "color": "#1F4E79", "size": 26}`
+
+
+### 🤖 **Claude** · 2026-11-13 20:28:03
+
+> 🔧 **mcp__open-pencil__render**: `{"page_id": "1325410829:386", "x": 2350, "y": 0, "jsx": "<Frame name=\"Email code – states\" w={420} flex=\"col\" gap={20} p={24} bg=\"#FFFFFF\" rounded={20} stroke=\"#E2E0DA\">\n  <Text w=\"fill\" size={16} weight={600} color=\"#1C1C1E\" lineHeight={24}>Email code states (alert shown above the form`
+
+
+### 🤖 **Claude** · 2026-11-13 20:28:04
+
+> 🔧 **mcp__open-pencil__find_nodes**: `{"name": "Icon slot", "page_id": "1325410829:386"}`
+
+
+### 🤖 **Claude** · 2026-11-13 20:28:07
+
+> 🔧 **mcp__open-pencil__insert_icon**: `{"name": "lucide:circle-alert", "parent_id": "1325410829:607", "color": "#C0392B", "size": 20}`
+
+
+### 🤖 **Claude** · 2026-11-13 20:28:08
+
+> 🔧 **mcp__open-pencil__insert_icon**: `{"name": "lucide:clock", "parent_id": "1325410829:612", "color": "#B7791F", "size": 20}`
+
+
+### 🤖 **Claude** · 2026-11-13 20:28:09
+
+> 🔧 **mcp__open-pencil__insert_icon**: `{"name": "lucide:circle-alert", "parent_id": "1325410829:617", "color": "#C0392B", "size": 20}`
+
+
+### 🤖 **Claude** · 2026-11-13 20:28:10
+
+> 🔧 **mcp__open-pencil__insert_icon**: `{"name": "lucide:info", "parent_id": "1325410829:622", "color": "#1F4E79", "size": 20}`
+
+
+### 🤖 **Claude** · 2026-11-13 20:28:10
+
+> 🔧 **mcp__open-pencil__export_image**: `{"ids": ["1325410829:578", "1325410829:602"], "page_id": "1325410829:386", "maxEdge": 1100}`
+
+
+### 🤖 **Claude** · 2026-11-13 20:28:15
+
+Algunas anotaciones del panel se salen por la derecha. Ajusto su ancho:
+
+
+### 🤖 **Claude** · 2026-11-13 20:28:15
+
+> 🔧 **mcp__open-pencil__find_nodes**: `{"name": "Text", "type": "TEXT", "page_id": "1325410829:386"}`
+
+
+### 🤖 **Claude** · 2026-11-13 20:28:18
+
+> 🔧 **mcp__open-pencil__update_node**: `{"id": "1325410829:610", "width": 372, "page_id": "1325410829:386"}`
+
+
+### 🤖 **Claude** · 2026-11-13 20:28:18
+
+> 🔧 **mcp__open-pencil__update_node**: `{"id": "1325410829:615", "width": 372, "page_id": "1325410829:386"}`
+
+
+### 🤖 **Claude** · 2026-11-13 20:28:19
+
+> 🔧 **mcp__open-pencil__export_image**: `{"ids": ["1325410829:602"], "page_id": "1325410829:386", "maxEdge": 600}`
+
+
+### 🤖 **Claude** · 2026-11-13 20:28:23
+
+Ahora la **página de mensajes** genérica (error) y sus variantes de información y de página caducada:
+
+
+### 🤖 **Claude** · 2026-11-13 20:28:28
+
+> 🔧 **mcp__open-pencil__render**: `{"page_id": "1325410829:386", "x": 2850, "y": 0, "jsx": "<Frame name=\"Message page – error\" w={390} h={844} bg=\"#FAFAF8\" flex=\"col\">\n  <Frame name=\"Header\" w=\"fill\" h={64} flex=\"row\" items=\"center\" px={16}><Text name=\"Wordmark\" size={22} weight={700} color=\"#1F4E79\" lineHeight={28`
+
+
+### 🤖 **Claude** · 2026-11-13 20:28:33
+
+> 🔧 **mcp__open-pencil__render**: `{"page_id": "1325410829:386", "x": 3320, "y": 0, "jsx": "<Frame name=\"Message page – states\" w={420} flex=\"col\" gap={20} p={24} bg=\"#FFFFFF\" rounded={20} stroke=\"#E2E0DA\">\n  <Text w={372} size={16} weight={600} color=\"#1C1C1E\" lineHeight={24}>Message page states (same layout; badge icon, `
+
+
+### 🤖 **Claude** · 2026-11-13 20:28:34
+
+> 🔧 **mcp__open-pencil__find_nodes**: `{"name": "State badge", "page_id": "1325410829:386"}`
+
+
+### 🤖 **Claude** · 2026-11-13 20:28:34
+
+> 🔧 **mcp__open-pencil__find_nodes**: `{"name": "Back icon slot", "page_id": "1325410829:386"}`
+
+
+### 🤖 **Claude** · 2026-11-13 20:28:37
+
+> 🔧 **mcp__open-pencil__insert_icon**: `{"name": "lucide:circle-alert", "parent_id": "1325410829:649", "color": "#C0392B", "size": 26}`
+
+
+### 🤖 **Claude** · 2026-11-13 20:28:38
+
+> 🔧 **mcp__open-pencil__insert_icon**: `{"name": "lucide:arrow-left", "parent_id": "1325410829:656", "color": "#1F4E79", "size": 16}`
+
+
+### 🤖 **Claude** · 2026-11-13 20:28:44
+
+> 🔧 **mcp__open-pencil__render**: `{"page_id": "1325410829:386", "x": 0, "y": 1100, "jsx": "<Frame name=\"Code email (HTML, 600 wide)\" w={600} flex=\"col\" bg=\"#FAFAF8\" p={24}>\n  <Frame name=\"Card\" w=\"fill\" flex=\"col\" gap={24} p={32} bg=\"#FFFFFF\" rounded={20} stroke=\"#E2E0DA\">\n    <Text name=\"Wordmark\" size={22} weig`
+
+
+### 🤖 **Claude** · 2026-11-13 20:28:45
+
+> 🔧 **mcp__open-pencil__export_image**: `{"ids": ["1325410829:644", "1325410829:658"], "page_id": "1325410829:386", "maxEdge": 1000}`
+
+
+### 🤖 **Claude** · 2026-11-13 20:28:50
+
+> 🔧 **mcp__open-pencil__export_image**: `{"ids": ["1325410829:674"], "page_id": "1325410829:386", "maxEdge": 700}`
+
+
+### 🤖 **Claude** · 2026-11-13 20:28:50
+
+> 🔧 **mcp__open-pencil__lint**: `{"preset": "accessibility", "page_id": "1325410829:386"}`
+
+
+### 🤖 **Claude** · 2026-11-13 20:28:53
+
+Añado la comprobación a 360x780 (Sign in con error, la pantalla más cargada) y guardo:
+
+
+### 🤖 **Claude** · 2026-11-13 20:28:53
+
+> 🔧 **mcp__open-pencil__clone_node**: `{"id": "1325410829:421", "page_id": "1325410829:386"}`
+
+
+### 🤖 **Claude** · 2026-11-13 20:28:57
+
+> 🔧 **mcp__open-pencil__update_node**: `{"id": "1325410829:692", "page_id": "1325410829:386", "name": "Sign in – invalid credentials @360x780 (check)", "x": 700, "y": 1100, "width": 360, "height": 780}`
+
+
+### 🤖 **Claude** · 2026-11-13 20:28:57
+
+> 🔧 **mcp__open-pencil__save_file**: `{}`
+
+
+### 🤖 **Claude** · 2026-11-13 20:28:58
+
+> 🔧 **mcp__open-pencil__export_image**: `{"page_id": "1325410829:386", "maxEdge": 2400, "path": "design/openpencil/keycloak-login-theme/overview-draft.png"}`
+
+
+### 🤖 **Claude** · 2026-11-13 20:29:02
+
+Como no estás delante del equipo, te envío la imagen de conjunto para que la revises desde donde estés:
+
+
+### 🤖 **Claude** · 2026-11-13 20:29:02
+
+> 🔧 **ToolSearch**: `{"query": "select:SendUserFile", "max_results": 1}`
+
+
+### 🤖 **Claude** · 2026-11-13 20:29:04
+
+> 🔧 **SendUserFile**: `{"files": ["/home/juanmi/Proyectos/hardwaremission.bricomission/design/openpencil/keycloak-login-theme/overview-draft.png"], "caption": "keycloak-login-theme: propuesta de diseño (solo inglés) para aprobar", "status": "proactive", "display": "render"}`
+
+
+### 🤖 **Claude** · 2026-11-13 20:29:13
+
+He terminado la propuesta de diseño de `keycloak-login-theme`, solo en inglés, y te la he enviado como imagen. Está guardada en `bricomission_B2C_app.fig`, página **Auth – Keycloak**:
+
+| Marco | Contenido |
+| --- | --- |
+| **Sign in** | Nombre BricoMission, "Sign in" con texto de ayuda, campos "Username or email" y "Password" (con botón para mostrarla), botón "Sign in", enlaces "New here? Create account" y "← Back to BricoMission" |
+| **Sign in – invalid credentials** | Aviso de error con icono y texto, y el campo de contraseña enfocado con el anillo azul. También a 360x780 |
+| **Create account** (altura completa, se desplaza) | Nombre, apellidos, email, usuario, contraseña y su confirmación, "Create account" y "Already have an account? Sign in" |
+| **Create account – field errors** | Errores por campo (borde rojo, icono y texto): nombre obligatorio, email no válido o ya registrado, usuario ocupado, contraseñas que no coinciden |
+| **Email code** | "Check your email" con la dirección de destino, campo de 6 dígitos, "The code is valid for 5 minutes", "Verify", "Resend code" (el plugin sí permite reenviar) y "Cancel and go back" |
+| **Email code – states** | Código incorrecto, código caducado, 5 intentos fallidos (Verify desactivado y "Resend code" pasa a botón principal) y espera antes de reenviar |
+| **Message page** (error) y sus estados | Error, información y página caducada: icono, título, mensaje, "Start again" y "Back to BricoMission" |
+| **Code email** (HTML, 600 px) | Saludo, código destacado, validez de 5 minutos, línea "ignóralo si no has sido tú" y asunto "Your BricoMission code: 482915" |
+
+Todo usa tokens de `DESIGN.md`, sin selector de idioma de Keycloak, y los errores nunca se indican solo con color. El lint de accesibilidad de OpenPencil no da ningún error.
+
+¿Lo apruebas o quieres cambios? Cuando lo apruebes, lo leo de vuelta y lanzo el implementer.
+
+
+### 🧑 **Juan Miguel** · 2026-11-13 21:02:05
+
+Aprobado, está perfecto
+
+
+### 🤖 **Claude** · 2026-11-13 21:02:08
+
+Aprobado. Leo el diseño de vuelta por MCP:
+
+
+### 🤖 **Claude** · 2026-11-13 21:02:08
+
+> 🔧 **mcp__open-pencil__get_jsx**: `{"id": "1325410829:387", "page_id": "1325410829:386", "path": "design/openpencil/keycloak-login-theme/sign-in.jsx"}`
+
+
+### 🤖 **Claude** · 2026-11-13 21:02:09
+
+> 🔧 **mcp__open-pencil__get_jsx**: `{"id": "1325410829:421", "page_id": "1325410829:386", "path": "design/openpencil/keycloak-login-theme/sign-in-invalid.jsx"}`
+
+
+### 🤖 **Claude** · 2026-11-13 21:02:10
+
+> 🔧 **mcp__open-pencil__get_jsx**: `{"id": "1325410829:460", "page_id": "1325410829:386", "path": "design/openpencil/keycloak-login-theme/create-account.jsx"}`
+
+
+### 🤖 **Claude** · 2026-11-13 21:02:11
+
+> 🔧 **mcp__open-pencil__get_jsx**: `{"id": "1325410829:506", "page_id": "1325410829:386", "path": "design/openpencil/keycloak-login-theme/create-account-errors.jsx"}`
+
+
+### 🤖 **Claude** · 2026-11-13 21:02:12
+
+> 🔧 **mcp__open-pencil__get_jsx**: `{"id": "1325410829:578", "page_id": "1325410829:386", "path": "design/openpencil/keycloak-login-theme/email-code.jsx"}`
+
+
+### 🤖 **Claude** · 2026-11-13 21:02:13
+
+> 🔧 **mcp__open-pencil__get_jsx**: `{"id": "1325410829:602", "page_id": "1325410829:386", "path": "design/openpencil/keycloak-login-theme/email-code-states.jsx"}`
+
+
+### 🤖 **Claude** · 2026-11-13 21:02:13
+
+> 🔧 **mcp__open-pencil__get_jsx**: `{"id": "1325410829:644", "page_id": "1325410829:386", "path": "design/openpencil/keycloak-login-theme/message-page-error.jsx"}`
+
+
+### 🤖 **Claude** · 2026-11-13 21:02:14
+
+> 🔧 **mcp__open-pencil__get_jsx**: `{"id": "1325410829:658", "page_id": "1325410829:386", "path": "design/openpencil/keycloak-login-theme/message-page-states.jsx"}`
+
+
+### 🤖 **Claude** · 2026-11-13 21:02:15
+
+> 🔧 **mcp__open-pencil__get_jsx**: `{"id": "1325410829:674", "page_id": "1325410829:386", "path": "design/openpencil/keycloak-login-theme/code-email.jsx"}`
+
+
+### 🤖 **Claude** · 2026-11-13 21:02:16
+
+> 🔧 **Bash**: `{"command": "cd /home/juanmi/Proyectos/hardwaremission.bricomission/design/openpencil/keycloak-login-theme && git mv -f overview-draft.png overview.png 2>/dev/null || mv overview-draft.png overview.png; ls", "description": "Rename overview export and list read-back files"}`
+
+
+### 🤖 **Claude** · 2026-11-13 21:02:18
+
+Ahora escribo el artefacto `docs/design/keycloak-login-theme.md`:
+
+
+### 🤖 **Claude** · 2026-11-13 21:02:48
+
+> 🔧 **Write**: `{"file_path": "/home/juanmi/Proyectos/hardwaremission.bricomission/docs/design/keycloak-login-theme.md", "content": "# Design Read-Back: keycloak-login-theme\n\nApproved by developer on 2026-11-13.\n\n- Source of truth: `design/openpencil/bricomission_B2C_app.fig`, page **Auth – Keycloak**, designed`
+
+
+### 🤖 **Claude** · 2026-11-13 21:02:49
+
+> 🔧 **Bash**: `{"command": "cd /home/juanmi/Proyectos/hardwaremission.bricomission && git status --short | head -20; git branch --show-current", "description": "Check working tree before launching implementer"}`
+
+
+### 🤖 **Claude** · 2026-11-13 21:02:59
+
+> 🔧 **Agent**: `{"description": "Implement keycloak-login-theme", "subagent_type": "implementer", "prompt": "Repository: /home/juanmi/Proyectos/hardwaremission.bricomission (branch feature/keycloak-login-theme, base 9a0a528, work directly in this checkout).\nSelected feature id: keycloak-login-theme\nRole: implemen`
+
+
+### 🤖 **Claude** · 2026-11-13 21:03:03
+
+He guardado el diseño aprobado de `keycloak-login-theme` con su lectura de vuelta:
+- **Ficheros exportados:** JSX de cada marco y la imagen de conjunto, en `design/openpencil/keycloak-login-theme/`.
+- **Artefacto para el implementer:** `docs/design/keycloak-login-theme.md`, con componentes, textos de cada estado, el email del código y la línea de aprobación.
+
+El **implementer** ya está con la feature:
+- tema `bricomission` de Keycloak (páginas y email) para los 11 idiomas;
+- cambios del realm: registro con código por email, rol `user` por defecto y SSO de 8 h;
+- tests E2E contra Keycloak.
+
+Te aviso cuando termine; después le toca al validator.
+
+
+### 🤖 **Claude** · 2026-11-13 21:31:11
+
+El implementer lo ha construido todo. Pasan 70 E2E, `init.sh` termina con código 0 y el smoke de Keycloak también pasa. Pero lo ha dejado en `in_progress` por una regla de "parar e informar".
+
+**Problema:** si una cuenta tiene un idioma guardado en Keycloak, ese idioma manda sobre el idioma de la app (`ui_locales`), incluso si se envía `kc_locale`. Y la página de registro de Keycloak guarda el idioma en cada cuenta nueva. Resultado: alguien que se registró en francés verá Keycloak siempre en francés, aunque luego cambie la app a alemán.
+
+
+### 🤖 **Claude** · 2026-11-13 21:31:16
+
+> 🔧 **AskUserQuestion**: `{"questions": [{"question": "¿Qué idioma deben mostrar las páginas de Keycloak (login, código, email) cuando la cuenta tiene un idioma guardado distinto al de la app?", "header": "Idioma KC", "multiSelect": false, "options": [{"label": "Siempre el de la app (Recomendado)", "description": "Opción (a)`
+
+
+### 🤖 **Claude** · 2026-11-13 21:33:11
+
+> 🔧 **SendMessage**: `{"to": "a117bb92e98dc504b", "summary": "Developer chose locale option (a)", "message": "Developer decision (2026-11-13): option (a). The app language always wins: remove the hidden `locale` field from register.ftl so Keycloak never stores a locale on new accounts; ui_locales (the PWA's current langu`
+
+
+### 🤖 **Claude** · 2026-11-13 21:33:14
+
+Opción (a) aplicada: el idioma de la app manda siempre. El implementer está quitando el campo `locale` del registro, ajustando el test y repitiendo las comprobaciones. Cuando termine, la feature pasará a `passing` y entra el validator.
+
+Al final queda una limpieza pendiente: el proyecto de prueba `kcstalecheck` (contenedores parados y 4 volúmenes) que creó el implementer. Lo borro antes del commit, salvo que prefieras conservarlo.
+
+
+### 🤖 **Claude** · 2026-11-13 21:35:22
+
+La feature está en `passing`. Antes de lanzar el validator limpio el proyecto de prueba `kcstalecheck`. **No** uso `docker compose down -v`, que también borraría los volúmenes compartidos con nombre fijo (`bricomission_*`, los pesos de los modelos). Borro solo lo que lleva el prefijo `kcstalecheck`:
+
+
+### 🤖 **Claude** · 2026-11-13 21:35:24
+
+> 🔧 **Bash**: `{"command": "COMPOSE_PROJECT_NAME=kcstalecheck docker compose --profile ai --profile rag --profile e2e down --remove-orphans 2>&1 | tail -2; for v in $(docker volume ls -q --filter name='^kcstalecheck_'); do docker volume rm \"$v\" >/dev/null && echo \"rm $v\"; done; for i in $(docker images --forma`
+
+
+### 🤖 **Claude** · 2026-11-13 21:35:35
+
+> 🔧 **Agent**: `{"description": "Validate keycloak-login-theme", "subagent_type": "validator", "prompt": "Repository: /home/juanmi/Proyectos/hardwaremission.bricomission (branch feature/keycloak-login-theme, base 9a0a528; uncommitted working tree = this feature).\nSelected feature id: keycloak-login-theme (status: `
+
+
+### 🤖 **Claude** · 2026-11-13 21:35:39
+
+`keycloak-login-theme` está en `passing` con la opción (a) aplicada:
+- El registro ya no guarda el idioma en Keycloak; manda siempre el de la app.
+- 70 E2E en verde.
+- `init.sh` y el smoke de Keycloak terminan con código 0.
+- He reiniciado el realm de desarrollo para borrar las cuentas de prueba antiguas.
+
+He limpiado el proyecto de prueba `kcstalecheck`: 4 volúmenes, 2 imágenes y su red. Los volúmenes compartidos `bricomission_*` siguen intactos.
+
+El **validator** lo está verificando. Te aviso con el veredicto.

@@ -3,11 +3,31 @@
   "displayName": "BricoMission",
   "enabled": true,
   "sslRequired": "external",
-  "registrationAllowed": false,
+  "registrationAllowed": true,
+  "registrationEmailAsUsername": false,
+  "verifyEmail": false,
   "loginWithEmailAllowed": true,
   "duplicateEmailsAllowed": false,
   "resetPasswordAllowed": false,
   "accessTokenLifespan": 300,
+  "ssoSessionIdleTimeout": 28800,
+  "internationalizationEnabled": true,
+  "supportedLocales": [
+    "en",
+    "es",
+    "fr",
+    "de",
+    "it",
+    "pt",
+    "nl",
+    "sv",
+    "no",
+    "da",
+    "fi"
+  ],
+  "defaultLocale": "en",
+  "loginTheme": "bricomission",
+  "emailTheme": "bricomission",
   "roles": {
     "realm": [
       {
@@ -21,8 +41,39 @@
       {
         "name": "admin",
         "description": "Administrator: back-office only, never acts as a Homeowner."
+      },
+      {
+        "name": "offline_access",
+        "description": "${role_offline-access}"
+      },
+      {
+        "name": "uma_authorization",
+        "description": "${role_uma_authorization}"
+      },
+      {
+        "name": "default-roles-bricomission",
+        "description": "Default roles: every new account (self-registration) gets realm role user. Imported seeded users get only their listed realmRoles.",
+        "composite": true,
+        "composites": {
+          "realm": [
+            "offline_access",
+            "uma_authorization",
+            "user"
+          ],
+          "client": {
+            "account": [
+              "view-profile",
+              "manage-account"
+            ]
+          }
+        }
       }
     ]
+  },
+  "defaultRole": {
+    "name": "default-roles-bricomission",
+    "composite": true,
+    "clientRole": false
   },
   "clients": [
     {
@@ -138,6 +189,7 @@
     "starttls": "false"
   },
   "browserFlow": "browser-email-otp",
+  "registrationFlow": "registration-email-otp",
   "authenticationFlows": [
     {
       "alias": "browser-email-otp",
@@ -185,6 +237,68 @@
           "userSetupAllowed": false
         }
       ]
+    },
+    {
+      "alias": "registration-email-otp",
+      "description": "Self-registration: user profile form, then a 6-digit code sent to the new account email.",
+      "providerId": "basic-flow",
+      "topLevel": true,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "authenticator": "registration-page-form",
+          "flowAlias": "registration-email-otp form",
+          "authenticatorFlow": true,
+          "requirement": "REQUIRED",
+          "priority": 10,
+          "userSetupAllowed": false
+        },
+        {
+          "authenticator": "email-authenticator-no-enrollment",
+          "authenticatorConfig": "email-otp-6-digits",
+          "authenticatorFlow": false,
+          "requirement": "REQUIRED",
+          "priority": 20,
+          "userSetupAllowed": false
+        }
+      ]
+    },
+    {
+      "alias": "registration-email-otp form",
+      "description": "Copy of the built-in registration form: user profile creation and password validation.",
+      "providerId": "form-flow",
+      "topLevel": false,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "authenticator": "registration-user-creation",
+          "authenticatorFlow": false,
+          "requirement": "REQUIRED",
+          "priority": 20,
+          "userSetupAllowed": false
+        },
+        {
+          "authenticator": "registration-password-action",
+          "authenticatorFlow": false,
+          "requirement": "REQUIRED",
+          "priority": 50,
+          "userSetupAllowed": false
+        },
+        {
+          "authenticator": "registration-recaptcha-action",
+          "authenticatorFlow": false,
+          "requirement": "DISABLED",
+          "priority": 60,
+          "userSetupAllowed": false
+        },
+        {
+          "authenticator": "registration-terms-and-conditions",
+          "authenticatorFlow": false,
+          "requirement": "DISABLED",
+          "priority": 70,
+          "userSetupAllowed": false
+        }
+      ]
     }
   ],
   "authenticatorConfig": [
@@ -195,7 +309,8 @@
         "ttl": "300",
         "maxAttempts": "5",
         "emailProviderType": "KEYCLOAK",
-        "simulationMode": "false"
+        "simulationMode": "false",
+        "showMaskedEmailOnOtpForm": "true"
       }
     }
   ]

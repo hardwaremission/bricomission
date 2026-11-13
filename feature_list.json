@@ -147,18 +147,53 @@
     "notes": "docs/user-and-access-model.md. Secrets via .env (git-ignored) with .env.example committed. Google SSO is a later feature."
   },
   {
+    "id": "keycloak-login-theme",
+    "area": "identity",
+    "title": "Keycloak sign-in, sign-up and email code pages in the BricoMission look and 11 languages",
+    "user_visible_behavior": "Keycloak's sign-in, create-account, email-code and message pages and the code email use the BricoMission theme (DESIGN.md tokens, self-hosted Inter) in the language passed by the client (11 locales); anyone can create an account, which gets role user and must enter the 6-digit email code from Mailpit.",
+    "depends_on": ["keycloak-realm-roles", "web-pwa-shell"],
+    "status": "accepted",
+    "verification": [
+      "Playwright against Keycloak (dev client, PKCE, ui_locales): themed sign-in + email code from Mailpit; create account + email code, token has exactly role user",
+      "Each of the 11 locales renders the sign-in page with matching html lang and theme strings; no Keycloak language picker",
+      "Test: 11 login + 11 email message files with the English key set, no empty values, matching placeholders",
+      "No external URLs in the theme; E2E localhost-only guard; no overflow at 360px in de and fi",
+      "keycloak-smoke.sh still passes (seeded accounts keep exactly one role); ./init.sh detects a stale realm and prints the reset hint"
+    ],
+    "evidence": [
+      "2026-11-13 independent validator ACCEPT: ./init.sh exit 0 (69 parity tests, theme check), keycloak-smoke.sh all passed, pnpm test:e2e 70 passed (localhost-only guard, no blocked requests), admin API: registration + registration-email-otp flow, 11 locales, idle 28800, seeded accounts exactly one role, self-registered account BricoMission roles exactly [user], no user has a locale attribute; no external URLs in theme, no cleartext secrets, Inter sha256 matches fontsource 5.3.0.",
+      "2026-11-13 implementer (base checkout, default compose project hardwaremissionbricomission, default ports). No sudo, no GPU, .env not read. Design input: docs/design/keycloak-login-theme.md, approved by developer on 2026-11-13; exports in design/openpencil/keycloak-login-theme/.",
+      "Provider jar (keycloak-2fa-email-authenticator v26.7.2) templates: email-code-form.ftl (form kc-otp-login-form, input emailCode, submits login/resend/cancel; attributes codeLength, maskedEmail, maxAttemptsReached, resendAvailableInSeconds), html/code-email.ftl + text/code-email.ftl (data code, ttl); subject key emailCodeSubject with only the realm display name. Theme templates override the provider's theme-resources (verified).",
+      "Default role on import: seeded users do NOT get default-roles-bricomission; keycloak-smoke S3 still gives exactly admin/user/professional. Self-registered account token realm roles filtered to user/professional/admin = [\"user\"] (E2E Scenario 3).",
+      "Registration flow shape accepted by Keycloak 26.8.2 import: registration-page-form (form-flow subflow: user creation, password, recaptcha/terms disabled) then email-authenticator-no-enrollment REQUIRED; the code step runs before sign-in (E2E Scenario 3, Mailpit id 5RCwFZjhPBTQ13n2pLh1Xq, user e2e-1794601566326).",
+      "${BM_SEED_*} placeholders still resolve after the realm changes (password grants and browser logins of seeded users pass).",
+      "Locale precedence: measured that a stored account locale fr beats ui_locales=de and kc_locale=de on /auth. Developer decision 2026-11-13 option (a): register.ftl sends no locale field, Keycloak stores no locale on new accounts, ui_locales decides. E2E 'ui_locales decides after sign-in for a self-registered account and a seeded one' passes (registered in fr -> de pages + de subject; bm-homeowner -> it). Admin API: e2e-1794602055857 and e2e-fr-1794602061277 have no locale attribute.",
+      "Image tag bricomission/keycloak:26.8.2-emailotp26.7.2-theme1. Fonts (from @fontsource-variable/inter 5.3.0, OFL.txt included): inter-latin-wght-normal.woff2 sha256 3100e775e8616cd2611beecfa23a4263d7037586789b43f035236a2e6fbd4c62; inter-latin-ext-wght-normal.woff2 sha256 34b9c504cab7a73e37b746343a449132e56cf7b5481af2cb81dc74dcff25c956.",
+      "Realm reset: docker compose rm -sf keycloak && docker volume rm hardwaremissionbricomission_keycloak-data; docker compose up -d --build --wait -> 6 healthy; import log 'Realm BricoMission imported'.",
+      "./init.sh exit 0: workspace gate api 130 / api-client 3 / web 191 tests (incl. keycloak-theme-messages.test.ts 69), 6 services healthy, 'sign-in page (dev client) -> theme bricomission'. Failure path: throwaway project kcstalecheck (ports +10000) with keycloak first imported from the base realm JSON -> ./init.sh exit 1 'the Keycloak sign-in page does not use the bricomission theme (stale realm volume)' plus the reset command for kcstalecheck_keycloak-data.",
+      "./scripts/keycloak-smoke.sh exit 0 ('Keycloak smoke: all checks passed.'); smoke now matches subject 'Your BricoMission code' and the code line of the themed email.",
+      "pnpm test:e2e exit 0: 70 passed (45 existing + 25 keycloak-theme.spec.ts: Scenario 2 themed sign-in/code/email/redirect, Mailpit id 66oDpPiqvnDgoS1mnztQCl; Scenario 3 create account + code + role user; Scenario 4 wrong password, wrong code x4 + too-many-attempts on the 5th, register field errors, expired page, error page; Scenario 5 11 locales sign-in + de/fi register/code/subject + precedence finding; Scenario 7 390x844 and 360x780 in de/fi: no overflow, targets >= 44, primary visible). Localhost guard active in every test, no blocked requests.",
+      "Expired-code state checked manually (not E2E, per spec): authenticator ttl set to 3 s via admin API, code submitted after 5 s -> warning alert 'Tämä koodi on vanhentunut...' (fi), Verify hidden, Resend primary; ttl restored to 300 (verified).",
+      "grep -rEi 'https?://' infra/keycloak/themes: only fonts/OFL.txt (license text, not a resource); 0 matches elsewhere. git grep -nE '\"value\": *\"[^$]' infra/keycloak: no matches. bash -n init.sh scripts/web/*.sh scripts/keycloak-smoke.sh: ok. pnpm -r lint: exit 0.",
+      "After option (a), realm reset (cleared e2e-*/probe-* accounts with a stored locale) and re-run: ./init.sh exit 0 (api 130 / api-client 3 / web 191 tests, theme check ok); keycloak-smoke.sh exit 0; pnpm test:e2e 70 passed (Scenario 2 Mailpit id 1n9LHcPOHSh5n2X8LZwUqL, Scenario 3 id 4sEE60jbQAPnSaq8S7SoHN, user e2e-1794602055857)."
+    ],
+    "notes": "Spec: docs/specs/keycloak-login-theme.md. Split from homeowner-password-login (developer decision 2026-11-13). UI gate: Keycloak frames (sign in, create account, email code, message page, code email), English only; read-back docs/design/keycloak-login-theme.md. Realm: registrationAllowed, default role user, registration flow with the email code, 11 locales, SSO idle 8 h. Realm JSON changes require a realm volume reset. Locale precedence: developer decision 2026-11-13 option (a), Keycloak stores no account locale; ui_locales decides."
+  },
+  {
     "id": "homeowner-password-login",
     "area": "identity",
     "title": "Homeowner signs in with password and email OTP",
-    "user_visible_behavior": "From the PWA a Homeowner registers or signs in through Keycloak with username/password and an email OTP delivered to Mailpit, and lands back signed in.",
-    "depends_on": ["web-pwa-shell", "keycloak-realm-roles"],
+    "user_visible_behavior": "From the PWA a Homeowner registers or signs in through the themed Keycloak pages with username/password and an email OTP delivered to Mailpit, lands back signed in (account entry in the Home header), stays signed in across web restarts, and can sign out.",
+    "depends_on": ["web-pwa-shell", "keycloak-realm-roles", "keycloak-login-theme"],
     "status": "not_started",
     "verification": [
       "Playwright: register, read OTP from Mailpit API, complete login, see signed-in state",
-      "Works with the network disabled"
+      "Works with the network disabled",
+      "Session survives docker compose restart web (scripts/web/auth-persist-check.sh); DB stores only the cookie hash and encrypted tokens",
+      "Proxy injects the session token, drops client Authorization, rejects cross-origin unsafe methods; sign-out ends the Keycloak session"
     ],
     "evidence": [],
-    "notes": "OIDC Authorization Code + PKCE. Keycloak login theme styled with DESIGN.md tokens (UI gate applies)."
+    "notes": "Spec: docs/specs/homeowner-password-login.md. Web/BFF side only: confidential OIDC client bricomission-web (Code + PKCE), sessions and login transactions in PostgreSQL schema web_session owned by apps/web (pg, lazy idempotent migration), AES-256-GCM token encryption (WEB_SESSION_KEY), opaque bm_session cookie, /auth/* routes, refresh/logout, /auth/error page, SW skips /auth/*. UI gate: web frames (Home header anonymous/signed in, account sheet, /auth/error), read-back docs/design/homeowner-password-login.md. Realm JSON change (client) requires a realm volume reset."
   },
   {
     "id": "kitchen-capture-draft",
@@ -589,6 +624,6 @@
       "Visual check of the longest strings (de, fi) on 360px width across the screens built so far"
     ],
     "evidence": [],
-    "notes": "Replaces i18n-all-locales (2026-11-13): the 11 locales, detection, Language Selection screen and device persistence moved into web-pwa-shell. PRD: persist the user's choice in the database. Every UI feature must add its strings to all 11 message files (missing-key test)."
+    "notes": "Re-check: a crafted kc_locale on a Keycloak login-actions URL might store a Keycloak locale attribute on the account; nothing may set it (keycloak-login-theme option (a)). Replaces i18n-all-locales (2026-11-13): the 11 locales, detection, Language Selection screen and device persistence moved into web-pwa-shell. PRD: persist the user's choice in the database. Every UI feature must add its strings to all 11 message files (missing-key test)."
   }
 ]

@@ -3,7 +3,7 @@ name: BricoMission
 description: Calm, airy, photo-first renovation planner. Apple-like restraint, IKEA-like warmth and clarity.
 designAssets:
   sourceOfTruth:
-    - design/openpencil/bricomission_B2C_app.fig (page Home approved 2026-11-13; other screens added per screen via open-pencil MCP)
+    - design/openpencil/bricomission_B2C_app.fig (page Home approved 2026-11-13; page Auth – Keycloak approved 2026-11-13; other screens added per screen via open-pencil MCP)
     - design/openpencil/bricomission_B2B_dashboard.fig (to be created)
     - design/openpencil/bricomission_admin.fig (to be created)
   generatedConcepts: []
@@ -99,11 +99,13 @@ Initial direction for BricoMission, written before any screen exists. Per-screen
 `design/openpencil/*.fig` files are created on demand (CLAUDE.md "No UI guessing" rule).
 
 - `design/openpencil/bricomission_B2C_app.fig`, page **Home** (approved 2026-11-13, `web-pwa-shell`): frames Home (390x844, plus 360x780 and full-length checks), Language Selection, LanguageSelector open (bottom sheet), ServiceStatus (4 states) and App icon 512 (maskable). Read-back: `docs/design/web-pwa-shell.md`; JSX/SVG/PNG exports in `design/openpencil/web-pwa-shell/`.
+- `design/openpencil/bricomission_B2C_app.fig`, page **Auth – Keycloak** (approved 2026-11-13, `keycloak-login-theme`): Sign in (+ invalid credentials, 360x780 check), Create account (+ field errors), Email code (+ states), Message page (error, info, page expired) and Code email (HTML 600 wide + plain text). Read-back: `docs/design/keycloak-login-theme.md`; exports in `design/openpencil/keycloak-login-theme/`. Implemented as the Keycloak theme `infra/keycloak/themes/bricomission/` (plain CSS with the same tokens, not Tailwind).
 
 Rules:
 
 - Designs are English only. Every other locale comes from `apps/web/messages/<locale>.json`. Layouts must fit German and Finnish (~30 % longer): text wraps, the CTA is never truncated, no fixed-width text boxes.
 - Approved non-token values (implemented as designed): wordmark 22/28 bold (h2 size, weight 700); step and field-label titles 16/24 and 14/20 semibold; sheet title 18/24 semibold; 12 px gaps (hero, steps, bottom bar) and 12 px bottom-bar top padding; selector pill 44 high with 14 px side padding and 6 px gap; option rows 48 high with 12 px padding; globe badge 56; step icon circles 44 with 22 px icons; bottom-sheet overlay `#1C1C1E` at 40 %. Shadows and radii use the tokens (`elevation.card`, `elevation.sheet`, `rounded.*`).
+- Approved non-token values for the Keycloak pages (`keycloak-login-theme`): header 64 high; content padding 32/16/24 (32 bottom on Create account); inputs 52 high with 16 px side padding (code input 56 high, value 28/34 semibold, letter spacing 8); 2 px focus/error strokes; password toggle 44x44 with a 20 px icon; field error row gap 6 with a 16 px icon; form-level alert padding 16, gap 12, 1 px stroke in the state color (`danger`, `warning`, `primary`); badge 56 with a 26 px icon; text links 14/20 weight 500, underlined, in 44 px rows. Code email: 600 wide, outer padding 24, card radius 20 and padding 32, code box 72 high with 34/40 bold `primary` and letter spacing 10.
 
 ## Generated Concept Images
 

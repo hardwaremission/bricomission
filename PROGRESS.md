@@ -11,7 +11,8 @@
 - Local AI stack: opt-in compose profiles `ai` (`llama-server`, `comfyui`) and `ai-fetch` (weights). Both run on the RX 9070 XT with ROCm in Docker. GPU jobs must be serialized (see `docs/spikes/local-ai-gpu-spike.md`). Weight volumes have fixed names (`bricomission_*`) shared by all checkouts.
 - Current blockers: none. pnpm 10.34.9 (pinned in `packageManager`) resolves through a corepack shim in `~/.local/bin` (host Node 26 has no bundled corepack). Docker works directly in agent shells since the 2026-11-13 reboot (docker group active; `newgrp docker` only needed in shells started before joining the group).
 - Web PWA: `web-pwa-shell` is `passing` (implemented and self-verified, awaiting independent validation). Web on `http://localhost:3100/` (`WEB_PORT`).
-- Last verified at: 2026-11-13 (`./init.sh` exit 0 with 6 healthy services and the Web step; `pnpm test:e2e` 45 passed; Lighthouse `installable-manifest` 1)
+- Keycloak theme: `keycloak-login-theme` is `passing` (implemented and self-verified, awaiting independent validation). Locale precedence decided (option a): Keycloak stores no account locale; `ui_locales` decides. `./init.sh` now also fails on a stale realm volume (no theme on the sign-in page) and prints the reset command.
+- Last verified at: 2026-11-13 after the option (a) change and a realm reset (`./init.sh` exit 0 with 6 healthy services, the Keycloak theme check and the Web step; `pnpm test:e2e` 70 passed; `./scripts/keycloak-smoke.sh` exit 0)
 
 ## Session Log
 
@@ -166,3 +167,19 @@
 - State left: core stack (6 services) healthy and detached; `apps/web/.next`, `apps/web/test-results` and `playwright-report` are git-ignored build/test output. Nothing committed.
 - Known risks: agent translations may contain errors; offline mode serves Home in the locale it was cached in; `pnpm install` still prints a stale "Ignored build scripts: @parcel/watcher" notice from the first install (now in `ignoredBuiltDependencies`).
 - Next best step: independent validation of `web-pwa-shell` (`feature-validator`), then the next dependency-ready feature.
+
+### Session 009
+
+- Date: 2026-11-13
+- Goal: implement `keycloak-login-theme` (spec `docs/specs/keycloak-login-theme.md`) in the base checkout, branch `feature/keycloak-login-theme`, default compose project `hardwaremissionbricomission`, default ports.
+- Completed:
+  - Realm JSON: self-registration, flow `registration-email-otp` (copy of the built-in registration form + `email-authenticator-no-enrollment` with `email-otp-6-digits`), default role `default-roles-bricomission` with `user`, internationalization (11 locales, default `en`), `loginTheme`/`emailTheme` `bricomission`, `ssoSessionIdleTimeout` 28800, `showMaskedEmailOnOtpForm=true`.
+  - Theme `infra/keycloak/themes/bricomission/` (login + email, `parent=base`): 7 overridden login templates + icon macros, CSS with DESIGN.md tokens, password-toggle JS, self-hosted Inter + OFL, code email html/text, 11 + 11 message files (10 agent-translated each). Dockerfile `COPY`; image tag `bricomission/keycloak:26.8.2-emailotp26.7.2-theme1`.
+  - Tests: `apps/web/test/keycloak-theme-messages.test.ts` (69 tests), `apps/web/e2e/keycloak-theme.spec.ts` (25 tests), helpers in `apps/web/e2e/support.ts`, Keycloak/Mailpit env in `scripts/web/e2e.sh`. `init.sh` theme check. `scripts/keycloak-smoke.sh` reads the code from the themed email.
+  - Docs: ARCHITECTURE.md, AGENTS.md (Identity), DESIGN.md, docs/user-and-access-model.md, docs/technical-discovery.md, docs/risks-and-open-questions.md.
+- Verification run: realm reset (`docker compose rm -sf keycloak && docker volume rm hardwaremissionbricomission_keycloak-data`), `./init.sh` exit 0 (api 130, api-client 3, web 191 tests; 6 healthy; theme check ok), `./scripts/keycloak-smoke.sh` exit 0 (seeded tokens keep exactly one role), `pnpm test:e2e` 70 passed (45 + 25), stale-realm failure path (throwaway project `kcstalecheck` with the base realm JSON: `./init.sh` exit 1 with the reset hint), grep checks, `bash -n`. Details in `feature_list.json` evidence.
+- Blocker (spec stop-and-report rule, Scenario 5 precedence): a stored account `locale` (fr) beats `ui_locales=de` and also `kc_locale=de` on `/auth`, so the spec's fallback ("clients must also send kc_locale") does not work. Needs a developer decision; options in `docs/risks-and-open-questions.md`. The E2E records the observed behavior; it does not claim the fallback.
+- Deviations: see the spec's "Implementation Notes" (subject without the code, masked email, no "Confirm your password." state, expired-code key, cooldown as info, extra `bmContinue` string).
+- State left: core stack healthy (realm reset done). The throwaway project `kcstalecheck` is stopped but its containers and 4 volumes (`kcstalecheck_*`) remain: removing them was denied to the agent. Remove with `COMPOSE_PROJECT_NAME=kcstalecheck docker compose down -v`. Test accounts `e2e-*` and `probe-*` exist in the dev realm (cleared by any realm reset). Nothing committed.
+- Follow-up (same day): developer chose option (a) for locale precedence. `register.ftl` no longer sends the hidden `locale` field; the precedence E2E now asserts that `ui_locales` wins for a newly self-registered account (registered in fr, signs in with de) and for seeded `bm-homeowner` (it). Docs updated; risk item moved to Resolved. Realm reset done (`hardwaremissionbricomission_keycloak-data`), which cleared the old `e2e-*`/`probe-*` accounts with a stored locale. Gates re-run: `./init.sh` exit 0 (api 130 / api-client 3 / web 191 tests), `./scripts/keycloak-smoke.sh` exit 0, `pnpm test:e2e` 70 passed; admin API shows new accounts `e2e-1794602055857` and `e2e-fr-1794602061277` with no `locale` attribute. Status `passing`.
+- Next best step: independent validation of `keycloak-login-theme` (`feature-validator`). Developer cleanup still pending: `COMPOSE_PROJECT_NAME=kcstalecheck docker compose down -v`.
