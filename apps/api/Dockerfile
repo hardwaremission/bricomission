@@ -22,9 +22,15 @@ RUN pnpm --filter @bricomission/api build \
 
 FROM node:26.13.1-bookworm-slim AS runtime
 ENV NODE_ENV=production \
-    PORT=3000
+    PORT=3000 \
+    CHECKPOINT_DISABLE=1
+# OpenSSL for the Prisma schema engine (`prisma migrate deploy` in docker-entrypoint.sh).
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends openssl \
+ && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 COPY --from=build --chown=node:node /out ./
 USER node
 EXPOSE 3000
-CMD ["node", "dist/main.js"]
+# Applies Prisma migrations best-effort, then runs node dist/main.js.
+CMD ["sh", "docker-entrypoint.sh"]
