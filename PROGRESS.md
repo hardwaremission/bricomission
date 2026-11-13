@@ -5,11 +5,12 @@
 - Repository root: `/home/juanmi/Proyectos/hardwaremission.bricomission`
 - Standard startup path: `./init.sh`
 - Standard verification path: `./init.sh` (bootstrapped variant since `api-skeleton`) checks host prerequisites, validates `feature_list.json`, runs the workspace gate (`pnpm install --frozen-lockfile`, `pnpm -r lint`, `pnpm -r test`), then the compose gate (`docker compose up -d --build --wait`; postgres, minio, mailpit, keycloak, api healthy). It requires `GET /health` to report `database: up` and, since `keycloak-realm-roles`, the realm `BricoMission` discovery issuer to equal `http://localhost:$KEYCLOAK_PORT/realms/BricoMission` ("Keycloak:" step). Real Keycloak behavior: `./scripts/keycloak-smoke.sh`. Without Docker it skips the compose gate after the pnpm steps and exits 0; with an unreachable daemon, an unhealthy stack or API health not up it exits 1; without pnpm it exits 1 with no-sudo guidance.
-- Last accepted features: `gpu-job-broker` (PR #8, merged) and `keycloak-realm-roles` (validator ACCEPT, 2026-11-13, github-flow `execute`); earlier `api-skeleton` and `local-ai-gpu-spike` (2026-11-12). Since the merge, the global default-deny `AuthGuard` also protects `/ai/jobs/*`.
+- Last accepted features: `gpu-job-broker` (PR #8) and `keycloak-realm-roles` (PR #9), both merged; `catalog-rag-ingestion` (validator ACCEPT, 2026-11-13). Earlier `api-skeleton` and `local-ai-gpu-spike` (2026-11-12). The global default-deny `AuthGuard` protects `/ai/jobs/*` and `/catalog/search`.
 - Current next ready features: see `feature_list.json` (dependency-ready after these two)
+- Catalog RAG: Opt-in compose profiles `rag` (`embedder`, CPU-only) and `rag-fetch` (weights into `bricomission_embedding-models`); the api applies Prisma migrations best-effort on start.
 - Local AI stack: opt-in compose profiles `ai` (`llama-server`, `comfyui`) and `ai-fetch` (weights). Both run on the RX 9070 XT with ROCm in Docker. GPU jobs must be serialized (see `docs/spikes/local-ai-gpu-spike.md`). Weight volumes have fixed names (`bricomission_*`) shared by all checkouts.
 - Current blockers: none. pnpm 10.34.9 (pinned in `packageManager`) resolves through a corepack shim in `~/.local/bin` (host Node 26 has no bundled corepack). Agent shells started before the docker group was added must run docker through `newgrp docker` (no `sg` on this host).
-- Last verified at: 2026-11-13 (`./init.sh` exit 0 with the stack healthy; feature list valid; gpu-job-broker validator ACCEPT)
+- Last verified at: 2026-11-13 (`./init.sh` exit 0 with the stack healthy; feature list valid; catalog-rag-ingestion validator ACCEPT)
 
 ## Session Log
 
@@ -118,3 +119,31 @@
 - State left: worktree stack running and healthy (5 services).
 - Independent validation: ACCEPT (2026-11-13). Validator re-ran lint/test (36/36), `./init.sh`, the smoke (23 ok), a fresh-volume import plus restart in a throwaway project, port, secret and checksum checks, and hostile-JWT probes (all 401, no token leakage). Non-blocking notes: `init.sh` port parsing with `cut -d: -f2` breaks on IPv6 output (smoke uses `awk -F: '{print $NF}'`); `@Public()` wins over `@Roles()` on the same route. Status `accepted`.
 - Next best step: publish via github-flow; then the next dependency-ready feature in `feature_list.json`.
+
+### Session 007
+
+- Date: 2026-11-13
+- Goal: implement `catalog-rag-ingestion` (spec `docs/specs/catalog-rag-ingestion.md`), headless, in worktree `feature/catalog-rag-ingestion` (`COMPOSE_PROJECT_NAME=catalog-rag-ingestion`, `API_PORT=3500`, `EMBEDDING_PORT=8591`).
+- Completed:
+  - `compose.yaml`: `embedder` (profile `rag`; `llama.cpp:server-b12316` CPU, no devices; `--embeddings --pooling last -ngl 0`; 127.0.0.1:`EMBEDDING_PORT`) and `embedder-fetch` (profile `rag-fetch`). Volume `bricomission_embedding-models`. api env `EMBEDDING_URL`, `EMBEDDING_MODEL`, `EMBEDDING_QUERY_INSTRUCTION`.
+  - `infra/ai/fetch-embedding-model.sh` (pinned Qwen3-Embedding-0.6B Q8_0). `.env.example` and `init.sh` hints.
+  - Prisma models `CatalogDocument`/`CatalogChunk` and the first migration (`20261113000000_catalog_rag`: extension, `vector(1024)`, HNSW cosine). `apps/api/docker-entrypoint.sh` runs migrate deploy best-effort. `prisma` moved to dependencies; the runtime image adds `openssl`.
+  - `apps/api/src/catalog/`: embedder interface, llama-server client and fake; `unpdf` page extraction with no-text-layer detection; page-bounded chunker; Prisma repository; ingestion service; search service with the SKU boost; `GET /catalog/search`; CLI `dist/catalog/cli/ingest.js`. Shared types `CatalogSearchResult`/`CatalogSearchResponse`.
+  - `scripts/catalog/{ingest,generate-sample-catalog}.sh`. Generator `apps/api/scripts/generate-sample-catalog.ts` (Node type stripping). Committed `infra/catalog/samples/{bricomission-sample-catalog.pdf,README.md}`.
+  - Docs: ADR 0004, ARCHITECTURE.md (catalog module, migrations, embedder row, `/catalog/search` auth follow-up), AGENTS.md (AI Services, ADR list), technical-discovery, risks (embedding model resolved, research task 3 updated).
+- Verification run: Scenarios 1-8 as written (details and numbers in `feature_list.json` evidence). Also `pnpm -r lint`/`pnpm -r test` (70 tests, also with no network via `unshare -rn`), `bash -n` on every script, `docker compose config -q` with and without the profiles, the awk pin check, the api booting with postgres down, and `./init.sh` exit 0 (final run with the embedder stopped).
+- Deviations from the spec:
+  - Ports follow the orchestrator's exported env (3500/5405/8591), not the spec's 3300/5634/8390.
+  - The PDF parser is `unpdf` 2.1.0, the alternative the spec allows. It bundles serverless PDF.js with no native canvas dependency.
+  - The SKU boost also requires a digit in the token, so plain upper-case words (`OAK`) are not boosted.
+  - `EMBEDDING_QUERY_INSTRUCTION` carries a literal `\n` in compose (compose defaults cannot hold newlines); the API decodes it. An empty value means no prefix.
+  - The CLI also pre-checks the embedder before any database work. The wrapper prints the Prisma migrate output.
+  - Report format: `[status] file: pages N, chunks N, skipped pages N`, plus warning lines and `summary: documents N, chunks N, warnings N, failed N`.
+- Failed / not run: no real partner Catalogs yet (only the synthetic sample). There was no persistent E2E harness (no UI). No GPU was used and no sudo was run.
+- State left: core stack healthy, embedder stopped, sample Catalog indexed in this worktree's database. Weights stay in `bricomission_embedding-models` (639 MB).
+- Known risks:
+  - Future schema changes must keep the hand-written HNSW index and the extension in the SQL, because Prisma does not model them (`migrate dev` would see drift).
+  - `/catalog/search` requires a valid Bearer token since the merge with `keycloak-realm-roles` (global default-deny `AuthGuard`).
+  - The api image is larger now that the Prisma CLI is a runtime dependency.
+- Independent validation: ACCEPT (2026-11-13). Validator re-ran S1-S8 on the live stack: generator sha256 stable, embedder CPU-only (no devices) with 1024 dims on 127.0.0.1, ingest report with the page 5 no-text-layer warning, en/es/SKU search top hit page 3 with 189.90, re-run `unchanged` with identical id hashes, edition-2 replacement verified and restored, failure paths (exit 1/2, HTTP 503/400), 70 tests, `./init.sh` exit 0. Low non-blocking notes: SKU boost is case-sensitive; the embedder fetch checks size, not sha256 (sha256 recorded in ADR 0004); a mid-directory embedder failure loses earlier report lines. Status `accepted`.
+- Next best step: next dependency-ready feature in `feature_list.json`.

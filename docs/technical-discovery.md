@@ -13,7 +13,7 @@ Mobile-first PWA for Homeowners; the same PWA serves the B2B dashboard and the A
 - **API**: NestJS, REST + OpenAPI, Prisma on PostgreSQL, SSE endpoints, in-process GPU job queue (decided in `gpu-job-broker`, see GPU Serialization).
 - **Identity**: Keycloak realm `BricoMission`, OIDC; roles `user`, `professional`, `admin`.
 - **LLM**: llama.cpp `llama-server` (OpenAI-compatible) running a medium MoE model (e.g. Qwen3-30B-A3B, Q4) with experts in system RAM (`--n-cpu-moe` / `-ot`). See ADR 0001.
-- **Embeddings / RAG**: small embedding model served locally; vectors in PostgreSQL (pgvector).
+- **Embeddings / RAG**: `Qwen3-Embedding-0.6B` Q8_0 (1024 dimensions, multilingual), served **CPU-only** by llama.cpp `server-b12316` (compose service `embedder`); vectors in PostgreSQL (pgvector `vector(1024)`, HNSW cosine). See ADR 0004.
 - **Images**: ComfyUI with SDXL + ControlNet (Depth, Canny), driven by API workflows from `apps/api`.
 - **PDF**: server-side generation (Shopping List, Contract) in `apps/api`.
 - **Demo video**: HyperFrames + local Whisper (doc section 5), outside the runtime stack.
@@ -23,7 +23,7 @@ Mobile-first PWA for Homeowners; the same PWA serves the B2B dashboard and the A
 - PostgreSQL (container): relational data + pgvector.
 - MinIO (container): photos, Renders, Catalog PDFs, generated PDFs. Credentials editable from the Admin Dashboard.
 - Optional (not required, developer-run, needs sudo): keep Docker images and volumes off the system disk by mounting a data NVMe and setting `"data-root"` in `/etc/docker/daemon.json` before the first image pull, then restarting docker (`sudo systemctl restart docker`). Not scripted.
-- Catalog ingestion: Catalog PDFs (curated with NotebookLM offline by the developer) are chunked and embedded by an ingestion script into pgvector.
+- Catalog ingestion: Catalog PDFs (curated with NotebookLM offline by the developer) are chunked and embedded into pgvector by `./scripts/catalog/ingest.sh <dir>`. It accepts any directory, extracts text page by page, skips pages without a text layer, and is idempotent by content hash and embedding model. Search: `CatalogSearchService` (in-process) and `GET /catalog/search`.
 
 ## Integrations
 
@@ -51,6 +51,8 @@ Built in `keycloak-realm-roles` (2026-11-13):
 - Single `compose.yaml` at repo root: postgres, keycloak, minio, mailpit, llama-server, comfyui, api, web (no Redis: the job queue is in-process). Pinned image tags, named volumes, healthchecks.
 - GPU passed to llama-server and ComfyUI via `/dev/kfd` and `/dev/dri` (ROCm) or `/dev/dri` (Vulkan). Measured setup (2026-11-12): both use ROCm, `group_add: [video, ${RENDER_GID:-987}]` (host `render` GID 987 owns `/dev/kfd`; `video` GID 983). ComfyUI also uses `ipc: host` and `seccomp=unconfined`.
 - The AI services are opt-in compose profiles: `ai` (`llama-server`, `comfyui`) and `ai-fetch` (one-shot weight download into the named volumes `llm-models`, `comfyui-models`, `comfyui-annotators`). `./init.sh` never starts them. Ports `LLAMA_PORT` (8080) and `COMFYUI_PORT` (8188) bind to 127.0.0.1. Measurements: `docs/spikes/local-ai-gpu-spike.md`.
+- The Catalog RAG embedder is opt-in too: profile `rag` (`embedder`, CPU-only, no GPU devices, port `EMBEDDING_PORT` 8090 on 127.0.0.1) and `rag-fetch` (`embedder-fetch`, one-shot download into the fixed-name volume `bricomission_embedding-models`). `./init.sh` never starts it.
+- The api container applies Prisma migrations (`prisma migrate deploy`) best-effort on start; `scripts/catalog/ingest.sh` applies them too.
 - `init.sh` brings the stack up and verifies health; works offline after the first pull.
 - Per-worktree isolation via `COMPOSE_PROJECT_NAME`.
 

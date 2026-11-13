@@ -6,7 +6,8 @@
   "files": [
     "dist",
     "prisma",
-    "prisma.config.ts"
+    "prisma.config.ts",
+    "docker-entrypoint.sh"
   ],
   "description": "BricoMission REST API (NestJS + Prisma + OpenAPI).",
   "scripts": {
@@ -14,7 +15,9 @@
     "build": "CHECKPOINT_DISABLE=1 prisma generate && tsc -p tsconfig.build.json",
     "lint": "CHECKPOINT_DISABLE=1 prisma generate && eslint . && tsc --noEmit -p tsconfig.json",
     "test": "CHECKPOINT_DISABLE=1 prisma generate && vitest run --reporter=verbose",
-    "start": "node dist/main.js"
+    "start": "node dist/main.js",
+    "generate:sample-catalog": "node scripts/generate-sample-catalog.ts ../../infra/catalog/samples",
+    "ingest": "node dist/catalog/cli/ingest.js"
   },
   "dependencies": {
     "@nestjs/common": "12.5.0",
@@ -24,16 +27,19 @@
     "@prisma/adapter-pg": "7.10.1",
     "@prisma/client": "7.10.1",
     "jose": "6.2.17",
+    "prisma": "7.10.1",
     "reflect-metadata": "0.2.2",
-    "rxjs": "7.8.2"
+    "rxjs": "7.8.2",
+    "unpdf": "2.1.0"
   },
   "devDependencies": {
     "@bricomission/shared-types": "workspace:*",
     "@nestjs/testing": "12.5.0",
     "@swc/core": "1.16.22",
     "@types/node": "26.6.6",
+    "@types/pdfkit": "0.17.7",
     "@types/supertest": "7.2.1",
-    "prisma": "7.10.1",
+    "pdfkit": "0.20.2",
     "supertest": "7.3.2",
     "typescript": "6.0.3",
     "unplugin-swc": "2.0.0",

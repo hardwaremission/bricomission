@@ -6,13 +6,13 @@ None. Discovery is sufficient to derive the harness (`/harness-starter`).
 
 ## Implementation-Time Questions
 
-- Embedding model for the RAG index.
 - Which Catalog PDFs are ingested for the demo, and their licensing for a public video.
 - Contract template legal wording (Spanish), VAT handling in totals.
 - Platform rating shown on anonymous Bids: source of ratings in the MVP (seeded demo data).
 
 ## Resolved
 
+- Embedding model for the RAG index (2026-11-13, `catalog-rag-ingestion`): `Qwen/Qwen3-Embedding-0.6B-GGUF` Q8_0, 1024 dimensions, CPU-only in the llama.cpp `server-b12316` image (no VRAM use). bge-m3 Q8_0 is the same-dimension fallback. See ADR 0004.
 - LLM model and quantization (2026-11-12, `local-ai-gpu-spike`): `unsloth/Qwen3-30B-A3B-Instruct-2507-GGUF` Q4_K_M, all experts in RAM (`--n-cpu-moe 48`). 3.2 GB VRAM peak, 25.5 tok/s generation, 3/3 valid schema-constrained JSON. See `docs/spikes/local-ai-gpu-spike.md`.
 - llama.cpp backend (2026-11-12, `local-ai-gpu-spike`): ROCm image `server-rocm-b12316`, native gfx1201. Vulkan works too, but prompt processing is half as fast (358 vs 771 tok/s).
 - SDXL checkpoint and ControlNet models (2026-11-12, `local-ai-gpu-spike`): RealVisXL V5.0 fp16 with `diffusers/controlnet-{depth,canny}-sdxl-1.0` fp16, plus the Depth Anything V2 Small annotator. Warm render about 8.5-9 s at 1216x832 with 25 steps. No SD 1.5 fallback needed.
@@ -55,4 +55,4 @@ None. Discovery is sufficient to derive the harness (`/harness-starter`).
 
 1. Done 2026-11-12: Day-1 spike (`docs/spikes/local-ai-gpu-spike.md`).
 2. Done 2026-11-12: llama.cpp structured output verified (json_schema, 3/3 valid).
-3. Confirm Catalog PDFs are parseable (text layer vs scanned).
+3. Confirm Catalog PDFs are parseable (text layer vs scanned): detection implemented in `catalog-rag-ingestion` (pages with fewer than 20 non-whitespace characters are skipped with a warning); checking the real partner PDFs is pending until the developer supplies them.

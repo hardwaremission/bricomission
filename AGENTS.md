@@ -14,7 +14,7 @@ Read when relevant:
 - `docs/user-and-access-model.md` — roles, permissions, anonymity, revocation.
 - `docs/technical-discovery.md` — stack, Compose services, integrations, GPU serialization, testing.
 - `ARCHITECTURE.md` — what is built today: monorepo layout, API module layout, runtime services, test layering.
-- `docs/adr/` — accepted decisions (0001 local MoE LLM, 0002 deterministic budget math, 0003 monorepo).
+- `docs/adr/` — accepted decisions (0001 local MoE LLM, 0002 deterministic budget math, 0003 monorepo, 0004 CPU multilingual embeddings).
 - `DESIGN.md` — visual tokens and UI rules, for any UI work.
 - `Documentación del Proyecto_BricoMission.md` — full project definition and PRD (section 3), phase plan (4.2), discovery decisions (4.3), demo video pipeline (5).
 
@@ -64,6 +64,11 @@ Before writing code:
 - Measured on 2026-11-12: serialization required. The LLM uses about 3.2 GB of VRAM; ComfyUI fills the card (about 15 GB) during a render. Run renders alone. Free VRAM with ComfyUI `POST /free` or `docker compose stop llama-server`. Numbers: `docs/spikes/local-ai-gpu-spike.md`.
 - Spike tools: `scripts/ai-spike/{llm-bench,comfy-run,vram-sample}.sh`.
 - The API reaches llama-server only with `AI_ADAPTERS=local`; the default `fake` uses deterministic adapters and never touches the GPU.
+- Catalog RAG embedder (ADR 0004). It is CPU-only: do not add GPU devices, `group_add` or `-ngl` > 0 to it.
+  - Download the weights once: `docker compose --profile rag-fetch run --rm embedder-fetch` (about 640 MB into `bricomission_embedding-models`; idempotent).
+  - Start: `docker compose --profile rag up -d --wait embedder` (`EMBEDDING_PORT` 8090 on 127.0.0.1). Stop: `docker compose --profile rag stop embedder` (name the service).
+  - Ingest any directory of Catalog PDFs: `./scripts/catalog/ingest.sh <dir> [--force]` (exit 0 ok, 1 failed document or embedder down, 2 usage). Search: `GET /catalog/search?q=&limit=`.
+  - Synthetic sample Catalog: `./scripts/catalog/generate-sample-catalog.sh [out-dir] [--edition 2]` (committed output in `infra/catalog/samples/`). Real Catalogs stay out of git.
 
 ## Required Artifacts
 

@@ -6,6 +6,10 @@
 #   docker compose --profile ai-fetch run --rm ai-fetch   # one-time weight download into volumes
 #   docker compose --profile ai up -d --wait               # llama-server + comfyui on the GPU
 #   docker compose --profile ai stop llama-server comfyui  # name services; bare stop/down also stops the core stack
+# Catalog RAG embedder (feature catalog-rag-ingestion, ADR 0004) is opt-in and CPU-only:
+#   docker compose --profile rag-fetch run --rm embedder-fetch  # one-time embedding weight download
+#   docker compose --profile rag up -d --wait embedder          # CPU embedder (no GPU devices)
+#   docker compose --profile rag stop embedder                  # name the service
 # No top-level `name:` so COMPOSE_PROJECT_NAME can isolate parallel worktrees.
 # Every variable has a default equal to .env.example; the stack runs without a .env.
 # Host ports bind to 127.0.0.1 only and are overridable through env vars.
@@ -133,6 +137,13 @@ services:
       GPU_BROKER_DEBUG_ENDPOINTS: ${GPU_BROKER_DEBUG_ENDPOINTS:-false}
       GPU_BROKER_LLM_CONCURRENCY: ${GPU_BROKER_LLM_CONCURRENCY:-1}
       GPU_BROKER_MAX_QUEUED: ${GPU_BROKER_MAX_QUEUED:-20}
+      # Catalog RAG (ADR 0004). No depends_on: the embedder is opt-in (profile rag);
+      # /catalog/search answers 503 while it is down.
+      EMBEDDING_URL: http://embedder:8080
+      EMBEDDING_MODEL: ${EMBEDDING_MODEL:-qwen3-embedding-0.6b-q8_0}
+      # Qwen3-Embedding query prefix (documents are embedded raw). The API turns the
+      # literal "\n" into a newline. Set EMBEDDING_QUERY_INSTRUCTION= (empty) for bge-m3.
+      EMBEDDING_QUERY_INSTRUCTION: '${EMBEDDING_QUERY_INSTRUCTION-Instruct: Given a product search query, retrieve catalog passages that contain matching products\nQuery: }'
     ports:
       - "127.0.0.1:${API_PORT:-3000}:3000"
     healthcheck:
@@ -235,6 +246,55 @@ services:
       - comfyui-models:/comfy-models
       - comfyui-annotators:/annotators
 
+  # --- Catalog RAG embedder (profile "rag"; ADR 0004) ---
+  embedder:
+    # CPU build of the same llama.cpp release as llama-server. CPU-only on purpose:
+    # no devices, no group_add, -ngl 0, so it never competes for VRAM.
+    # Digest (2026-11-13): sha256:2103d1f4f2e2e223ad80587dcb39fc15a9f912f29ae1fa9fc1193fe8c1aea82f
+    image: ghcr.io/ggml-org/llama.cpp:server-b12316
+    profiles: ["rag"]
+    restart: unless-stopped
+    command:
+      - -m
+      - /models/Qwen3-Embedding-0.6B-Q8_0.gguf
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8080"
+      - --embeddings
+      - --pooling
+      - last
+      - -ngl
+      - "0"
+      - -t
+      - "${EMBEDDING_THREADS:-8}"
+      - -c
+      - "8192"
+      - -b
+      - "2048"
+      - -ub
+      - "2048"
+    ports:
+      - "127.0.0.1:${EMBEDDING_PORT:-8090}:8080"
+    volumes:
+      - embedding-models:/models:ro
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "-o", "/dev/null", "http://127.0.0.1:8080/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 120s
+
+  embedder-fetch:
+    # One-shot downloader for the embedding GGUF (Ubuntu image with bash and curl).
+    image: ghcr.io/ggml-org/llama.cpp:server-b12316
+    profiles: ["rag-fetch"]
+    restart: "no"
+    entrypoint: ["bash", "/fetch/fetch-embedding-model.sh"]
+    volumes:
+      - ./infra/ai:/fetch:ro
+      - embedding-models:/models
+
 volumes:
   postgres-data:
   minio-data:
@@ -249,3 +309,5 @@ volumes:
   comfyui-annotators:
     name: bricomission_comfyui-annotators
   comfyui-output:
+  embedding-models:
+    name: bricomission_embedding-models

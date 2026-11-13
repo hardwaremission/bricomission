@@ -1,5 +1,7 @@
-// BricoMission Prisma schema. No models yet: domain models arrive with their features.
+// BricoMission Prisma schema. Domain models arrive with their features.
 // The connection URL comes from DATABASE_URL via prisma.config.ts.
+// Migrations live in prisma/migrations and are applied with `prisma migrate deploy`
+// (api container start, best-effort, and scripts/catalog/ingest.sh).
 
 generator client {
   provider     = "prisma-client"
@@ -9,4 +11,39 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+}
+
+/// One ingested Catalog PDF (feature catalog-rag-ingestion). `sourceName` is the
+/// file basename; re-ingesting a file with the same name replaces the document.
+model CatalogDocument {
+  id             String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  sourceName     String         @unique @map("source_name")
+  catalogName    String         @map("catalog_name")
+  contentSha256  String         @map("content_sha256") @db.Char(64)
+  embeddingModel String         @map("embedding_model")
+  pageCount      Int            @map("page_count")
+  skippedPages   Int[]          @default([]) @map("skipped_pages")
+  /// `indexed` or `no_text_layer`.
+  status         String
+  createdAt      DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt      DateTime       @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+  chunks         CatalogChunk[]
+
+  @@map("catalog_document")
+}
+
+/// A page-bounded text chunk of a Catalog document with its embedding
+/// (vector(1024) = CATALOG_EMBEDDING_DIMENSIONS, HNSW cosine index in the migration).
+model CatalogChunk {
+  id         String                       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  documentId String                       @map("document_id") @db.Uuid
+  document   CatalogDocument              @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  /// 1-based page number in the source PDF.
+  pageNumber Int                          @map("page_number")
+  chunkIndex Int                          @map("chunk_index")
+  text       String
+  embedding  Unsupported("vector(1024)")
+
+  @@unique([documentId, pageNumber, chunkIndex])
+  @@map("catalog_chunk")
 }
