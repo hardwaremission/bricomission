@@ -195,14 +195,26 @@
     "title": "API serializes GPU jobs and streams their status",
     "user_visible_behavior": "AI requests go through one API job broker: image jobs run one at a time, chat waits while the GPU is busy, and clients receive queued/running/done status over SSE.",
     "depends_on": ["local-ai-gpu-spike", "api-skeleton"],
-    "status": "not_started",
+    "status": "accepted",
     "verification": [
       "Test with fake AI adapters: two image jobs never overlap; chat request during an image job is queued then served",
       "SSE endpoint emits ordered status events for a job",
       "AI adapters are behind interfaces with deterministic fakes"
     ],
-    "evidence": [],
-    "notes": "docs/technical-discovery.md GPU Serialization. Queue technology (BullMQ+Redis vs Postgres) decided in the spec. Endpoints read from platform settings (default: compose service URLs)."
+    "evidence": [
+      "2026-11-13 implementer: pnpm install --frozen-lockfile exit 0, pnpm-lock.yaml unchanged (no new dependency)",
+      "pnpm -r lint exit 0; pnpm -r test exit 0, 35 passed (5 files; 28 new)",
+      "broker tests (11): two image jobs never overlap (maxActive 1, submission order); llm submitted during image is queued with waitingFor image, then served; queued image blocks later llm (FIFO); llm concurrency 2 runs two llm jobs together but never with image; adapter error -> failed adapter_error, next job starts; timeout aborts signal -> failed timeout, slot freed, late settle ignored; timeout aborts a fake adapter through its signal; queue full throws; retention evicts finished jobs; events have strictly increasing seq and end with one terminal event; residency hook wraps every image job",
+      "HTTP tests (9): debug POST 404 flag off; GET job 404/400; SSE 404 unknown; /docs-json has /ai/jobs/{id} and /ai/jobs/{id}/events (text/event-stream) and no POST when off; POST 202 + GET 200 + invalid body 400; live SSE queued,queued,running,done with increasing ids and stream end, late replay equal, Last-Event-ID 2 -> ids 3,4; failed stream ends with failed adapter_error, no adapter text; POST 202/429 documented; 429 with GPU_BROKER_MAX_QUEUED=1",
+      "adapter tests (8): fakes deterministic, overlap tracking, abort; llama adapter sends response_format json_schema (name out, strict) and maps usage against a node:http stub; non-2xx -> AiBackendError(500) without body; malformed body -> AiBackendError",
+      "grep setTimeout apps/api/test/gpu-*: no matches (timeouts are 5-10 ms option values; completion driven by gates)",
+      "compose (COMPOSE_PROJECT_NAME=gpu-job-broker, API_PORT=3400): config -q exit 0; up -d --build --wait exit 0, 4 healthy; /health {status:ok,database:up}; POST /ai/jobs flag off -> 404; /docs-json paths [/health, /ai/jobs/{id}, /ai/jobs/{id}/events]",
+      "compose SSE check (GPU_BROKER_DEBUG_ENDPOINTS=true, fake delays 3000/500 ms): POST image, image, llm -> llm view queued position 2 waitingFor image; curl -sN events: queued(id 1, pos 2, image), queued(id 2, pos 1, image), running(id 3), done(id 4), stream ended after 6.5 s, curl exit 0; Last-Event-ID 2 -> ids 3,4; unknown id -> 404; flag restored (api env GPU_BROKER_DEBUG_ENDPOINTS=false, AI_ADAPTERS=fake)",
+      "optional real-LLM smoke under flock /tmp/bricomission-gpu.lock: llama-server up healthy, api AI_ADAPTERS=local + debug: POST llm 'Say OK' -> events queued,running,done in 0.34 s; image adapter fake warning logged once; llama-server stopped afterwards, api restored to fake/false",
+      "./init.sh exit 0 (workspace gate + compose gate, /health database up)",
+      "2026-11-13 independent validator ACCEPT: re-ran frozen install (lockfile unchanged), lint 0, test 35/35 (x6 stable), ./init.sh 0 (ports 5404/9400/9401/8425/1425/3400), compose SSE check queued(2,image)/queued(1,image)/running/done + Last-Event-ID replay + unknown 404 / invalid 400, debug flag restored"
+    ],
+    "notes": "Spec: docs/specs/gpu-job-broker.md. docs/technical-discovery.md GPU Serialization. Queue decided: in-process in-memory FIFO scheduler (single API instance, no Redis, no migrations; jobs lost on restart). Endpoints via an env-backed AiEndpointsProvider (default: compose service URLs) that admin-service-endpoints later backs with Platform Settings. Image adapter fake only here; real ComfyUI adapter in controlnet-render."
   },
   {
     "id": "controlnet-render",

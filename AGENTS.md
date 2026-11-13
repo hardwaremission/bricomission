@@ -63,6 +63,7 @@ Before writing code:
   - Stop: `docker compose --profile ai stop llama-server comfyui` (name the services: a bare `--profile ai stop/down` also stops the core stack).
 - Measured on 2026-11-12: serialization required. The LLM uses about 3.2 GB of VRAM; ComfyUI fills the card (about 15 GB) during a render. Run renders alone. Free VRAM with ComfyUI `POST /free` or `docker compose stop llama-server`. Numbers: `docs/spikes/local-ai-gpu-spike.md`.
 - Spike tools: `scripts/ai-spike/{llm-bench,comfy-run,vram-sample}.sh`.
+- The API reaches llama-server only with `AI_ADAPTERS=local`; the default `fake` uses deterministic adapters and never touches the GPU.
 
 ## Required Artifacts
 

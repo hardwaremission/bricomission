@@ -7,7 +7,7 @@ Current, built architecture. Planned components live in `docs/technical-discover
 pnpm workspace (`pnpm-workspace.yaml`), pnpm pinned through `packageManager` in the root `package.json`.
 
 - `apps/api` (`@bricomission/api`): NestJS 12 REST API, ESM (`"type": "module"`, `module: nodenext`, relative imports end in `.js`). Prisma 7 with the `@prisma/adapter-pg` driver adapter.
-- `packages/shared-types` (`@bricomission/shared-types`): type-only contracts (`HealthResponse`, `RealmRole`, `MeResponse`, `AdminPingResponse`, ...). No runtime code and no build step. Consumers use `import type`; the API lists it as a devDependency.
+- `packages/shared-types` (`@bricomission/shared-types`): type-only contracts (`HealthResponse`, `RealmRole`, `MeResponse`, `AdminPingResponse`, `GpuJobView`, `GpuJobEvent`, ...). No runtime code and no build step. Consumers use `import type`; the API lists it as a devDependency.
 - Planned: `apps/web` (Next.js PWA) and a generated API client (`web-pwa-shell`).
 
 Root configs: `tsconfig.base.json` (strict), `eslint.config.mjs` (flat config, typescript-eslint recommended, `consistent-type-imports`). Every package exposes `lint` (ESLint + `tsc --noEmit`) and `test`.
@@ -24,6 +24,8 @@ Root configs: `tsconfig.base.json` (strict), `eslint.config.mjs` (flat config, t
   - `RolesGuard` enforces `@Roles(...roles: RealmRole[])`: 403 unless the caller holds one of the roles. Roles come from `realm_access.roles`, filtered to `user`, `professional`, `admin`.
   - `@CurrentUser()` injects the `AuthenticatedUser` (`sub`, `username`, `email`, `roles`). `GET /me` lives here.
 - `src/admin/`: `AdminController` (`@Roles('admin')` on the class) with `GET /admin/ping`; later admin features extend this module.
+- `src/ai/`: AI layer (`AiModule.register()`, a dynamic module). See "AI layer and GPU job broker" below.
+  - The `AuthGuard` is global and default-deny, so the AI job routes (`/ai/jobs/*`) require a valid token; tests that build `AiModule` alone run without the guard.
 - `prisma/schema.prisma` + `prisma.config.ts`: Prisma 7 keeps the datasource URL in `prisma.config.ts` (`DATABASE_URL`). No models yet. The client is generated into `src/generated/prisma` (git-ignored); `lint`, `test` and `build` run `prisma generate` first.
 
 ## API contract
@@ -34,6 +36,19 @@ OpenAPI (`/docs-json`) is the contract for the web PWA and the future native iOS
 - `GET /me` (any realm role): 200 `{sub, username, email, roles}`; 401 without a valid token.
 - `GET /admin/ping` (`admin` only): 200 `{"status":"ok"}`; 401 without a valid token, 403 for other roles.
 - The OpenAPI document declares the `bearer` HTTP security scheme (`addBearerAuth()` in `configureApp`). Protected controllers carry `@ApiBearerAuth()` and their 401/403 responses. `/docs` and `/docs-json` are served by Swagger outside the Nest router, so they stay public.
+
+- `GET /ai/jobs/:id`: 200 `GpuJobView` (`id`, `kind`, `status`, 1-based `position` and `waitingFor` while queued, ISO timestamps, `errorCode`), 404 unknown or expired, 400 malformed UUID. No product outputs: features expose their own.
+- `GET /ai/jobs/:id/events` (SSE, `text/event-stream`): replays the job history, then live events: `queued` (again on every position or blocker change), `running`, then exactly one `done` or `failed`; the stream closes after the terminal event. SSE `id` = per-job `seq` (strictly increasing from 1), `event` = status, `data` = JSON `GpuJobEvent`. `Last-Event-ID: n` sends only `seq > n`. 404 for unknown ids.
+- `POST /ai/jobs` (debug only, mounted when `GPU_BROKER_DEBUG_ENDPOINTS=true`, otherwise 404 and absent from OpenAPI): body `{ kind: 'image'|'llm', prompt? }`, runs one adapter call through the broker, 202 `GpuJobView`, 400 invalid body, 429 queue full.
+- The job endpoints require a valid Bearer token (global default-deny `AuthGuard`, since `keycloak-realm-roles`); per-job ownership checks arrive with later features (`ownerRef` is stored, not exposed).
+
+## AI layer and GPU job broker (`src/ai/`)
+
+- `jobs/gpu-job-broker.service.ts`: `GpuJobBrokerService` implements the `GpuJobBroker` interface (`submit(kind, run, { ownerRef })` -> `{ jobId, result }`, `get`, `events(jobId, afterSeq)`). Every GPU call goes through `submit`; product features await `result` (rejects with `GpuJobFailedError(code)`). In-process and in-memory: one FIFO queue with head-of-line admission (an image head starts when nothing runs; an LLM head starts when no image runs and running LLM jobs < `llmConcurrency`; no look-ahead). Per-kind timeouts abort the `AbortSignal` passed to the run and free the slot; late settles are ignored. Public errors are codes (`adapter_error`, `timeout`); logs carry the error class name only. Queue cap throws `GpuQueueFullError`. Finished jobs are pruned after `retentionMs`. Jobs are lost on restart.
+- `jobs/gpu-residency.hook.ts`: no-op `beforeImage()/afterImage()` around every image job; the GPU stays held until `afterImage` resolves.
+- `adapters/`: `LlmAdapter` and `ImageAdapter` interfaces; deterministic fakes (`FakeLlmAdapter` -> `fake:<sha256-16>`, `FakeImageAdapter` -> `fake/<sha256-16>.png`; optional `delayMs` or `gate`, abort-aware, `active`/`maxActive`/`calls` for tests); `LlamaServerLlmAdapter` (non-streaming `POST /v1/chat/completions`, `response_format: json_schema` when a schema is given, non-2xx -> `AiBackendError(status)` without the body). The real ComfyUI adapter arrives with `controlnet-render`.
+- `ai.tokens.ts`: `LLM_ADAPTER`, `IMAGE_ADAPTER`, `GPU_BROKER_OPTIONS`, `AI_ENDPOINTS`. `ai-endpoints.provider.ts`: `AiEndpointsProvider.get()` (env-backed today, read per call; `admin-service-endpoints` backs it with Platform Settings).
+- Env (read at module build): `AI_ADAPTERS` (`fake` default, `local` = llama-server LLM, image still fake), `LLM_BASE_URL` (`http://llama-server:8080`), `COMFYUI_BASE_URL` (`http://comfyui:8188`), `GPU_BROKER_DEBUG_ENDPOINTS` (`false`), `GPU_BROKER_LLM_CONCURRENCY` (1), `GPU_BROKER_MAX_QUEUED` (20); code defaults only: `GPU_BROKER_IMAGE_TIMEOUT_MS` (180000), `GPU_BROKER_LLM_TIMEOUT_MS` (120000), `GPU_BROKER_RETENTION_MS` (3600000), `AI_FAKE_IMAGE_DELAY_MS` (3000), `AI_FAKE_LLM_DELAY_MS` (500).
 
 ## Runtime (compose.yaml)
 
@@ -53,6 +68,7 @@ The api image is multi-stage: frozen install, `prisma generate` + `tsc`, then `p
 
 - `pnpm -r test` (Vitest + `unplugin-swc` for decorator metadata): DB-free unit tests and supertest HTTP tests with `PrismaService` overridden. No Docker needed.
 - Auth tests (`test/auth.http.spec.ts`, `test/token-verifier.spec.ts`) override `KEY_RESOLVER` with a local JWKS built from a generated RS256 key pair (`test/support/tokens.ts`), so no Keycloak is needed.
-- Real-database behavior (DB up/down/recovery) is checked against the compose stack (`./init.sh` checks `/health` reports `database: up` and the realm discovery issuer).
 - Real Keycloak behavior is checked by `scripts/keycloak-smoke.sh` against the running stack: seeded role tokens, API 401/403/200 with real tokens, SMTP to Mailpit, and the email-code browser login (Authorization Code + PKCE driven with curl).
+- AI tests run without GPU, Docker or network: the broker is driven with gated fakes (`test/gpu-test-helpers.ts`: `Gate`, `GateQueue`, `flush`, injected clock and ids), SSE is read with `fetch` against `app.listen(0)`, and `LlamaServerLlmAdapter` is tested against a local `node:http` stub on port 0.
+- Real-database behavior (DB up/down/recovery) is checked against the compose stack (`./init.sh` checks `/health` reports `database: up` and the realm discovery issuer).
 - Persistent browser E2E (Playwright) arrives with `web-pwa-shell`.
