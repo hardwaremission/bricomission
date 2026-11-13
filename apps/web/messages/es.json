@@ -37,5 +37,23 @@
     "online": "Servicio disponible",
     "degraded": "Algunas funciones no están disponibles temporalmente",
     "offline": "Estás sin conexión o no se puede acceder al servicio"
+  },
+  "auth": {
+    "signIn": "Iniciar sesión",
+    "accountLabel": "Cuenta: {name}",
+    "sheetTitle": "Cuenta",
+    "close": "Cerrar",
+    "signOut": "Cerrar sesión",
+    "error": {
+      "title": "No hemos podido iniciar tu sesión",
+      "reasons": {
+        "cancelled": "Has cancelado el inicio de sesión. Puedes volver a intentarlo cuando quieras.",
+        "expired": "Tu enlace de inicio de sesión ha caducado. Empieza de nuevo para continuar.",
+        "unavailable": "El inicio de sesión no está disponible temporalmente. Vuelve a intentarlo en unos minutos.",
+        "generic": "Algo ha fallado al iniciar tu sesión. Vuelve a intentarlo."
+      },
+      "tryAgain": "Reintentar",
+      "backHome": "Volver al inicio"
+    }
   }
 }

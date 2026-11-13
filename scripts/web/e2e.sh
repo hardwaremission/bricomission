@@ -4,7 +4,8 @@
 # profile e2e); nothing is installed on the host. Extra args go to `playwright test`.
 # Prerequisite: the stack is up (./init.sh or docker compose up -d --build --wait).
 # The Keycloak theme spec (keycloak-theme.spec.ts) also gets the Keycloak and Mailpit URLs and
-# the bm-homeowner seed password (env or the compose default).
+# the bm-homeowner seed password (env or the compose default). E2E_PERSIST_PHASE (save|check) is
+# passed through for scripts/web/auth-persist-check.sh; empty skips e2e/auth-persist.spec.ts.
 # Exit code: Playwright's (0 = all specs passed).
 set -euo pipefail
 cd "$(dirname "$0")/../.."
@@ -29,4 +30,5 @@ exec docker compose --profile e2e run --rm --user "$(id -u):$(id -g)" \
   -e E2E_KEYCLOAK_URL="http://localhost:${kc_port}" \
   -e E2E_MAILPIT_URL="http://localhost:${mailpit_port}" \
   -e E2E_SEED_HOMEOWNER_PASSWORD="${BM_SEED_HOMEOWNER_PASSWORD:-bm-homeowner-dev}" \
+  -e E2E_PERSIST_PHASE="${E2E_PERSIST_PHASE:-}" \
   web-e2e ./node_modules/.bin/playwright test "$@"

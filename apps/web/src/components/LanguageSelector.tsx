@@ -41,11 +41,15 @@ export function LanguageSelector({ current }: { current: Locale }) {
         aria-haspopup="dialog"
         aria-label={t('selectorLabel', { language: LOCALE_NATIVE_NAMES[current] })}
         onClick={() => dialogRef.current?.showModal()}
-        className="flex h-11 shrink-0 items-center gap-1.5 rounded-pill bg-surface-muted px-3.5 text-text"
+        className="flex h-11 shrink-0 items-center justify-center gap-1.5 rounded-pill bg-surface-muted px-3.5 text-text max-[375px]:gap-1 max-[375px]:px-2.5"
       >
-        <Globe size={18} aria-hidden="true" />
-        <span className="text-small leading-5 font-semibold">{LOCALE_NATIVE_NAMES[current]}</span>
-        <ChevronDown size={16} aria-hidden="true" />
+        {/* Below 375 px (developer rule, homeowner-password-login design): compact pill that
+            keeps the full native name at 12/16, never a language code. */}
+        <Globe size={18} aria-hidden="true" className="shrink-0 max-[375px]:size-4" />
+        <span data-testid="locale-selector-label" className="text-small leading-5 font-semibold whitespace-nowrap max-[375px]:text-[12px] max-[375px]:leading-4">
+          {LOCALE_NATIVE_NAMES[current]}
+        </span>
+        <ChevronDown size={16} aria-hidden="true" className="shrink-0 max-[375px]:size-3.5" />
       </button>
 
       <dialog

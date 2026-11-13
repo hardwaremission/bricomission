@@ -37,5 +37,23 @@
     "online": "Tjenesten er tilgængelig",
     "degraded": "Nogle funktioner er midlertidigt utilgængelige",
     "offline": "Du er offline, eller tjenesten kan ikke nås"
+  },
+  "auth": {
+    "signIn": "Log ind",
+    "accountLabel": "Konto: {name}",
+    "sheetTitle": "Konto",
+    "close": "Luk",
+    "signOut": "Log ud",
+    "error": {
+      "title": "Vi kunne ikke logge dig ind",
+      "reasons": {
+        "cancelled": "Du annullerede login. Du kan prøve igen, når du er klar.",
+        "expired": "Dit loginlink er udløbet. Start forfra for at fortsætte.",
+        "unavailable": "Login er midlertidigt utilgængeligt. Prøv igen om et par minutter.",
+        "generic": "Noget gik galt under login. Prøv igen."
+      },
+      "tryAgain": "Prøv igen",
+      "backHome": "Tilbage til forsiden"
+    }
   }
 }

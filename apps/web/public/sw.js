@@ -4,10 +4,10 @@
  * - navigations: network-first; 200 non-redirected responses are cached; offline serves
  *   the cached copy (ignoreVary: Next varies on RSC headers).
  * - /_next/static/*, fonts and icons: cache-first.
- * - /api/* and non-GET requests: never intercepted.
+ * - /api/*, /auth/* (sign-in, session state) and non-GET requests: never intercepted.
  * Bump VERSION to drop old caches on activate.
  */
-const VERSION = 'v1';
+const VERSION = 'v2';
 const CACHE = `bricomission-shell-${VERSION}`;
 const PRECACHE = [
   '/manifest.webmanifest',
@@ -74,7 +74,7 @@ self.addEventListener('fetch', (event) => {
   const { request } = event;
   if (request.method !== 'GET') return;
   const url = new URL(request.url);
-  if (url.origin !== self.location.origin || url.pathname.startsWith('/api/')) return;
+  if (url.origin !== self.location.origin || url.pathname.startsWith('/api/') || url.pathname.startsWith('/auth/')) return;
   if (request.mode === 'navigate') {
     event.respondWith(networkFirst(request));
   } else if (isCacheFirst(url)) {

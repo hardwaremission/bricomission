@@ -54,6 +54,14 @@ Built in `keycloak-realm-roles` (2026-11-13):
 - Access tokens carry `aud: bricomission-api` through an audience mapper on the client. The API checks RS256 signature, `iss`, `aud` and `exp`, and authorizes on `realm_access.roles`.
 - Email OTP: core Keycloak 26.8.2 has no email-code login authenticator, so the image adds the Apache-2.0 provider `mesutpiskin/keycloak-2fa-email-authenticator` v26.7.2. It uses authenticator `email-authenticator-no-enrollment`, a 6-digit code with 300 s TTL and 5 attempts, sent through the realm SMTP, which is Mailpit (`mailpit:1025`, from `noreply@bricomission.local`). The browser flow `browser-email-otp` runs cookie, then password, then the email code. The direct grant flow stays default (no code) for the dev-only CLI client.
 
+Built in `homeowner-password-login` (2026-11-13), web sign-in as a Backend-for-Frontend:
+
+- The Next.js server is the confidential OIDC client `bricomission-web` (Authorization Code + PKCE S256, `state`, `nonce`) on `openid-client` 6.9.0 with explicit metadata: the issuer and authorization endpoint use the public Keycloak URL, the token, JWKS and logout endpoints the internal one. The themed Keycloak pages do the password and email code. Rejected: tokens in the browser (Keycloak JS adapter), custom password forms (no email code), iframes.
+- Sessions in PostgreSQL, schema `web_session` owned by the web (`pg`, lazy idempotent migration under an advisory lock); the API's Prisma owns `public`. Rejected: internal session endpoints in the API (they widen the surface behind the `/api` proxy, couple sign-in to API uptime and mix browser concerns into the REST API the iOS app will reuse) and tables in the API's Prisma schema (two apps writing one model). Cost: the web container holds database credentials.
+- Opaque cookie (`bm_session`, 32 random bytes; the row key is its SHA-256) and AES-256-GCM tokens at rest (`WEB_SESSION_KEY`). Login transactions are stored too (10 min), so a login survives a web restart.
+- `/api/*` calls carry the session's access token (refreshed 30 s before expiry, single flight per process); the browser's `Authorization` header is dropped; unsafe methods with the session cookie need a same-origin `Origin`.
+- Registration from the app uses `prompt=create` (Keycloak 26.8.2 opens the themed registration page; verified 2026-11-13). Realm `${VAR}` placeholders resolve in any field of the import file (secret, `rootUrl`, `redirectUris`), not only in `credentials`.
+
 Built in `keycloak-login-theme` (2026-11-13):
 
 - Keycloak-hosted pages, themed: custom theme `bricomission` (login + email, `parent=base`) baked into the image from `infra/keycloak/themes/bricomission/`. It overrides the base templates for sign in, create account, error, info and page expired, plus the email-OTP provider's `email-code-form.ftl` and `code-email.ftl` (a theme template wins over the provider's `theme-resources`). Recheck these overrides on every Keycloak or provider upgrade.

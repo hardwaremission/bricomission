@@ -37,5 +37,23 @@
     "online": "Serviço disponível",
     "degraded": "Algumas funcionalidades estão temporariamente indisponíveis",
     "offline": "Está offline ou não é possível aceder ao serviço"
+  },
+  "auth": {
+    "signIn": "Iniciar sessão",
+    "accountLabel": "Conta: {name}",
+    "sheetTitle": "Conta",
+    "close": "Fechar",
+    "signOut": "Terminar sessão",
+    "error": {
+      "title": "Não conseguimos iniciar a sua sessão",
+      "reasons": {
+        "cancelled": "Cancelou o início de sessão. Pode tentar novamente quando quiser.",
+        "expired": "A sua ligação de início de sessão expirou. Comece de novo para continuar.",
+        "unavailable": "O início de sessão está temporariamente indisponível. Tente novamente dentro de alguns minutos.",
+        "generic": "Ocorreu um erro ao iniciar a sua sessão. Tente novamente."
+      },
+      "tryAgain": "Tentar novamente",
+      "backHome": "Voltar ao início"
+    }
   }
 }

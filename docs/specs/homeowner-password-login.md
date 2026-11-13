@@ -396,3 +396,28 @@ Use the orchestrator's exported env. No sudo, no GPU, never read `.env`.
 - The web gets database credentials. The dev default `WEB_SESSION_KEY` must never be used outside local use.
 - Each checkout needs a realm reset after this feature (and after `keycloak-login-theme`).
 - Cookies ignore ports, so parallel worktrees on `localhost` overwrite each other's `bm_session`.
+
+## Implementation Notes (implementer, 2026-11-13)
+
+Design input: `docs/design/homeowner-password-login.md` (approved by developer on 2026-11-13), exports in `design/openpencil/homeowner-password-login/`. Dependency `keycloak-login-theme` is accepted.
+
+### Planning-time unknowns
+
+- **Library:** `openid-client` 6.9.0 accepts the split public/internal metadata (explicit `Configuration`, no discovery). The `jose` fallback was not needed. `enableNonRepudiationChecks` is on, so ID token signatures are verified against the internal JWKS (openid-client skips that by default). `pg` 8.23.1 (+ `@types/pg` 8.23.1, dev) traces into the standalone build.
+- **`${VAR}` placeholders outside `credentials`:** they resolve. Verified after the realm reset: the authorization URL with `redirect_uri=http://localhost:3100/auth/callback` returns 200 and a foreign `redirect_uri` 400, the sign-in page links "Back to BricoMission" to `http://localhost:3100`, and `client_credentials` with `bm-web-dev-secret` authenticates while the literal `${BM_WEB_CLIENT_SECRET}` fails. No stop needed.
+- **`prompt=create`:** supported by Keycloak 26.8.2 (the themed registration page opens, `ui_locales` applies). The `registrations` endpoint is not used.
+- **`kc_locale`:** not used (keycloak-login-theme decision (a): `ui_locales` always wins; Keycloak stores no account locale).
+
+### Deviations from the spec
+
+- `/auth/login` failures (database down, abuse cap, bad key or missing secret) redirect 303 to `/auth/error?reason=unavailable` instead of a raw 503 JSON body: the route is a browser navigation and the designed page covers "unavailable". `/auth/session` and the proxy answer 503 `{"status":"error"}` as specified.
+- `/auth/error` also accepts `returnTo` (re-validated with `safeReturnTo`), so "Try again" restarts sign-in with the original `returnTo` as the design requires. The callback adds it to failure redirects when the transaction was found. Reason `failed` and unknown values show the design's `generic` helper.
+- AAD is a purpose label (`tx:`, `access:`, `refresh:`) plus the row's id hash, so access and refresh ciphertexts cannot be swapped either.
+- Extra files: `src/lib/auth/handlers.ts` (route logic, unit-tested), `src/lib/auth/runtime.ts` (lazy process-wide wiring), `src/lib/auth/origin.ts` (CSRF rule), `test/support/fake-keycloak.ts`.
+- The Origin rule compares the `Origin` host with the request `Host` (the existing `/locale` pattern) and requires `Origin` to be present; `POST /auth/logout` uses the same rule as the proxy.
+- `bm_session` has `Max-Age` 36000 (Keycloak SSO max, 10 h); the row expiry decides validity. A stale cookie (no row) is cleared by `/auth/session` and the proxy.
+- The callback deletes a previous session row of the same browser before creating the new one.
+- The anonymous account entry is a link (`<a>`, accessible name "Sign in"): it navigates to `/auth/login` with no sheet, as the design describes.
+- With a `bm_session` cookie present and the database down, `/api/health` through the proxy also returns 503 (the session lookup comes first), so `ApiStatus` shows offline instead of degraded for signed-in users in that case.
+- `scripts/web/auth-persist-check.sh` also checks with psql that the session row is keyed by `sha256(bm_session)` and holds no `eyJ` text (Scenario 4 evidence).
+- Language selector: below 375 px `max-[375px]:` variants give the compact pill (px 10, gap 4, globe 16, chevron 14, label 12/16); the label is `whitespace-nowrap` and the pill content is centered at every width.

@@ -37,5 +37,23 @@
     "online": "Tjenesten er tilgjengelig",
     "degraded": "Noen funksjoner er midlertidig utilgjengelige",
     "offline": "Du er frakoblet, eller tjenesten kan ikke nås"
+  },
+  "auth": {
+    "signIn": "Logg inn",
+    "accountLabel": "Konto: {name}",
+    "sheetTitle": "Konto",
+    "close": "Lukk",
+    "signOut": "Logg ut",
+    "error": {
+      "title": "Vi kunne ikke logge deg inn",
+      "reasons": {
+        "cancelled": "Du avbrøt innloggingen. Du kan prøve igjen når du vil.",
+        "expired": "Innloggingslenken din har utløpt. Start på nytt for å fortsette.",
+        "unavailable": "Innlogging er midlertidig utilgjengelig. Prøv igjen om noen minutter.",
+        "generic": "Noe gikk galt under innloggingen. Prøv igjen."
+      },
+      "tryAgain": "Prøv igjen",
+      "backHome": "Tilbake til forsiden"
+    }
   }
 }

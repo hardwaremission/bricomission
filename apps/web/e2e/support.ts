@@ -11,6 +11,14 @@ interface Messages {
   home: { headline: string; cta: string; professionalLink: string };
   language: { title: string };
   status: Record<'checking' | 'online' | 'degraded' | 'offline', string>;
+  auth: {
+    signIn: string;
+    accountLabel: string;
+    sheetTitle: string;
+    close: string;
+    signOut: string;
+    error: { title: string; reasons: Record<'cancelled' | 'expired' | 'unavailable' | 'generic', string>; tryAgain: string; backHome: string };
+  };
 }
 
 export function messages(locale: Locale): Messages {
@@ -169,4 +177,40 @@ export async function mailpitCount(request: APIRequestContext, email: string): P
 
 export async function mailpitClear(request: APIRequestContext, email: string) {
   await request.delete(`${mailpitURL()}/api/v1/search?query=${encodeURIComponent(`to:${email}`)}`);
+}
+
+// --- Web sign-in E2E (feature homeowner-password-login) ---
+
+export const HOMEOWNER = 'bm-homeowner';
+export const HOMEOWNER_EMAIL = 'homeowner@bricomission.local';
+export const HOMEOWNER_DISPLAY_NAME = 'Hugo Homeowner';
+
+/** Origins the auth E2E may reach: the web app and Keycloak (both on localhost). */
+export function authOrigins(): string[] {
+  return [new URL(baseURL()).origin, new URL(keycloakURL()).origin];
+}
+
+/**
+ * On the themed Keycloak sign-in page: enters the password, reads the email code from Mailpit,
+ * submits it and waits until the browser is back on the web app at `landingPath`.
+ */
+export async function completeKeycloakSignIn(page: Page, request: APIRequestContext, landingPath = '/', username = HOMEOWNER, password = homeownerPassword(), email = HOMEOWNER_EMAIL) {
+  await page.locator('#username').fill(username);
+  await page.locator('#password').fill(password);
+  const mail = await mailpitCode(request, email, () => page.locator('#kc-login').click());
+  await page.locator('#emailCode').fill(mail.code);
+  await page.locator('#kc-login').click();
+  await page.waitForURL(`${new URL(baseURL()).origin}${landingPath}`);
+  return mail;
+}
+
+/** Calls the same-origin API proxy from the page (as the app would) and returns status and body. */
+export async function pageFetch(page: Page, path: string, init: { method?: string; headers?: Record<string, string> } = {}) {
+  return page.evaluate(
+    async ({ path, init }) => {
+      const res = await fetch(path, { ...init, credentials: 'same-origin' });
+      return { status: res.status, body: await res.text() };
+    },
+    { path, init },
+  );
 }

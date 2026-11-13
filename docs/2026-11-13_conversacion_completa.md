@@ -1,6 +1,6 @@
 # Registro de conversación con Claude Code · 2026-11-13
 
-_Actualizado: 2026-11-13 21:37_
+_Actualizado: 2026-11-13 22:25_
 
 
 ---
@@ -2733,3 +2733,477 @@ La feature está en `passing`. Antes de lanzar el validator limpio el proyecto d
 He limpiado el proyecto de prueba `kcstalecheck`: 4 volúmenes, 2 imágenes y su red. Los volúmenes compartidos `bricomission_*` siguen intactos.
 
 El **validator** lo está verificando. Te aviso con el veredicto.
+
+
+### 🤖 **Claude** · 2026-11-13 21:37:39
+
+El validator ha dado **accept**. Aplico dos notas menores (el comentario desfasado de `template.ftl` y la nota de riesgo sobre `kc_locale` para `language-preference-account`), marco la feature como `accepted` y publico:
+
+
+### 🤖 **Claude** · 2026-11-13 21:37:45
+
+> 🔧 **Bash**: `{"command": "sed -n 5p infra/keycloak/themes/bricomission/login/template.ftl && sed -i '5s#ui_locales / kc_locale#ui_locales (developer decision 2026-11-13: no stored Keycloak locale, the app language always wins)#' infra/keycloak/themes/bricomission/login/template.ftl && sed -n 5p infra/keycloak/th`
+
+
+### 🤖 **Claude** · 2026-11-13 21:37:53
+
+> 🔧 **Bash**: `{"command": "git add -A && git diff --cached --name-only | grep -E 'node_modules|test-results|playwright-report|\\.next/|(^|/)\\.env$' || echo \"no junk\"; git diff --cached --stat | tail -1; git commit -q -F - <<'EOF'\nfeat: complete keycloak-login-theme\n\n- Keycloak theme `bricomission` (login + `
+
+
+### 🤖 **Claude** · 2026-11-13 21:38:13
+
+> 🔧 **mcp__github__create_pull_request**: `{"owner": "hardwaremission", "repo": "bricomission", "title": "[keycloak-login-theme] Keycloak sign-in, registration and email-code pages follow the BricoMission design in 11 languages", "head": "feature/keycloak-login-theme", "base": "main", "body": "Closes #14\n\n## Summary\n- **Keycloak theme `br`
+
+
+### 🤖 **Claude** · 2026-11-13 21:38:14
+
+> 🔧 **mcp__github__add_issue_comment**: `{"owner": "hardwaremission", "repo": "bricomission", "issue_number": 14, "body": "Status: **accepted** by the independent validator. Commit `2601214 feat: complete keycloak-login-theme` pushed to `feature/keycloak-login-theme`; published as PR #15 (not merged)."}`
+
+
+### 🤖 **Claude** · 2026-11-13 21:38:27
+
+`keycloak-login-theme` está **publicada**: PR **#15**, que cierra el issue #14.
+
+**Qué se ha hecho**
+- **Tema `bricomission` de Keycloak**, construido a partir del diseño aprobado:
+  - Sign in, Create account y Email code, cada uno con sus estados de error;
+  - páginas de mensaje;
+  - email del código.
+  - Sin selector de idioma y sin recursos externos.
+- **Los 11 idiomas** en las páginas y el email, con test de paridad.
+- **Realm:**
+  - registro con código por email obligatorio;
+  - rol `user` solo para las cuentas registradas por el propio usuario;
+  - sesión SSO de 8 h.
+- **Idioma:** manda siempre el de la app (opción a); Keycloak ya no lo guarda en la cuenta.
+
+**Cómo probarlo**
+```bash
+./init.sh
+./scripts/keycloak-smoke.sh
+pnpm test:e2e
+```
+Página de login en alemán:
+http://localhost:8180/realms/BricoMission/protocol/openid-connect/auth?client_id=bricomission-dev-cli&redirect_uri=http://localhost/dev-callback&response_type=code&scope=openid&code_challenge=abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG&code_challenge_method=S256&ui_locales=de
+
+Los códigos llegan a Mailpit: http://localhost:8025.
+
+**Tras el merge:** cada checkout tiene que reiniciar una vez el volumen del realm. `init.sh` lo detecta y te dice el comando.
+
+**Validación:** accept.
+- `init.sh` termina con código 0.
+- El smoke de Keycloak pasa.
+- 70 E2E en verde.
+- Las cuentas sembradas conservan un solo rol.
+- Ningún usuario tiene idioma guardado en Keycloak.
+
+**Notas menores del validator:**
+- Ya he corregido un comentario que había quedado desfasado.
+- He anotado en `language-preference-account` que hay que revisar si `kc_locale` puede guardar un idioma en la cuenta.
+- El registro permite saber si un email ya tiene cuenta, porque así lo indica el diseño aprobado.
+
+**Commit:** `2601214 feat: complete keycloak-login-theme`.
+
+**Siguiente:** haz merge de **#15**. Después sigo con `homeowner-password-login` (#13): BFF, sesiones en PostgreSQL y "Sign in" en la cabecera, con su propio paso de diseño.
+
+
+### 🧑 **Juan Miguel** · 2026-11-13 21:45:22
+
+#15 mergeado. Continua
+
+
+### 🤖 **Claude** · 2026-11-13 21:45:27
+
+> 🔧 **Bash**: `{"command": "GIT_TERMINAL_PROMPT=0 git fetch -q origin && (git merge-base --is-ancestor feature/keycloak-login-theme origin/main && echo merged) && git stash -q && git checkout -q main && GIT_TERMINAL_PROMPT=0 git pull -q --ff-only origin main && git stash pop -q; git branch -d feature/keycloak-logi`
+
+
+### 🤖 **Claude** · 2026-11-13 21:45:35
+
+> 🔧 **Bash**: `{"command": "grep -n -iE 'kc_locale|locale attribute|in-memory|keycloak-login-theme' docs/specs/homeowner-password-login.md | cut -c1-200 | head -20; awk '/Design Brief/{p=1} p' docs/specs/homeowner-password-login.md | sed -n 1,30p", "description": "Check spec for stale locale notes and read design `
+
+
+### 🤖 **Claude** · 2026-11-13 21:45:49
+
+> 🔧 **mcp__open-pencil__list_documents**: `{}`
+
+
+### 🤖 **Claude** · 2026-11-13 21:45:49
+
+> 🔧 **mcp__open-pencil__fetch_icons**: `{"names": ["lucide:user-round", "lucide:log-out", "lucide:x", "lucide:circle-alert", "lucide:globe", "lucide:chevron-down", "lucide:arrow-left", "lucide:rotate-ccw"]}`
+
+
+### 🤖 **Claude** · 2026-11-13 21:45:56
+
+La conexión funciona. El JSX admite `<Icon>` en línea, así que reutilizo la Home aprobada y solo cambio la cabecera. **Home – anonymous**:
+
+
+### 🤖 **Claude** · 2026-11-13 21:45:57
+
+> 🔧 **mcp__open-pencil__create_page**: `{"name": "Auth – Web"}`
+
+
+### 🤖 **Claude** · 2026-11-13 21:46:02
+
+> 🔧 **Bash**: `{"command": "python3 -I - <<'EOF'\ns=open('design/openpencil/web-pwa-shell/home.jsx').read()\nold_start=s.index('<Frame name=\"LanguageSelector (closed)\"')\nold_end=s.index('</Frame>\\n  </Frame>\\n  <Frame name=\"Content\"')\nselector=s[old_start:old_end]+'</Frame>'\ndef header(variant):\n    if v`
+
+
+### 🤖 **Claude** · 2026-11-13 21:46:06
+
+> 🔧 **Bash**: `{"command": "cat /tmp/claude-1000/-home-juanmi-Proyectos-hardwaremission-bricomission/f43e4370-93ae-4d11-927d-b8255aa114d7/scratchpad/home-anon.jsx | python3 -I -c \"import sys,json;print(json.dumps(sys.stdin.read()))\" | head -c 300", "description": "Preview anonymous Home JSX start"}`
+
+
+### 🤖 **Claude** · 2026-11-13 21:46:11
+
+> 🔧 **Read**: `{"file_path": "/tmp/claude-1000/-home-juanmi-Proyectos-hardwaremission-bricomission/f43e4370-93ae-4d11-927d-b8255aa114d7/scratchpad/home-anon.jsx"}`
+
+
+### 🤖 **Claude** · 2026-11-13 21:46:27
+
+> 🔧 **mcp__open-pencil__render**: `{"page_id": "1325410829:733", "x": 0, "y": 0, "jsx": "<Frame name=\"Home – anonymous\" flex=\"col\" h={844} w={390} bg=\"#FAFAF8\">\n  <Frame name=\"Header\" flex=\"row\" h={64} w=\"fill\" justify=\"between\" items=\"center\" py={0} px={16}>\n    <Text name=\"Wordmark\" color=\"#1F4E79\" size={22} w`
+
+
+### 🤖 **Claude** · 2026-11-13 21:46:30
+
+> 🔧 **mcp__open-pencil__clone_node**: `{"id": "1325410829:734", "page_id": "1325410829:733"}`
+
+
+### 🤖 **Claude** · 2026-11-13 21:46:30
+
+> 🔧 **mcp__open-pencil__find_nodes**: `{"name": "AccountEntry", "page_id": "1325410829:733"}`
+
+
+### 🤖 **Claude** · 2026-11-13 21:46:33
+
+> 🔧 **mcp__open-pencil__update_node**: `{"id": "1325410829:789", "page_id": "1325410829:733", "name": "Home – signed in", "x": 470, "y": 0}`
+
+
+### 🤖 **Claude** · 2026-11-13 21:46:35
+
+> 🔧 **mcp__open-pencil__render**: `{"page_id": "1325410829:733", "replace_id": "1325410829:802", "jsx": "<Frame name=\"AccountEntry (signed in) – accessible name 'Account: María López'\" w={44} h={44} flex=\"row\" justify=\"center\" items=\"center\" bg=\"#1F4E79\" rounded={999}><Text name=\"Initial\" size={16} weight={600} color=\"#F`
+
+
+### 🤖 **Claude** · 2026-11-13 21:46:40
+
+> 🔧 **mcp__open-pencil__render**: `{"page_id": "1325410829:733", "x": 940, "y": 0, "jsx": "<Frame name=\"Account sheet – open\" w={390} h={844} bg=\"#1C1C1E66\" flex=\"col\" justify=\"end\">\n  <Frame name=\"Sheet\" w=\"fill\" flex=\"col\" gap={16} px={16} pt={8} pb={24} bg=\"#FFFFFF\" rounded={20} shadow=\"0 -8 32 #0000001F\">\n    `
+
+
+### 🤖 **Claude** · 2026-11-13 21:46:47
+
+> 🔧 **mcp__open-pencil__render**: `{"page_id": "1325410829:733", "x": 1410, "y": 0, "jsx": "<Frame name=\"Sign-in problem (/auth/error) – generic\" w={390} h={844} bg=\"#FAFAF8\" flex=\"col\">\n  <Frame name=\"Header\" w=\"fill\" h={64} flex=\"row\" justify=\"between\" items=\"center\" px={16}>\n    <Text name=\"Wordmark\" size={22} `
+
+
+### 🤖 **Claude** · 2026-11-13 21:46:52
+
+> 🔧 **mcp__open-pencil__render**: `{"page_id": "1325410829:733", "x": 1880, "y": 0, "jsx": "<Frame name=\"Sign-in problem – reasons\" w={420} flex=\"col\" gap={20} p={24} bg=\"#FFFFFF\" rounded={20} stroke=\"#E2E0DA\">\n  <Text w={372} size={16} weight={600} color=\"#1C1C1E\" lineHeight={24}>/auth/error reasons (same layout; only the`
+
+
+### 🤖 **Claude** · 2026-11-13 21:46:53
+
+> 🔧 **mcp__open-pencil__export_image**: `{"ids": ["1325410829:734", "1325410829:789", "1325410829:940"], "page_id": "1325410829:733", "maxEdge": 1280}`
+
+
+### 🤖 **Claude** · 2026-11-13 21:46:56
+
+Estoy diseñando los 4 marcos de `homeowner-password-login` en OpenPencil. Ya tengo los dibujos; reviso cómo quedan:
+
+
+### 🤖 **Claude** · 2026-11-13 21:46:57
+
+> 🔧 **mcp__open-pencil__export_image**: `{"ids": ["1325410829:734", "1325410829:789", "1325410829:846", "1325410829:863", "1325410829:891"], "page_id": "1325410829:733", "maxEdge": 2000}`
+
+
+### 🤖 **Claude** · 2026-11-13 21:47:01
+
+Se ve bien. Compruebo la cabecera a 360 px con el nombre de idioma más largo ("Nederlands") y el botón de cuenta:
+
+
+### 🤖 **Claude** · 2026-11-13 21:47:02
+
+> 🔧 **mcp__open-pencil__clone_node**: `{"id": "1325410829:734", "page_id": "1325410829:733"}`
+
+
+### 🤖 **Claude** · 2026-11-13 21:47:06
+
+> 🔧 **mcp__open-pencil__update_node**: `{"id": "1325410829:907", "page_id": "1325410829:733", "name": "Home – anonymous @360x780, longest language name (check)", "x": 0, "y": 940, "width": 360, "height": 780}`
+
+
+### 🤖 **Claude** · 2026-11-13 21:47:06
+
+> 🔧 **mcp__open-pencil__find_nodes**: `{"name": "Current language", "page_id": "1325410829:733"}`
+
+
+### 🤖 **Claude** · 2026-11-13 21:47:10
+
+> 🔧 **mcp__open-pencil__set_text**: `{"id": "1325410829:916", "text": "Nederlands", "page_id": "1325410829:733"}`
+
+
+### 🤖 **Claude** · 2026-11-13 21:47:10
+
+> 🔧 **mcp__open-pencil__export_image**: `{"ids": ["1325410829:907"], "page_id": "1325410829:733", "maxEdge": 700}`
+
+
+### 🤖 **Claude** · 2026-11-13 21:47:11
+
+> 🔧 **mcp__open-pencil__lint**: `{"preset": "accessibility", "page_id": "1325410829:733"}`
+
+
+### 🤖 **Claude** · 2026-11-13 21:47:19
+
+> 🔧 **mcp__open-pencil__set_text**: `{"id": "1325410829:916", "text": "NL", "page_id": "1325410829:733"}`
+
+
+### 🤖 **Claude** · 2026-11-13 21:47:20
+
+> 🔧 **mcp__open-pencil__update_node**: `{"id": "1325410829:907", "page_id": "1325410829:733", "name": "Home – anonymous @360x780 (check): below 375 px the selector shows the language code (accessible name keeps the full name)"}`
+
+
+### 🤖 **Claude** · 2026-11-13 21:47:20
+
+> 🔧 **mcp__open-pencil__export_image**: `{"ids": ["1325410829:907"], "page_id": "1325410829:733", "maxEdge": 500}`
+
+
+### 🤖 **Claude** · 2026-11-13 21:47:23
+
+> 🔧 **mcp__open-pencil__save_file**: `{}`
+
+
+### 🤖 **Claude** · 2026-11-13 21:47:23
+
+> 🔧 **mcp__open-pencil__export_image**: `{"page_id": "1325410829:733", "maxEdge": 2400, "path": "design/openpencil/homeowner-password-login/overview.png"}`
+
+
+### 🤖 **Claude** · 2026-11-13 21:47:24
+
+> 🔧 **SendUserFile**: `{"files": ["/home/juanmi/Proyectos/hardwaremission.bricomission/design/openpencil/homeowner-password-login/overview.png"], "caption": "homeowner-password-login: propuesta de diseño (solo inglés) para aprobar", "status": "proactive", "display": "render"}`
+
+
+### 🤖 **Claude** · 2026-11-13 21:47:30
+
+> 🔧 **SendUserFile**: `{"files": ["/home/juanmi/Proyectos/hardwaremission.bricomission/design/openpencil/homeowner-password-login/overview.png"], "caption": "homeowner-password-login: propuesta de diseño (solo inglés) para aprobar", "status": "proactive", "display": "render"}`
+
+
+### 🤖 **Claude** · 2026-11-13 21:47:36
+
+He terminado la propuesta de diseño de `homeowner-password-login`, solo en inglés, y te la he enviado como imagen. Está en `bricomission_B2C_app.fig`, página **Auth – Web**:
+
+| Marco | Contenido |
+| --- | --- |
+| **Home – anonymous** | La Home aprobada, con un botón circular discreto de cuenta (icono de usuario, 44 px, nombre accesible "Sign in") junto al selector de idioma. El botón principal no cambia y nunca se obliga a iniciar sesión |
+| **Home – signed in** | En el mismo hueco, un círculo `primary` con la inicial ("M"), con nombre accesible "Account: María López" |
+| **Account sheet – open** | Hoja inferior, con el mismo estilo que la de idiomas: "Account", botón de cerrar, avatar con la inicial, nombre y usuario, y el botón secundario "Sign out" |
+| **Sign-in problem (`/auth/error`)** | "We couldn't sign you in", con un texto según el motivo (cancelado, enlace caducado, servicio no disponible o error genérico), "Try again" y "← Back to Home" |
+| **Home @360x780 (check)** | Regla nueva: **por debajo de 375 px el selector muestra el código del idioma** (NL, EN…), porque con "Nederlands" no caben en la cabecera el nombre BricoMission, el selector y el botón de cuenta. El nombre accesible sigue siendo el completo |
+
+El lint de accesibilidad de OpenPencil no da errores.
+
+¿Lo apruebas, incluida la regla del código de idioma a 360 px?
+
+
+### 🧑 **Juan Miguel** · 2026-11-13 21:53:51
+
+Prefiero que quepa la palabra completa del idioma. Reduce en estos casos la fuente del idioma pero asegúrate de centrar la palabra en el pill
+
+
+### 🤖 **Claude** · 2026-11-13 21:53:56
+
+Entendido: a menos de 375 px se mantiene el nombre completo, con la fuente reducida y centrado en el pill. Lo ajusto en el marco de comprobación:
+
+
+### 🤖 **Claude** · 2026-11-13 21:53:57
+
+> 🔧 **mcp__open-pencil__get_page_tree**: `{"root_id": "1325410829:907", "depth": 4, "page_id": "1325410829:733"}`
+
+
+### 🤖 **Claude** · 2026-11-13 21:54:03
+
+> 🔧 **mcp__open-pencil__render**: `{"page_id": "1325410829:733", "replace_id": "1325410829:911", "jsx": "<Frame name=\"LanguageSelector (closed, compact < 375px)\" flex=\"row\" h={44} gap={4} justify=\"center\" items=\"center\" px={10} bg=\"#F2F1ED\" rounded={999}><Icon name=\"lucide:globe\" size={16} color=\"#1C1C1E\" /><Text name=\`
+
+
+### 🤖 **Claude** · 2026-11-13 21:54:04
+
+> 🔧 **mcp__open-pencil__update_node**: `{"id": "1325410829:907", "page_id": "1325410829:733", "name": "Home – anonymous @360x780 (check): below 375 px the selector keeps the full language name at 12/16, centered in a compact pill"}`
+
+
+### 🤖 **Claude** · 2026-11-13 21:54:06
+
+> 🔧 **mcp__open-pencil__describe**: `{"id": "1325410829:908", "page_id": "1325410829:733", "depth": 2}`
+
+
+### 🤖 **Claude** · 2026-11-13 21:54:07
+
+> 🔧 **mcp__open-pencil__export_image**: `{"ids": ["1325410829:908"], "page_id": "1325410829:733", "scale": 2, "maxEdge": 800}`
+
+
+### 🤖 **Claude** · 2026-11-13 21:54:11
+
+> 🔧 **mcp__open-pencil__save_file**: `{}`
+
+
+### 🤖 **Claude** · 2026-11-13 21:54:12
+
+> 🔧 **mcp__open-pencil__export_image**: `{"page_id": "1325410829:733", "maxEdge": 2400, "path": "design/openpencil/homeowner-password-login/overview.png"}`
+
+
+### 🤖 **Claude** · 2026-11-13 21:54:13
+
+> 🔧 **SendUserFile**: `{"files": ["/home/juanmi/Proyectos/hardwaremission.bricomission/design/openpencil/homeowner-password-login/overview.png"], "caption": "Actualizado: a 360 px el selector mantiene \"Nederlands\" a 12 px, centrado", "status": "normal", "display": "render"}`
+
+
+### 🤖 **Claude** · 2026-11-13 21:54:17
+
+Cambiado y guardado. Te he enviado la imagen actualizada.
+
+Ahora, **por debajo de 375 px**:
+- el selector mantiene el **nombre completo** del idioma;
+- la fuente baja de 14/20 a **12/16**;
+- los iconos bajan a 16 y 14 px;
+- el relleno es de 10 px a cada lado y la separación de 4 px;
+- el contenido va **centrado** en el pill.
+
+La altura de toque sigue siendo de 44 px. Con "Nederlands", el nombre más largo, todo cabe en 360 px y queda un margen de 9 px.
+
+¿Lo apruebas?
+
+
+### 🧑 **Juan Miguel** · 2026-11-13 21:55:23
+
+En la captura que me has enviado sigue poniendo NL. Asegúrate que el cambio está realizado correctamente en el prototipo
+
+
+### 🤖 **Claude** · 2026-11-13 21:55:26
+
+> 🔧 **mcp__open-pencil__get_page_tree**: `{"root_id": "1325410829:907", "node_types": ["TEXT"], "depth": 4, "page_id": "1325410829:733"}`
+
+
+### 🤖 **Claude** · 2026-11-13 21:55:27
+
+> 🔧 **Bash**: `{"command": "ls -la --time-style=+%H:%M:%S /home/juanmi/Proyectos/hardwaremission.bricomission/design/openpencil/homeowner-password-login/; date +%H:%M:%S", "description": "Check overview export timestamp"}`
+
+
+### 🤖 **Claude** · 2026-11-13 21:55:29
+
+> 🔧 **Read**: `{"file_path": "/home/juanmi/Proyectos/hardwaremission.bricomission/design/openpencil/homeowner-password-login/overview.png"}`
+
+
+### 🤖 **Claude** · 2026-11-13 21:55:32
+
+> 🔧 **mcp__open-pencil__get_jsx**: `{"id": "1325410829:908", "page_id": "1325410829:733"}`
+
+
+### 🤖 **Claude** · 2026-11-13 21:55:33
+
+> 🔧 **mcp__open-pencil__export_image**: `{"ids": ["1325410829:907"], "page_id": "1325410829:733", "maxEdge": 780, "path": "design/openpencil/homeowner-password-login/check-360-nederlands.png"}`
+
+
+### 🤖 **Claude** · 2026-11-13 21:55:37
+
+> 🔧 **SendUserFile**: `{"files": ["/home/juanmi/Proyectos/hardwaremission.bricomission/design/openpencil/homeowner-password-login/check-360-nederlands.png"], "caption": "Marco de comprobación a 360x780 tal como está ahora en el prototipo: \"Nederlands\" a 12/16, centrado en el pill", "status": "normal", "display": "render`
+
+
+### 🤖 **Claude** · 2026-11-13 21:55:42
+
+He comprobado el prototipo directamente por MCP y el cambio está aplicado. El JSX de la cabecera del marco a 360x780 contiene:
+
+```jsx
+<Frame name="LanguageSelector (closed, compact < 375px)" flex="row" h={44} gap={4} justify="center" items="center" px={10} ...>
+  <Icon name="lucide:globe" size={16} />
+  <Text name="Current language" size={12} weight={600} lineHeight={16}>Nederlands</Text>
+  <Icon name="lucide:chevron-down" size={14} />
+</Frame>
+```
+
+El fichero `overview.png` que te reenvié también muestra "Nederlands". Lo más probable es que viste la versión anterior: el fichero tenía el mismo nombre y tu cliente lo tenía en caché. Para evitarlo te he enviado una captura nueva, solo del marco a 360 px, con otro nombre (`check-360-nederlands.png`).
+
+¿Lo apruebas?
+
+
+### 🧑 **Juan Miguel** · 2026-11-13 21:56:26
+
+Aprobado
+
+
+### 🤖 **Claude** · 2026-11-13 21:56:27
+
+Aprobado. Leo el diseño de vuelta y escribo el artefacto:
+
+
+### 🤖 **Claude** · 2026-11-13 21:56:28
+
+> 🔧 **mcp__open-pencil__get_jsx**: `{"id": "1325410829:734", "page_id": "1325410829:733", "path": "design/openpencil/homeowner-password-login/home-anonymous.jsx"}`
+
+
+### 🤖 **Claude** · 2026-11-13 21:56:29
+
+> 🔧 **mcp__open-pencil__get_jsx**: `{"id": "1325410829:789", "page_id": "1325410829:733", "path": "design/openpencil/homeowner-password-login/home-signed-in.jsx"}`
+
+
+### 🤖 **Claude** · 2026-11-13 21:56:30
+
+> 🔧 **mcp__open-pencil__get_jsx**: `{"id": "1325410829:846", "page_id": "1325410829:733", "path": "design/openpencil/homeowner-password-login/account-sheet.jsx"}`
+
+
+### 🤖 **Claude** · 2026-11-13 21:56:31
+
+> 🔧 **mcp__open-pencil__get_jsx**: `{"id": "1325410829:863", "page_id": "1325410829:733", "path": "design/openpencil/homeowner-password-login/auth-error.jsx"}`
+
+
+### 🤖 **Claude** · 2026-11-13 21:56:31
+
+> 🔧 **mcp__open-pencil__get_jsx**: `{"id": "1325410829:891", "page_id": "1325410829:733", "path": "design/openpencil/homeowner-password-login/auth-error-reasons.jsx"}`
+
+
+### 🤖 **Claude** · 2026-11-13 21:56:32
+
+> 🔧 **mcp__open-pencil__get_jsx**: `{"id": "1325410829:907", "page_id": "1325410829:733", "path": "design/openpencil/homeowner-password-login/home-anonymous-360-check.jsx"}`
+
+
+### 🤖 **Claude** · 2026-11-13 21:56:53
+
+> 🔧 **Write**: `{"file_path": "/home/juanmi/Proyectos/hardwaremission.bricomission/docs/design/homeowner-password-login.md", "content": "# Design Read-Back: homeowner-password-login\n\nApproved by developer on 2026-11-13.\n\n- Source of truth: `design/openpencil/bricomission_B2C_app.fig`, page **Auth – Web**, desig`
+
+
+### 🤖 **Claude** · 2026-11-13 21:57:04
+
+> 🔧 **Agent**: `{"description": "Implement homeowner-password-login", "subagent_type": "implementer", "prompt": "Repository: /home/juanmi/Proyectos/hardwaremission.bricomission (branch feature/homeowner-password-login, base be1a0a7 = main after keycloak-login-theme merge; work directly in this checkout).\nSelected `
+
+
+### 🤖 **Claude** · 2026-11-13 21:57:07
+
+He guardado el diseño aprobado y su lectura de vuelta:
+- **Lectura de vuelta:** los JSX de cada marco y las imágenes, en `design/openpencil/homeowner-password-login/`.
+- **Artefacto para el implementer:** `docs/design/homeowner-password-login.md`. Incluye tu regla nueva: por debajo de 375 px, nombre completo del idioma a 12/16 centrado en el pill, nunca el código.
+
+El **implementer** ya está con `homeowner-password-login`:
+- BFF con el cliente `bricomission-web`;
+- sesiones en PostgreSQL con tokens cifrados;
+- el proxy `/api` añade el token y protege contra CSRF;
+- rutas `/auth/*`;
+- botón de cuenta, hoja de cuenta y página `/auth/error`.
+
+Te aviso cuando termine; después le toca al validator.
+
+
+### 🤖 **Claude** · 2026-11-13 22:21:26
+
+The implementer marked it `passing`. Launching the validator.
+
+
+### 🤖 **Claude** · 2026-11-13 22:21:33
+
+> 🔧 **Agent**: `{"description": "Validate homeowner-password-login", "subagent_type": "validator", "prompt": "Repository: /home/juanmi/Proyectos/hardwaremission.bricomission (branch feature/homeowner-password-login, base be1a0a7; uncommitted working tree = this feature).\nSelected feature id: homeowner-password-log`
+
+
+### 🤖 **Claude** · 2026-11-13 22:21:51
+
+El implementer ha dejado `homeowner-password-login` en `passing`:
+- **Tests:** 284 de web, 130 de api, 89 E2E y el smoke de Keycloak, todos en verde.
+- **Sesión:** sobrevive a reiniciar el contenedor web y en la base de datos solo se guarda el hash de la cookie y los tokens cifrados.
+- **Pruebas de seguridad:** CSRF, redirecciones abiertas y cabecera `Authorization` falsificada.
+
+El **validator** está haciendo la verificación independiente, centrada en la seguridad del login: callback OIDC, cookies, cifrado de tokens, CSRF y cierre de sesión.
+
+Mientras tanto ya puedes probarlo:
+1. Abre http://localhost:3100/ (con `localhost`, no `127.0.0.1`).
+2. Pulsa el icono de usuario y entra como `bm-homeowner`.
+3. Lee el código en Mailpit (http://localhost:8025).
+4. Vuelves a Home con tu inicial en la cabecera; desde ahí puedes cerrar sesión.

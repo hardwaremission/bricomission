@@ -37,5 +37,23 @@
     "online": "Servizio disponibile",
     "degraded": "Alcune funzioni sono temporaneamente non disponibili",
     "offline": "Sei offline o il servizio non è raggiungibile"
+  },
+  "auth": {
+    "signIn": "Accedi",
+    "accountLabel": "Account: {name}",
+    "sheetTitle": "Account",
+    "close": "Chiudi",
+    "signOut": "Esci",
+    "error": {
+      "title": "Non siamo riusciti a farti accedere",
+      "reasons": {
+        "cancelled": "Hai annullato l'accesso. Puoi riprovare quando vuoi.",
+        "expired": "Il tuo link di accesso è scaduto. Ricomincia per continuare.",
+        "unavailable": "L'accesso è temporaneamente non disponibile. Riprova tra qualche minuto.",
+        "generic": "Si è verificato un problema durante l'accesso. Riprova."
+      },
+      "tryAgain": "Riprova",
+      "backHome": "Torna alla home"
+    }
   }
 }

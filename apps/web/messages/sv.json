@@ -37,5 +37,23 @@
     "online": "Tjänsten är tillgänglig",
     "degraded": "Vissa funktioner är tillfälligt otillgängliga",
     "offline": "Du är offline eller så går det inte att nå tjänsten"
+  },
+  "auth": {
+    "signIn": "Logga in",
+    "accountLabel": "Konto: {name}",
+    "sheetTitle": "Konto",
+    "close": "Stäng",
+    "signOut": "Logga ut",
+    "error": {
+      "title": "Vi kunde inte logga in dig",
+      "reasons": {
+        "cancelled": "Du avbröt inloggningen. Du kan försöka igen när du vill.",
+        "expired": "Din inloggningslänk har gått ut. Börja om för att fortsätta.",
+        "unavailable": "Inloggningen är tillfälligt otillgänglig. Försök igen om några minuter.",
+        "generic": "Något gick fel när du skulle loggas in. Försök igen."
+      },
+      "tryAgain": "Försök igen",
+      "backHome": "Tillbaka till startsidan"
+    }
   }
 }

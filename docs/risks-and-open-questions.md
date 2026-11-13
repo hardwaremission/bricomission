@@ -52,6 +52,9 @@ None. Discovery is sufficient to derive the harness (`/harness-starter`).
 | In-memory GPU jobs lost on API restart (`gpu-job-broker`) | Queued/running Renders or chat answers vanish; clients get 404 | Accepted for the single-instance MVP: clients retry on 404; product features persist their own outputs. Swap the `GpuJobBroker` implementation for a durable queue if restarts become common |
 | Keycloak theme overrides Keycloak and provider templates (`keycloak-login-theme`) | A Keycloak or email-OTP provider upgrade changes template variables or message keys; pages break or show English | Recheck `infra/keycloak/themes/bricomission` on every upgrade: run `pnpm test:e2e` (keycloak-theme spec) and `./scripts/keycloak-smoke.sh`. The theme also overrides the generic Keycloak key `expiredActionTokenSessionExistsMessage` with the expired-code copy (no action-token flows are enabled today) |
 | Default role `user` on every self-registered account | When `professional-registration` adds Professional sign-up, those accounts would also get `user` | That feature must use its own registration path or remove `user` for Professionals; seeded accounts are unaffected (imports do not apply default roles) |
+| The web container holds database credentials (`homeowner-password-login`) | A web compromise reaches every table, not only `web_session` | Accepted for local MVP use (same superuser as the api). Hardening: a dedicated PostgreSQL role limited to schema `web_session` |
+| Dev default `WEB_SESSION_KEY` and `BM_WEB_CLIENT_SECRET` are public in the repo | Anyone with the database can decrypt session tokens; anyone can use the client secret | Local use only. Any shared or hosted deployment must set both from secrets (`openssl rand -base64 32` for the key); changing the key signs every web session out |
+| Cookies ignore ports | Parallel worktrees on `localhost` share the `bm_session` cookie name, so signing in on one port replaces the other's cookie (and the other web treats it as unknown and clears it) | Sign in to one worktree at a time, or use separate browser profiles; a per-port cookie name can be added if it becomes a problem |
 | Disk space for models | Stack fails | Optional: move Docker data-root and model weights to a data NVMe (see docs/technical-discovery.md); otherwise monitor free space on the 465 GB system disk |
 
 ## Research Tasks
@@ -59,3 +62,9 @@ None. Discovery is sufficient to derive the harness (`/harness-starter`).
 1. Done 2026-11-12: Day-1 spike (`docs/spikes/local-ai-gpu-spike.md`).
 2. Done 2026-11-12: llama.cpp structured output verified (json_schema, 3/3 valid).
 3. Confirm Catalog PDFs are parseable (text layer vs scanned): detection implemented in `catalog-rag-ingestion` (pages with fewer than 20 non-whitespace characters are skipped with a warning); checking the real partner PDFs is pending until the developer supplies them.
+
+### Web auth hardening follow-ups (validator notes, homeowner-password-login, 2026-11-13; optional)
+
+- L2: `api-proxy.ts` detects the session cookie with its own parser; reuse `readCookie`/`SESSION_COOKIE` from the auth module.
+- L3: a callback that replaces an older session in the same browser deletes the old row but does not end that Keycloak SSO session over the backchannel.
+- L4: single-flight refresh is per process; revisit if the realm enables refresh-token rotation (`revokeRefreshToken`).

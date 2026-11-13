@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { ArrowRight, Camera, ReceiptText, Sparkles, type LucideIcon } from 'lucide-react';
 import { getLocale, getTranslations } from 'next-intl/server';
+import { AccountEntry } from '../components/AccountEntry';
 import { ApiStatus } from '../components/ApiStatus';
 import { LanguageSelector } from '../components/LanguageSelector';
 import { Wordmark } from '../components/Wordmark';
@@ -15,7 +16,11 @@ const STEPS: ReadonlyArray<{ key: 'capture' | 'design' | 'budget'; Icon: LucideI
   { key: 'budget', Icon: ReceiptText },
 ];
 
-/** Home (design: docs/design/web-pwa-shell.md, frame "Home" 390x844). */
+/**
+ * Home (design: docs/design/web-pwa-shell.md, frame "Home" 390x844; header actions from
+ * docs/design/homeowner-password-login.md). The HTML is the same for anonymous and
+ * signed-in visitors: AccountEntry hydrates the signed-in state on the client.
+ */
 export default async function HomePage() {
   const t = await getTranslations('home');
   const locale = await getLocale();
@@ -23,7 +28,10 @@ export default async function HomePage() {
     <div className="flex h-dvh flex-col">
       <header className="flex h-xxl shrink-0 items-center justify-between px-md">
         <Wordmark />
-        <LanguageSelector current={isLocale(locale) ? locale : DEFAULT_LOCALE} />
+        <div className="flex items-center gap-sm">
+          <LanguageSelector current={isLocale(locale) ? locale : DEFAULT_LOCALE} />
+          <AccountEntry />
+        </div>
       </header>
 
       <main className="flex min-h-0 flex-1 flex-col gap-lg overflow-y-auto px-md pt-md pb-lg">
