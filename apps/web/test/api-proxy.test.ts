@@ -1,16 +1,18 @@
 import { describe, expect, it, vi } from 'vitest';
 import { createApiProxy, upstreamPath } from '../src/lib/api-proxy';
+import type { AccessResult } from '../src/lib/auth/session';
 
 const BASE = 'http://api.internal:3000';
 
-function setup(response: Response | Error = Response.json({ status: 'ok', database: 'up' })) {
+function setup(response: Response | Error = Response.json({ status: 'ok', database: 'up' }), access: AccessResult = { kind: 'anonymous', clearCookie: false }) {
   const fetchImpl = vi.fn<typeof fetch>(async () => {
     if (response instanceof Error) throw response;
     return response;
   });
   const logError = vi.fn<(message: string) => void>();
-  const proxy = createApiProxy({ baseUrl: () => BASE, fetchImpl, logError });
-  return { proxy, fetchImpl, logError };
+  const resolveAccessToken = vi.fn<(cookie: string | null) => Promise<AccessResult>>(async () => access);
+  const proxy = createApiProxy({ baseUrl: () => BASE, fetchImpl, logError, resolveAccessToken, clearSessionCookie: () => 'bm_session=; Max-Age=0' });
+  return { proxy, fetchImpl, logError, resolveAccessToken };
 }
 
 describe('upstreamPath', () => {
@@ -40,7 +42,7 @@ describe('createApiProxy', () => {
     expect(fetchImpl.mock.calls[0]?.[0]).toBe(`${BASE}/health?x=1`);
   });
 
-  it('forwards only allowlisted request headers, never cookies', async () => {
+  it('forwards only allowlisted request headers, never cookies or the client Authorization', async () => {
     const { proxy, fetchImpl } = setup();
     await proxy(
       new Request('http://localhost:3100/api/me', {
@@ -56,8 +58,58 @@ describe('createApiProxy', () => {
       }),
     );
     const sent = new Headers(fetchImpl.mock.calls[0]?.[1]?.headers);
-    expect([...sent.keys()].sort()).toEqual(['accept', 'accept-language', 'authorization', 'last-event-id']);
+    expect([...sent.keys()].sort()).toEqual(['accept', 'accept-language', 'last-event-id']);
     expect(sent.get('cookie')).toBeNull();
+    expect(sent.get('authorization')).toBeNull();
+  });
+
+  it('attaches the session access token instead of the browser header', async () => {
+    const { proxy, fetchImpl, resolveAccessToken } = setup(undefined, { kind: 'token', token: 'session-token' });
+    await proxy(new Request('http://localhost:3100/api/me', { headers: { authorization: 'Bearer forged', cookie: 'bm_session=abc' } }));
+    expect(resolveAccessToken).toHaveBeenCalledWith('bm_session=abc');
+    expect(new Headers(fetchImpl.mock.calls[0]?.[1]?.headers).get('authorization')).toBe('Bearer session-token');
+  });
+
+  it('answers 503 when the session cannot be resolved (Keycloak or database down)', async () => {
+    const { proxy, fetchImpl } = setup(undefined, { kind: 'unavailable' });
+    const res = await proxy(new Request('http://localhost:3100/api/me', { headers: { cookie: 'bm_session=abc' } }));
+    expect(res.status).toBe(503);
+    expect(await res.json()).toEqual({ status: 'error' });
+    expect(fetchImpl).not.toHaveBeenCalled();
+  });
+
+  it('forwards anonymously and clears the cookie after invalid_grant or a stale session', async () => {
+    const { proxy, fetchImpl } = setup(new Response('{}', { status: 401 }), { kind: 'anonymous', clearCookie: true });
+    const res = await proxy(new Request('http://localhost:3100/api/me', { headers: { cookie: 'bm_session=abc' } }));
+    expect(res.status).toBe(401);
+    expect(new Headers(fetchImpl.mock.calls[0]?.[1]?.headers).get('authorization')).toBeNull();
+    expect(res.headers.get('set-cookie')).toBe('bm_session=; Max-Age=0');
+  });
+
+  describe('CSRF: unsafe methods with a session cookie need a same-origin Origin', () => {
+    const host = { host: 'localhost:3100', cookie: 'bm_session=abc' };
+    it.each(['POST', 'PUT', 'PATCH', 'DELETE'])('%s with a missing or foreign Origin -> 403 before any lookup', async (method) => {
+      for (const headers of [host, { ...host, origin: 'http://evil.example' }, { ...host, origin: 'null' }]) {
+        const { proxy, fetchImpl, resolveAccessToken } = setup();
+        const res = await proxy(new Request('http://localhost:3100/api/ai/jobs', { method, headers, body: '{}' }));
+        expect(res.status).toBe(403);
+        expect(fetchImpl).not.toHaveBeenCalled();
+        expect(resolveAccessToken).not.toHaveBeenCalled();
+      }
+    });
+
+    it('same-origin POST passes; GET and cookie-less POST are not checked', async () => {
+      for (const [method, headers] of [
+        ['POST', { ...host, origin: 'http://localhost:3100' }],
+        ['GET', host],
+        ['POST', { host: 'localhost:3100' }],
+      ] as const) {
+        const { proxy, fetchImpl } = setup();
+        const res = await proxy(new Request('http://localhost:3100/api/ai/jobs', { method, headers, body: method === 'GET' ? undefined : '{}' }));
+        expect(res.status).toBe(200);
+        expect(fetchImpl).toHaveBeenCalledTimes(1);
+      }
+    });
   });
 
   it('streams a POST body with method and content-type', async () => {

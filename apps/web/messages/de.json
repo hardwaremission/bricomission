@@ -37,5 +37,23 @@
     "online": "Dienst verfügbar",
     "degraded": "Einige Funktionen sind vorübergehend nicht verfügbar",
     "offline": "Du bist offline oder der Dienst ist nicht erreichbar"
+  },
+  "auth": {
+    "signIn": "Anmelden",
+    "accountLabel": "Konto: {name}",
+    "sheetTitle": "Konto",
+    "close": "Schließen",
+    "signOut": "Abmelden",
+    "error": {
+      "title": "Wir konnten dich nicht anmelden",
+      "reasons": {
+        "cancelled": "Du hast die Anmeldung abgebrochen. Du kannst es jederzeit erneut versuchen.",
+        "expired": "Dein Anmeldelink ist abgelaufen. Beginne erneut, um fortzufahren.",
+        "unavailable": "Die Anmeldung ist vorübergehend nicht verfügbar. Bitte versuche es in ein paar Minuten erneut.",
+        "generic": "Bei der Anmeldung ist etwas schiefgelaufen. Bitte versuche es erneut."
+      },
+      "tryAgain": "Erneut versuchen",
+      "backHome": "Zurück zur Startseite"
+    }
   }
 }

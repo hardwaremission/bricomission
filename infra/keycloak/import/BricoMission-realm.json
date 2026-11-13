@@ -121,6 +121,45 @@
           }
         }
       ]
+    },
+    {
+      "clientId": "bricomission-web",
+      "name": "BricoMission web",
+      "description": "Confidential OIDC client of the web PWA server (Backend-for-Frontend). Authorization Code + PKCE; tokens stay on the server.",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "${BM_WEB_CLIENT_SECRET}",
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "frontchannelLogout": false,
+      "rootUrl": "${BM_WEB_PUBLIC_URL}",
+      "baseUrl": "${BM_WEB_PUBLIC_URL}",
+      "redirectUris": [
+        "${BM_WEB_PUBLIC_URL}/auth/callback"
+      ],
+      "webOrigins": [],
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "post.logout.redirect.uris": "${BM_WEB_PUBLIC_URL}/"
+      },
+      "protocolMappers": [
+        {
+          "name": "bricomission-api audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.client.audience": "bricomission-api",
+            "access.token.claim": "true",
+            "id.token.claim": "false",
+            "introspection.token.claim": "true"
+          }
+        }
+      ]
     }
   ],
   "users": [

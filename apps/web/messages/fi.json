@@ -37,5 +37,23 @@
     "online": "Palvelu on käytettävissä",
     "degraded": "Jotkin toiminnot eivät ole tilapäisesti käytettävissä",
     "offline": "Olet offline-tilassa tai palveluun ei saada yhteyttä"
+  },
+  "auth": {
+    "signIn": "Kirjaudu sisään",
+    "accountLabel": "Tili: {name}",
+    "sheetTitle": "Tili",
+    "close": "Sulje",
+    "signOut": "Kirjaudu ulos",
+    "error": {
+      "title": "Emme voineet kirjata sinua sisään",
+      "reasons": {
+        "cancelled": "Peruutit kirjautumisen. Voit yrittää uudelleen milloin tahansa.",
+        "expired": "Kirjautumislinkkisi on vanhentunut. Aloita alusta jatkaaksesi.",
+        "unavailable": "Kirjautuminen ei ole tilapäisesti käytettävissä. Yritä uudelleen muutaman minuutin kuluttua.",
+        "generic": "Kirjautumisessa tapahtui virhe. Yritä uudelleen."
+      },
+      "tryAgain": "Yritä uudelleen",
+      "backHome": "Takaisin etusivulle"
+    }
   }
 }

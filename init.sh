@@ -4,9 +4,10 @@
 # pnpm workspace gate (frozen install, lint, test), then builds and starts the
 # detached compose stack (6 services: postgres, minio, mailpit, keycloak, api, web) with
 # `docker compose up -d --build --wait`, verifies GET /health reports database up, that
-# Keycloak serves realm BricoMission with the expected issuer and the bricomission login
-# theme (stale realm volumes get the reset command), and that the web PWA
-# serves a localized Home, Language Selection, its manifest and the /api proxy.
+# Keycloak serves realm BricoMission with the expected issuer, the bricomission login
+# theme and the web client bricomission-web (stale realm volumes get the reset command), and
+# that the web PWA serves a localized Home, Language Selection, its manifest, the /api proxy
+# and the sign-in routes (/auth/session, /auth/login -> Keycloak).
 # Never runs foreground or long-running dev servers, Playwright or Lighthouse.
 set -euo pipefail
 
@@ -151,6 +152,23 @@ if ! grep -qE '/resources/[^"/]+/login/bricomission/' <<<"$kc_login"; then
   exit 1
 fi
 echo "  sign-in page (dev client) -> theme bricomission"
+# Web client check (homeowner-password-login): a realm imported before that feature has no
+# bricomission-web client, so Keycloak answers 400 for its authorization URL.
+web_port_kc=$(docker compose port web 3000 2>/dev/null | awk -F: '{print $NF}' || true)
+kc_web_status=$(curl -sS --max-time 10 -o /dev/null -w '%{http_code}' -G "http://127.0.0.1:${kc_port}/realms/BricoMission/protocol/openid-connect/auth" \
+  --data-urlencode client_id=bricomission-web --data-urlencode "redirect_uri=http://localhost:${web_port_kc:-3100}/auth/callback" \
+  --data-urlencode response_type=code --data-urlencode scope=openid --data-urlencode ui_locales=en \
+  --data-urlencode code_challenge=init-sh-web-client-check-init-sh-web-client \
+  --data-urlencode code_challenge_method=S256 2>/dev/null || true)
+if [ "$kc_web_status" != "200" ]; then
+  kc_project=${COMPOSE_PROJECT_NAME:-$(docker compose config --format json 2>/dev/null | python3 -c "import json,sys; print(json.load(sys.stdin)['name'])" 2>/dev/null || basename "$(pwd)")}
+  echo "ERROR: Keycloak rejects the web client bricomission-web (HTTP ${kc_web_status:-none}; stale realm volume or WEB_PORT changed)." >&2
+  echo "  The realm JSON is imported only once per keycloak-data volume. Reset the realm (project '$kc_project'):" >&2
+  echo "    docker compose rm -sf keycloak && docker volume rm ${kc_project}_keycloak-data" >&2
+  echo "    docker compose up -d --build --wait   (or re-run ./init.sh)" >&2
+  exit 1
+fi
+echo "  authorization URL (client bricomission-web) -> 200"
 
 echo
 echo "Web:"
@@ -177,10 +195,22 @@ echo "  GET /manifest.webmanifest -> 200"
 web_health=$(curl -sS --max-time 10 "${web_url}/api/health" 2>/dev/null || true)
 grep -q '"database":"up"' <<<"$web_health" || web_fail "GET /api/health (proxy) is '${web_health:-<empty>}', expected database up"
 echo "  GET /api/health (proxy) -> $web_health"
+# Web sign-in (homeowner-password-login), on the canonical localhost URL (cookies are host-scoped).
+web_public="http://localhost:${web_port}"
+web_session=$(curl -sS --max-time 10 "${web_public}/auth/session" 2>/dev/null || true)
+[ "$web_session" = '{"signedIn":false}' ] || web_fail "GET /auth/session is '${web_session:-<empty>}', expected {\"signedIn\":false}"
+echo "  GET /auth/session -> $web_session"
+web_login=$(curl -sS --max-time 10 -o /dev/null -w '%{http_code} %{redirect_url}' "${web_public}/auth/login?returnTo=%2F" 2>/dev/null || true)
+case "$web_login" in
+  "303 http://localhost:${kc_port}/realms/BricoMission/protocol/openid-connect/auth?"*client_id=bricomission-web*)
+    grep -q 'code_challenge_method=S256' <<<"$web_login" || web_fail "GET /auth/login redirect has no code_challenge_method=S256"
+    echo "  GET /auth/login -> 303 to Keycloak (client bricomission-web, PKCE S256; web_session schema writable)" ;;
+  *) web_fail "GET /auth/login gave '${web_login:-<none>}', expected 303 to the Keycloak authorization endpoint (database or WEB_* env?)" ;;
+esac
 
 echo
 echo "Stack is up and healthy (detached)."
-echo "  Web:      http://localhost:${web_port}/  (PWA; language from the browser or the NEXT_LOCALE cookie)"
+echo "  Web:      http://localhost:${web_port}/  (PWA; language from the browser or the NEXT_LOCALE cookie; sign in from the Home header)"
 echo "  API:      http://127.0.0.1:${api_port}/health"
 echo "  API docs: http://127.0.0.1:${api_port}/docs  (OpenAPI JSON: /docs-json)"
 echo "  Keycloak: http://localhost:${kc_port}/admin  (master bootstrap admin, KEYCLOAK_ADMIN_*)"
@@ -189,6 +219,7 @@ echo "Next step: run /feature-flow on the first ready feature in feature_list.js
 echo "Useful commands:"
 echo "  ${PNPM[*]} -r lint && ${PNPM[*]} -r test  # workspace verification (no database needed)"
 echo "  ./scripts/keycloak-smoke.sh             # realm roles, API 401/403/200, Mailpit SMTP, email-code login"
+echo "  bash scripts/web/auth-persist-check.sh  # web sign-in survives docker compose restart web (Playwright)"
 echo "  ${PNPM[*]} test:e2e                     # browser E2E (Playwright image, mobile 390x844) against the web service"
 echo "  bash scripts/web/lighthouse-pwa.sh      # Lighthouse 11 PWA installability (installable-manifest)"
 echo "  docker compose up -d --build --wait     # rebuild the api and web images after code changes"

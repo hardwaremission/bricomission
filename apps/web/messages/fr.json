@@ -37,5 +37,23 @@
     "online": "Service disponible",
     "degraded": "Certaines fonctionnalités sont temporairement indisponibles",
     "offline": "Vous êtes hors ligne ou le service est injoignable"
+  },
+  "auth": {
+    "signIn": "Se connecter",
+    "accountLabel": "Compte : {name}",
+    "sheetTitle": "Compte",
+    "close": "Fermer",
+    "signOut": "Se déconnecter",
+    "error": {
+      "title": "Nous n'avons pas pu vous connecter",
+      "reasons": {
+        "cancelled": "Vous avez annulé la connexion. Vous pouvez réessayer quand vous le souhaitez.",
+        "expired": "Votre lien de connexion a expiré. Recommencez pour continuer.",
+        "unavailable": "La connexion est temporairement indisponible. Veuillez réessayer dans quelques minutes.",
+        "generic": "Une erreur s'est produite lors de votre connexion. Veuillez réessayer."
+      },
+      "tryAgain": "Réessayer",
+      "backHome": "Retour à l'accueil"
+    }
   }
 }

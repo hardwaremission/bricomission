@@ -37,5 +37,23 @@
     "online": "Service beschikbaar",
     "degraded": "Sommige functies zijn tijdelijk niet beschikbaar",
     "offline": "Je bent offline of de service is niet bereikbaar"
+  },
+  "auth": {
+    "signIn": "Inloggen",
+    "accountLabel": "Account: {name}",
+    "sheetTitle": "Account",
+    "close": "Sluiten",
+    "signOut": "Uitloggen",
+    "error": {
+      "title": "We konden je niet inloggen",
+      "reasons": {
+        "cancelled": "Je hebt het inloggen geannuleerd. Je kunt het opnieuw proberen wanneer je wilt.",
+        "expired": "Je inloglink is verlopen. Begin opnieuw om verder te gaan.",
+        "unavailable": "Inloggen is tijdelijk niet beschikbaar. Probeer het over een paar minuten opnieuw.",
+        "generic": "Er ging iets mis bij het inloggen. Probeer het opnieuw."
+      },
+      "tryAgain": "Opnieuw proberen",
+      "backHome": "Terug naar home"
+    }
   }
 }

@@ -37,5 +37,23 @@
     "online": "Service available",
     "degraded": "Some features are temporarily unavailable",
     "offline": "You're offline or the service can't be reached"
+  },
+  "auth": {
+    "signIn": "Sign in",
+    "accountLabel": "Account: {name}",
+    "sheetTitle": "Account",
+    "close": "Close",
+    "signOut": "Sign out",
+    "error": {
+      "title": "We couldn't sign you in",
+      "reasons": {
+        "cancelled": "You cancelled signing in. You can try again whenever you're ready.",
+        "expired": "Your sign-in link expired. Start again to continue.",
+        "unavailable": "Sign-in is temporarily unavailable. Please try again in a few minutes.",
+        "generic": "Something went wrong while signing you in. Please try again."
+      },
+      "tryAgain": "Try again",
+      "backHome": "Back to Home"
+    }
   }
 }

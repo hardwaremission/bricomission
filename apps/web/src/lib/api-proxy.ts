@@ -1,17 +1,32 @@
+import type { AccessResult } from './auth/session';
+import { hasSameOrigin, UNSAFE_METHODS } from './auth/origin';
+
 /**
  * Same-origin proxy from the browser's /api/* to the API (API_INTERNAL_URL). Not an open
  * proxy: the target is always the fixed base plus re-encoded path segments plus the
  * original query; only an allowlist of request headers is forwarded (never cookies).
+ * Authorization never comes from the browser: a client `Authorization` header is dropped and
+ * the server session's access token (homeowner-password-login) is attached instead.
+ * With a session cookie, unsafe methods need a same-origin Origin header (CSRF).
  */
-export const FORWARDED_REQUEST_HEADERS = ['accept', 'accept-language', 'authorization', 'content-type', 'last-event-id'] as const;
+export const FORWARDED_REQUEST_HEADERS = ['accept', 'accept-language', 'content-type', 'last-event-id'] as const;
 export const RETURNED_RESPONSE_HEADERS = ['content-type', 'cache-control', 'www-authenticate'] as const;
 
 const PREFIX = '/api/';
+const SESSION_COOKIE_NAME = 'bm_session';
 
 export interface ProxyOptions {
   baseUrl: () => string;
+  /** Session lookup (with refresh) for the request's Cookie header. Default: anonymous. */
+  resolveAccessToken?: (cookieHeader: string | null) => Promise<AccessResult>;
+  /** Set-Cookie value that clears the session cookie (after invalid_grant or a stale cookie). */
+  clearSessionCookie?: () => string;
   fetchImpl?: typeof fetch;
   logError?: (message: string) => void;
+}
+
+function hasSessionCookie(cookieHeader: string | null): boolean {
+  return cookieHeader !== null && cookieHeader.split(';').some((part) => part.trim().startsWith(`${SESSION_COOKIE_NAME}=`));
 }
 
 function jsonError(status: number): Response {
@@ -37,18 +52,31 @@ export function upstreamPath(rawPathname: string): string | null {
   return `/${encoded.join('/')}`;
 }
 
-export function createApiProxy({ baseUrl, fetchImpl = fetch, logError = console.error }: ProxyOptions) {
+export function createApiProxy({
+  baseUrl,
+  resolveAccessToken = async () => ({ kind: 'anonymous', clearCookie: false }),
+  clearSessionCookie = () => `${SESSION_COOKIE_NAME}=; Path=/; Max-Age=0; HttpOnly; SameSite=Lax`,
+  fetchImpl = fetch,
+  logError = console.error,
+}: ProxyOptions) {
   return async function proxyRequest(request: Request): Promise<Response> {
     const url = new URL(request.url);
     const path = upstreamPath(url.pathname);
     if (path === null) return jsonError(400);
+    const cookieHeader = request.headers.get('cookie');
+    // CSRF: checked before any session lookup or upstream call.
+    if (UNSAFE_METHODS.has(request.method) && hasSessionCookie(cookieHeader) && !hasSameOrigin(request)) return jsonError(403);
     const target = `${baseUrl().replace(/\/+$/, '')}${path}${url.search}`;
+
+    const access = await resolveAccessToken(cookieHeader);
+    if (access.kind === 'unavailable') return jsonError(503);
 
     const headers = new Headers();
     for (const name of FORWARDED_REQUEST_HEADERS) {
       const value = request.headers.get(name);
       if (value !== null) headers.set(name, value);
     }
+    if (access.kind === 'token') headers.set('authorization', `Bearer ${access.token}`);
     const hasBody = request.method !== 'GET' && request.method !== 'HEAD' && request.body !== null;
 
     let upstream: Response;
@@ -71,6 +99,7 @@ export function createApiProxy({ baseUrl, fetchImpl = fetch, logError = console.
       const value = upstream.headers.get(name);
       if (value !== null) responseHeaders.set(name, value);
     }
+    if (access.kind === 'anonymous' && access.clearCookie) responseHeaders.append('set-cookie', clearSessionCookie());
     const noBody = request.method === 'HEAD' || upstream.status === 204 || upstream.status === 304;
     return new Response(noBody ? null : upstream.body, { status: upstream.status, headers: responseHeaders });
   };

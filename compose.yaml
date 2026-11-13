@@ -103,6 +103,9 @@ services:
       BM_SEED_ADMIN_PASSWORD: ${BM_SEED_ADMIN_PASSWORD:-bm-admin-dev}
       BM_SEED_HOMEOWNER_PASSWORD: ${BM_SEED_HOMEOWNER_PASSWORD:-bm-homeowner-dev}
       BM_SEED_PROFESSIONAL_PASSWORD: ${BM_SEED_PROFESSIONAL_PASSWORD:-bm-professional-dev}
+      # Web BFF client bricomission-web (homeowner-password-login): its redirect/base URLs and secret.
+      BM_WEB_PUBLIC_URL: http://localhost:${WEB_PORT:-3100}
+      BM_WEB_CLIENT_SECRET: ${BM_WEB_CLIENT_SECRET:-bm-web-dev-secret}
     ports:
       # Management port 9000 stays internal (it would clash with MinIO on the host).
       - "127.0.0.1:${KEYCLOAK_PORT:-8180}:8080"
@@ -159,13 +162,23 @@ services:
   web:
     # Next.js standalone server (apps/web). Browsers call /api/* on this origin; the
     # route handler proxies to API_INTERNAL_URL (no CORS). No depends_on: Home shows the
-    # API state itself (offline/degraded) instead of failing to start.
+    # API state itself (offline/degraded) and works anonymously with postgres or Keycloak down.
+    # Sign-in (homeowner-password-login): the server is the OIDC client bricomission-web
+    # (BFF); sessions live in the web-owned schema web_session of the same database.
     build:
       context: .
       dockerfile: apps/web/Dockerfile
     restart: unless-stopped
     environment:
       API_INTERNAL_URL: http://api:3000
+      # Every query is schema-qualified (web_session.*); Prisma (api) owns public.
+      WEB_DATABASE_URL: postgresql://${POSTGRES_USER:-bricomission}:${POSTGRES_PASSWORD:-bricomission}@postgres:5432/${POSTGRES_DB:-bricomission}
+      WEB_PUBLIC_URL: http://localhost:${WEB_PORT:-3100}
+      KEYCLOAK_PUBLIC_URL: http://localhost:${KEYCLOAK_PORT:-8180}
+      KEYCLOAK_INTERNAL_URL: http://keycloak:8080
+      KEYCLOAK_WEB_CLIENT_SECRET: ${BM_WEB_CLIENT_SECRET:-bm-web-dev-secret}
+      # AES-256-GCM key for tokens at rest (base64, 32 bytes). Dev default: local use only.
+      WEB_SESSION_KEY: ${WEB_SESSION_KEY:-SmSKlZZ67zH0iPvgrQkG8MuWdgcXgBOojZ2sFimNMvE=}
     ports:
       - "127.0.0.1:${WEB_PORT:-3100}:3000"
     healthcheck:
