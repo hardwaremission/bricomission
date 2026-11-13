@@ -6,6 +6,10 @@
       "headers": {
         "Authorization": "Bearer ${BRICOMISSION_GITHUB_PAT}"
       }
+    },
+    "open-pencil": {
+      "command": "npx",
+      "args": ["-y", "-p", "@open-pencil/mcp@0.16.0", "openpencil-mcp"]
     }
   }
 }

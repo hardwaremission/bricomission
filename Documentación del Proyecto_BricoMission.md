@@ -499,7 +499,7 @@ La skill `/harness-starter` ha convertido los documentos de descubrimiento de la
 | B2B y marketplace | `professional-registration`, `admin-company-validation`, `admin-marketplace-settings`, `b2b-dossier-feed`, `bid-submission-revision`, `homeowner-bid-acceptance`, `bid-live-notifications` |
 | Contratos y pagos | `contract-pdf-generation`, `contract-electronic-acceptance`, `commission-simulated-checkout`, `commission-paypal-sandbox` |
 | Cuotas y administración | `daily-quota-enforcement`, `admin-quota-controls`, `admin-user-management`, `admin-service-endpoints` |
-| Amplitud | `google-sso-login`, `i18n-all-locales` |
+| Amplitud | `google-sso-login`, `language-preference-account` |
 
 **Criterios de corte aplicados:**
 - Cada feature es una porción vertical que se completa y se verifica en una sola sesión de agente.

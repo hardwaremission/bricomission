@@ -1,6 +1,6 @@
 # Registro de conversación con Claude Code · 2026-11-13
 
-_Actualizado: 2026-11-13 06:51_
+_Actualizado: 2026-11-13 07:50_
 
 
 ---
@@ -966,3 +966,1011 @@ he reiniciado el equipo así que puede que no necesites 'newgrp docker'
 ### 🤖 **Claude** · 2026-11-13 06:50:41
 
 Confirmado: esta sesión ya tiene el grupo `docker` y accede al servicio de Docker directamente (versión 29.9.3), así que **`newgrp docker` ya no hace falta**. La skill solo lo usa si el proceso no tiene el grupo, por lo que no hay que cambiarla.
+
+
+### 🧑 **Juan Miguel** · 2026-11-13 06:51:17
+
+vamos con la siguiente feature
+
+
+### 🤖 **Claude** · 2026-11-13 06:51:22
+
+> 🔧 **Bash**: `{"command": "GIT_TERMINAL_PROMPT=0 git fetch -q origin && git status --short; git log --oneline -1 origin/main; python3 -I -c \"\nimport json;f=json.load(open('feature_list.json'));st={x['id']:x['status'] for x in f}\nfor x in f:\n  if x['status']!='accepted' and all(st[d]=='accepted' for d in x['de`
+
+
+### 🤖 **Claude** · 2026-11-13 06:51:35
+
+> 🔧 **AskUserQuestion**: `{"questions": [{"question": "Para dejar la base limpia, ¿hago commit en main de los cambios de la skill github-flow, CLAUDE.md y los logs de conversación, y los subo directamente a origin/main?", "header": "Base limpia", "multiSelect": false, "options": [{"label": "Sí, commit y push a main (Recomend`
+
+
+### 🤖 **Claude** · 2026-11-13 06:53:01
+
+> 🔧 **Bash**: `{"command": "git add -A && git commit -q -F - <<'EOF'\nchore: make github-flow sequential\n\n- github-flow now delivers one feature at a time: each feature branches\n  from the freshly merged base and the next starts only after the\n  developer merges the previous PR, avoiding merge conflicts on sha`
+
+
+### 🤖 **Claude** · 2026-11-13 06:53:07
+
+Base limpia (`5d468e5`, ya en `origin/main`) y rama `feature/web-pwa-shell` creada en este checkout. Creo el issue:
+
+
+### 🤖 **Claude** · 2026-11-13 06:53:11
+
+> 🔧 **mcp__github__issue_write**: `{"method": "create", "owner": "hardwaremission", "repo": "bricomission", "title": "[web-pwa-shell] Installable PWA shell with design tokens and en/es i18n", "body": "**Feature:** `web-pwa-shell` (see `feature_list.json`)\n\n**Behavior:** `apps/web` (Next.js + Tailwind with DESIGN.md tokens) serves a`
+
+
+### 🤖 **Claude** · 2026-11-13 06:53:17
+
+Issue [#11](https://github.com/hardwaremission/bricomission/issues/11) creado. Empiezo `feature-flow` con el planner. El diseño en OpenPencil irá entre la spec y la implementación, contigo.
+
+
+### 🤖 **Claude** · 2026-11-13 06:53:27
+
+> 🔧 **Agent**: `{"description": "Plan web-pwa-shell spec", "subagent_type": "planner", "prompt": "Repository: /home/juanmi/Proyectos/hardwaremission.bricomission (branch feature/web-pwa-shell, base 5d468e5; work in this checkout).\nSelected feature id: web-pwa-shell\nRole: planner. Write docs/specs/web-pwa-shell.md`
+
+
+### 🤖 **Claude** · 2026-11-13 06:53:29
+
+> 🔧 **ToolSearch**: `{"query": "open-pencil", "max_results": 5}`
+
+
+### 🤖 **Claude** · 2026-11-13 06:53:31
+
+> 🔧 **Bash**: `{"command": "cat /home/juanmi/Proyectos/hardwaremission.bricomission/.mcp.json | python3 -I -c \"import json,sys;print(list(json.load(sys.stdin)['mcpServers']))\"; claude mcp list 2>/dev/null | sed -E 's/(Bearer )[^ ]+/\\1<redacted>/' | head; ls /home/juanmi/Proyectos/hardwaremission.bricomission/de`
+
+
+### 🤖 **Claude** · 2026-11-13 06:53:40
+
+No hay ningún servidor MCP `open-pencil` configurado, aunque OpenPencil sí está instalado en el equipo. Busco cómo expone su MCP:
+
+
+### 🤖 **Claude** · 2026-11-13 06:53:41
+
+> 🔧 **WebSearch**: `{"query": "OpenPencil MCP server Claude Code setup open-pencil .fig", "mode": "standard"}`
+
+
+### 🤖 **Claude** · 2026-11-13 06:53:51
+
+> 🔧 **WebFetch**: `{"url": "https://openpencil-docs.pages.dev/programmable/mcp-server", "prompt": "Exact install and configuration steps for Claude Code: package name, command, stdio vs HTTP, whether the desktop app must be running (WebSocket port), project-level .mcp.json example, env vars, and how to point it at a .`
+
+
+### 🤖 **Claude** · 2026-11-13 06:54:05
+
+> 🔧 **Bash**: `{"command": "npm view @open-pencil/mcp version bin engines time.modified 2>&1 | head -12; npm config get prefix", "description": "Look up the OpenPencil MCP npm package"}`
+
+
+### 🤖 **Claude** · 2026-11-13 06:54:18
+
+> 🔧 **AskUserQuestion**: `{"questions": [{"question": "¿Añado el servidor MCP open-pencil (@open-pencil/mcp@0.16.0 vía npx, sin secretos) al .mcp.json del proyecto? Después tendrías que reiniciar Claude Code para que cargue.", "header": "MCP Pencil", "multiSelect": false, "options": [{"label": "Sí, añádelo al proyecto (Recom`
+
+
+### 🤖 **Claude** · 2026-11-13 06:54:55
+
+> 🔧 **Read**: `{"file_path": "/home/juanmi/Proyectos/hardwaremission.bricomission/.mcp.json"}`
+
+
+### 🤖 **Claude** · 2026-11-13 06:54:56
+
+> 🔧 **Edit**: `{"replace_all": false, "file_path": "/home/juanmi/Proyectos/hardwaremission.bricomission/.mcp.json", "old_string": "        \"Authorization\": \"Bearer ${BRICOMISSION_GITHUB_PAT}\"\n      }\n    }\n  }", "new_string": "        \"Authorization\": \"Bearer ${BRICOMISSION_GITHUB_PAT}\"\n      }\n    },`
+
+
+### 🤖 **Claude** · 2026-11-13 06:54:59
+
+> 🔧 **Bash**: `{"command": "python3 -I -c \"import json;print(list(json.load(open('.mcp.json'))['mcpServers']))\"; mkdir -p design/openpencil; timeout 25 npx -y -p @open-pencil/mcp@0.16.0 openpencil-mcp </dev/null >/tmp/claude-1000/-home-juanmi-Proyectos-hardwaremission-bricomission/f43e4370-93ae-4d11-927d-b8255aa`
+
+
+### 🤖 **Claude** · 2026-11-13 06:55:14
+
+He añadido el MCP `open-pencil` a `.mcp.json` y he creado `design/openpencil/`. He comprobado que el binario arranca con `npx` (`exit=0`).
+
+**Espera a que termine el planner antes de reiniciar**, porque reiniciar cortaría el subagente. Cuando te avise:
+
+1. Abre OpenPencil y crea un documento nuevo. Guárdalo como `design/openpencil/bricomission_B2C_app.fig` dentro del repo y déjalo abierto con el documento cargado.
+2. Reinicia Claude Code desde fish en esta carpeta y reanuda esta conversación (`claude --continue`). Si te lo pide, aprueba el servidor `open-pencil` de `.mcp.json`.
+3. Confírmame que `/mcp` muestra `open-pencil` conectado. Entonces diseño la pantalla de inicio contigo.
+
+
+### 🤖 **Claude** · 2026-11-13 06:58:17
+
+El planner ha terminado. La spec está en `docs/specs/web-pwa-shell.md` y define 9 escenarios de aceptación. Las decisiones principales:
+- **Servicio `web` en compose** en el puerto 3100. Las llamadas a la API pasan por un proxy en el propio servidor web (`/api/*`), así que no hace falta CORS.
+- **Cliente de la API** generado a partir del OpenAPI, en `packages/api-client`.
+- **Idioma inglés o español** según el navegador, con un selector para cambiarlo.
+- **PWA instalable** con service worker propio y la fuente Inter servida en local.
+- **E2E y Lighthouse** en contenedores de Playwright fijados a una versión, sin sudo.
+
+**Brief de diseño** para la pantalla de inicio, en un marco de 390x844:
+- Wordmark "BricoMission".
+- Titular y una frase con la propuesta de valor.
+- Un solo botón principal en una barra fija abajo: "Empieza tu proyecto de cocina".
+- Selector EN/ES.
+- Indicador de estado discreto, con 4 variantes.
+- Icono de la app de 512x512.
+
+Ya puedes **reiniciar**. Haz estos pasos en orden:
+1. Abre OpenPencil y guarda un documento nuevo como `design/openpencil/bricomission_B2C_app.fig` dentro del repo. Déjalo abierto.
+2. Desde fish, en `~/Proyectos/hardwaremission.bricomission`, arranca `claude --continue` y aprueba el servidor `open-pencil` si te lo pide.
+3. Confírmame que `/mcp` muestra `open-pencil` conectado.
+
+Entonces diseño la pantalla contigo en OpenPencil. Cuando la apruebes, la leo de vuelta y se la paso al implementer.
+
+
+### 🧑 **Juan Miguel** · 2026-11-13 06:58:17
+
+<task-notification>
+<task-id>af1b744aa57895a87</task-id>
+<tool-use-id>toolu_01SmMZ6Vr2dTP21qKEoiS9CE</tool-use-id>
+<output-file>/tmp/claude-1000/-home-juanmi-Proyectos-hardwaremission-bricomission/f43e4370-93ae-4d11-927d-b8255aa114d7/tasks/af1b744aa57895a87.output</output-file>
+<status>completed</status>
+<summary>Agent "Plan web-pwa-shell spec" finished</summary>
+<note>A task-notification fires each time this agent stops with no live background children of its own. The user can send it another message and resume it, so the same task-id may notify more than once.</note>
+<result>This agent's report was delivered to you as a message from "af1b744aa57895a87" (its SubagentHandback call). Read it there; it is not repeated here.
+</result>
+<usage><subagent_tokens>114356</subagent_tokens><tool_uses>26</tool_uses><duration_ms>281904</duration_ms></usage>
+</task-notification>
+
+
+### 🧑 **Juan Miguel** · 2026-11-13 06:59:58
+
+Todo ok, empieza a diseñar
+
+
+### 🤖 **Claude** · 2026-11-13 07:00:01
+
+> 🔧 **ToolSearch**: `{"query": "select:mcp__open-pencil__list_documents,mcp__open-pencil__render,mcp__open-pencil__export_image,mcp__open-pencil__get_page_tree,mcp__open-pencil__save_file,mcp__open-pencil__describe,mcp__open-pencil__list_available_fonts,mcp__open-pencil__get_jsx", "max_results": 8}`
+
+
+### 🤖 **Claude** · 2026-11-13 07:00:02
+
+> 🔧 **Bash**: `{"command": "awk '/^## Design Brief/{p=1} p&&/^## /&&!/Design Brief/{exit} p' docs/specs/web-pwa-shell.md", "description": "Read the design brief section of the spec"}`
+
+
+### 🤖 **Claude** · 2026-11-13 07:00:08
+
+> 🔧 **Bash**: `{"command": "grep -n '^#' docs/specs/web-pwa-shell.md | head -40", "description": "List spec headings to locate design brief"}`
+
+
+### 🤖 **Claude** · 2026-11-13 07:00:08
+
+> 🔧 **mcp__open-pencil__list_documents**: `{}`
+
+
+### 🤖 **Claude** · 2026-11-13 07:00:09
+
+> 🔧 **mcp__open-pencil__list_available_fonts**: `{"family": "inter"}`
+
+
+### 🤖 **Claude** · 2026-11-13 07:00:12
+
+La aplicación OpenPencil no está conectada: el MCP responde que la aplicación de escritorio no está abierta o que no tiene ningún documento cargado.
+
+Abre OpenPencil y carga (o crea y guarda) `design/openpencil/bricomission_B2C_app.fig` dentro del repo. Déjalo abierto y avísame; reintento en cuanto me confirmes.
+
+
+### 🧑 **Juan Miguel** · 2026-11-13 07:05:33
+
+
+
+<pasted_content id="509f">
+❯ sudo npm i -g @open-pencil/mcp@0.16.0
+
+changed 137 packages in 2s
+npm warn install-scripts 1 package had install scripts blocked because they are not covered by allowScripts:
+npm warn install-scripts   core-js@3.51.0 (postinstall: node -e "try{require('./postinstall')}catch(e){}")
+npm warn install-scripts
+npm warn install-scripts Run `npm install -g --allow-scripts=core-js` to allow these scripts once, or `npm config set allow-scripts=core-js --location=user` to allow them for all global installs.
+</pasted_content id="509f">
+
+
+Y el log de openpencil al intentar activar el servidor mcp me indica :code=exited
+detail=code=1 signal=null node: /tmp/.mount_OpenPeGgFeFH/usr/lib/libffi.so.8: version `LIBFFI_CALL_PLAN_8.4' not found (required by node)
+
+
+### 🤖 **Claude** · 2026-11-13 07:05:43
+
+> 🔧 **Bash**: `{"command": "grep -E '^(Exec|Name)=' ~/.local/share/applications/OpenPencil-handler.desktop; ls ~/.local/share/applications | grep -i pencil; pgrep -af -i openpencil | cut -c1-140 | head -5; ldd /usr/bin/node | grep ffi; pacman -Q libffi nodejs 2>/dev/null", "description": "Inspect OpenPencil launch`
+
+
+### 🤖 **Claude** · 2026-11-13 07:05:52
+
+> 🔧 **Bash**: `{"command": "d=$HOME/.local/share/openpencil-node-shim; mkdir -p $d; cat > $d/node <<'EOF'\n#!/bin/sh\n# Run the system node without the OpenPencil AppImage's bundled libraries\n# (its old libffi breaks /usr/bin/node: LIBFFI_CALL_PLAN_8.4 not found).\nunset LD_LIBRARY_PATH LD_PRELOAD\nexec /usr/bin/`
+
+
+### 🤖 **Claude** · 2026-11-13 07:06:00
+
+El shim funciona. Como `openpencil-mcp` arranca con `#!/usr/bin/env node`, tomará el shim si va primero en el `PATH`.
+
+Cierra OpenPencil y vuelve a lanzarlo desde fish con el shim delante en el `PATH`:
+
+```fish
+env PATH=$HOME/.local/share/openpencil-node-shim:$PATH ~/Descargas/OpenPencil_0.16.0_amd64.AppImage &
+```
+
+Después abre `design/openpencil/bricomission_B2C_app.fig`, activa el servidor MCP en la app y avísame.
+
+Si funciona y quieres que el acceso directo lo haga siempre, cambia la línea `Exec` de `~/.local/share/applications/OpenPencil-handler.desktop` por esta:
+```
+Exec=env PATH=/home/juanmi/.local/share/openpencil-node-shim:/usr/local/bin:/usr/bin "/home/juanmi/Descargas/OpenPencil_0.16.0_amd64.AppImage" %u
+```
+
+
+### 🧑 **Juan Miguel** · 2026-11-13 07:06:49
+
+
+
+<pasted_content id="509f">
+❯ env PATH=$HOME/.local/share/openpencil-node-shim:$PATH ~/Descargas/OpenPencil_0.16.0_amd64.AppImage &
+
+Error: No suitable fusermount binary found on the $PATH
+Error: $FUSERMOUNT_PROG not set
+
+Cannot mount AppImage, please check your FUSE setup.
+You might still be able to extract the contents of this AppImage 
+if you run it with the --appimage-extract option. 
+See https://github.com/AppImage/AppImageKit/wiki/FUSE 
+for more information
+open dir error: No such file or directory
+
+fish: Job 1, 'env PATH=$HOME/.local/share/ope…' has ended
+</pasted_content id="509f">
+
+
+
+### 🤖 **Claude** · 2026-11-13 07:06:54
+
+Es un problema de fish: `$PATH` es una lista, así que `PATH=...:$PATH` se expandió en varios argumentos y el `PATH` final se quedó sin `/usr/bin`. Por eso no encuentra `fusermount`. Hay que unir la lista con `string join`:
+
+```fish
+env PATH=$HOME/.local/share/openpencil-node-shim:(string join : $PATH) ~/Descargas/OpenPencil_0.16.0_amd64.AppImage &
+```
+
+Después abre `design/openpencil/bricomission_B2C_app.fig`, activa el MCP en la app y avísame.
+
+
+### 🧑 **Juan Miguel** · 2026-11-13 07:08:12
+
+ya está el mcp de openpencil activo según el propio programa
+
+
+### 🤖 **Claude** · 2026-11-13 07:08:14
+
+> 🔧 **mcp__open-pencil__list_documents**: `{}`
+
+
+### 🤖 **Claude** · 2026-11-13 07:08:16
+
+Conectado. Leo el brief y miro las fuentes disponibles:
+
+
+### 🤖 **Claude** · 2026-11-13 07:08:17
+
+> 🔧 **Bash**: `{"command": "sed -n 164,188p docs/specs/web-pwa-shell.md", "description": "Read the design brief section of the spec"}`
+
+
+### 🤖 **Claude** · 2026-11-13 07:08:17
+
+> 🔧 **mcp__open-pencil__list_available_fonts**: `{"family": "inter"}`
+
+
+### 🤖 **Claude** · 2026-11-13 07:08:23
+
+Inter está disponible. Pruebo la sintaxis JSX de `render` con un marco mínimo:
+
+
+### 🤖 **Claude** · 2026-11-13 07:08:24
+
+> 🔧 **mcp__open-pencil__render**: `{"jsx": "<Frame name=\"__probe\" w={200} h={100} bg=\"#1F4E79\" rounded={20} flex=\"col\" p={16} gap={8}><Text size={16} weight={600} color=\"#FFFFFF\" font=\"Inter\">Probe</Text></Frame>", "x": -400, "y": 0}`
+
+
+### 🤖 **Claude** · 2026-11-13 07:08:27
+
+> 🔧 **mcp__open-pencil__get_jsx**: `{"id": "1325410829:5"}`
+
+
+### 🤖 **Claude** · 2026-11-13 07:08:27
+
+> 🔧 **mcp__open-pencil__export_image**: `{"ids": ["1325410829:5"], "maxEdge": 300}`
+
+
+### 🤖 **Claude** · 2026-11-13 07:08:34
+
+> 🔧 **ToolSearch**: `{"query": "select:mcp__open-pencil__delete_node,mcp__open-pencil__get_codegen_prompt,mcp__open-pencil__set_effects,mcp__open-pencil__create_page,mcp__open-pencil__rename_node,mcp__open-pencil__update_node,mcp__open-pencil__lint", "max_results": 7}`
+
+
+### 🤖 **Claude** · 2026-11-13 07:08:38
+
+> 🔧 **mcp__open-pencil__render**: `{"jsx": "<Frame name=\"__probe2\" w={300} flex=\"col\" gap={8} p={16} bg=\"#FFFFFF\" stroke=\"#E2E0DA\" strokeWidth={1} rounded={12} shadow=\"0 4 16 #0000000F\"><Frame name=\"row\" w=\"fill\" flex=\"row\" justify=\"between\" items=\"center\"><Ellipse w={8} h={8} bg=\"#2E7D4F\" /><Text size={14} colo`
+
+
+### 🤖 **Claude** · 2026-11-13 07:08:38
+
+> 🔧 **mcp__open-pencil__delete_node**: `{"id": "1325410829:5"}`
+
+
+### 🤖 **Claude** · 2026-11-13 07:08:41
+
+> 🔧 **mcp__open-pencil__get_jsx**: `{"id": "1325410829:9"}`
+
+
+### 🤖 **Claude** · 2026-11-13 07:08:53
+
+La sintaxis funciona. Borro el marco de prueba y busco iconos con licencia libre para los 3 pasos:
+
+
+### 🤖 **Claude** · 2026-11-13 07:08:53
+
+> 🔧 **mcp__open-pencil__delete_node**: `{"id": "1325410829:9"}`
+
+
+### 🤖 **Claude** · 2026-11-13 07:08:54
+
+> 🔧 **ToolSearch**: `{"query": "select:mcp__open-pencil__search_icons,mcp__open-pencil__insert_icon,mcp__open-pencil__fetch_icons", "max_results": 3}`
+
+
+### 🤖 **Claude** · 2026-11-13 07:08:56
+
+> 🔧 **mcp__open-pencil__fetch_icons**: `{"names": ["lucide:camera", "lucide:sparkles", "lucide:receipt-text", "lucide:arrow-right"], "size": 24}`
+
+
+### 🤖 **Claude** · 2026-11-13 07:08:56
+
+> 🔧 **mcp__open-pencil__create_page**: `{"name": "Home"}`
+
+
+### 🤖 **Claude** · 2026-11-13 07:09:07
+
+Página `Home` creada e iconos Lucide (licencia ISC) en caché. Dibujo el marco **Home – EN** (390x844):
+
+
+### 🤖 **Claude** · 2026-11-13 07:09:20
+
+> 🔧 **mcp__open-pencil__render**: `{"page_id": "1325410829:13", "x": 0, "y": 0, "jsx": "<Frame name=\"Home – EN\" w={390} h={844} bg=\"#FAFAF8\" flex=\"col\" clip>\n  <Frame name=\"Header\" w=\"fill\" h={64} flex=\"row\" justify=\"between\" items=\"center\" px={16}>\n    <Text name=\"Wordmark\" size={22} weight={700} color=\"#1F4E79\`
+
+
+### 🤖 **Claude** · 2026-11-13 07:09:22
+
+> 🔧 **mcp__open-pencil__get_page_tree**: `{"root_id": "1325410829:14", "node_types": ["FRAME"]}`
+
+
+### 🤖 **Claude** · 2026-11-13 07:09:25
+
+Inserto los iconos en los círculos de los pasos:
+
+
+### 🤖 **Claude** · 2026-11-13 07:09:26
+
+> 🔧 **mcp__open-pencil__insert_icon**: `{"name": "lucide:camera", "parent_id": "1325410829:28", "color": "#1F4E79", "size": 22}`
+
+
+### 🤖 **Claude** · 2026-11-13 07:09:27
+
+> 🔧 **mcp__open-pencil__insert_icon**: `{"name": "lucide:sparkles", "parent_id": "1325410829:33", "color": "#1F4E79", "size": 22}`
+
+
+### 🤖 **Claude** · 2026-11-13 07:09:28
+
+> 🔧 **mcp__open-pencil__insert_icon**: `{"name": "lucide:receipt-text", "parent_id": "1325410829:38", "color": "#1F4E79", "size": 22}`
+
+
+### 🤖 **Claude** · 2026-11-13 07:09:28
+
+> 🔧 **mcp__open-pencil__insert_icon**: `{"name": "lucide:arrow-right", "parent_id": "1325410829:46", "color": "#FFFFFF", "size": 20}`
+
+
+### 🤖 **Claude** · 2026-11-13 07:09:30
+
+> 🔧 **mcp__open-pencil__export_image**: `{"ids": ["1325410829:14"], "page_id": "1325410829:13", "maxEdge": 900}`
+
+
+### 🤖 **Claude** · 2026-11-13 07:09:31
+
+> 🔧 **mcp__open-pencil__lint**: `{"ids": ["1325410829:14"], "preset": "accessibility", "page_id": "1325410829:13"}`
+
+
+### 🤖 **Claude** · 2026-11-13 07:09:36
+
+El EN queda bien y el lint de accesibilidad no da errores. Ahora clono para la variante ES:
+
+
+### 🤖 **Claude** · 2026-11-13 07:09:37
+
+> 🔧 **ToolSearch**: `{"query": "select:mcp__open-pencil__clone_node,mcp__open-pencil__set_text,mcp__open-pencil__find_nodes,mcp__open-pencil__set_fill", "max_results": 4}`
+
+
+### 🤖 **Claude** · 2026-11-13 07:09:38
+
+> 🔧 **mcp__open-pencil__clone_node**: `{"id": "1325410829:14", "page_id": "1325410829:13"}`
+
+
+### 🤖 **Claude** · 2026-11-13 07:09:42
+
+> 🔧 **mcp__open-pencil__update_node**: `{"id": "1325410829:60", "page_id": "1325410829:13", "name": "Home – ES", "x": 470, "y": 0}`
+
+
+### 🤖 **Claude** · 2026-11-13 07:09:42
+
+> 🔧 **mcp__open-pencil__get_page_tree**: `{"root_id": "1325410829:60", "node_types": ["TEXT"], "page_id": "1325410829:13"}`
+
+
+### 🤖 **Claude** · 2026-11-13 07:09:46
+
+> 🔧 **mcp__open-pencil__set_text**: `{"id": "1325410829:70", "text": "Tu nueva cocina, diseñada y presupuestada antes de la primera baldosa.", "page_id": "1325410829:13"}`
+
+
+### 🤖 **Claude** · 2026-11-13 07:09:47
+
+> 🔧 **mcp__open-pencil__set_text**: `{"id": "1325410829:71", "text": "Sube fotos y medidas de tu cocina. Descubre diseños fotorrealistas, obtén un presupuesto con precios de catálogos reales y decide: hazlo tú mismo o recibe ofertas de profesionales validados.", "page_id": "1325410829:13"}`
+
+
+### 🤖 **Claude** · 2026-11-13 07:09:48
+
+> 🔧 **mcp__open-pencil__set_text**: `{"id": "1325410829:79", "text": "1. Captura", "page_id": "1325410829:13"}`
+
+
+### 🤖 **Claude** · 2026-11-13 07:09:49
+
+> 🔧 **mcp__open-pencil__set_text**: `{"id": "1325410829:80", "text": "Fotos de tu cocina y sus medidas.", "page_id": "1325410829:13"}`
+
+
+### 🤖 **Claude** · 2026-11-13 07:09:49
+
+> 🔧 **mcp__open-pencil__set_text**: `{"id": "1325410829:87", "text": "2. Diseño", "page_id": "1325410829:13"}`
+
+
+### 🤖 **Claude** · 2026-11-13 07:09:50
+
+> 🔧 **mcp__open-pencil__set_text**: `{"id": "1325410829:88", "text": "Diseños fotorrealistas que respetan la distribución de tu cocina.", "page_id": "1325410829:13"}`
+
+
+### 🤖 **Claude** · 2026-11-13 07:09:51
+
+> 🔧 **mcp__open-pencil__set_text**: `{"id": "1325410829:94", "text": "3. Presupuesto", "page_id": "1325410829:13"}`
+
+
+### 🤖 **Claude** · 2026-11-13 07:09:52
+
+> 🔧 **mcp__open-pencil__set_text**: `{"id": "1325410829:95", "text": "Cuatro niveles de precio con catálogos reales. Hazlo tú mismo o recibe ofertas.", "page_id": "1325410829:13"}`
+
+
+### 🤖 **Claude** · 2026-11-13 07:09:53
+
+> 🔧 **mcp__open-pencil__set_text**: `{"id": "1325410829:99", "text": "Servicio disponible", "page_id": "1325410829:13"}`
+
+
+### 🤖 **Claude** · 2026-11-13 07:09:53
+
+> 🔧 **mcp__open-pencil__set_text**: `{"id": "1325410829:101", "text": "Empieza tu proyecto de cocina", "page_id": "1325410829:13"}`
+
+
+### 🤖 **Claude** · 2026-11-13 07:09:54
+
+> 🔧 **mcp__open-pencil__set_fill**: `{"id": "1325410829:64", "color": "#F2F1ED", "page_id": "1325410829:13"}`
+
+
+### 🤖 **Claude** · 2026-11-13 07:09:55
+
+> 🔧 **mcp__open-pencil__set_fill**: `{"id": "1325410829:65", "color": "#1C1C1E", "page_id": "1325410829:13"}`
+
+
+### 🤖 **Claude** · 2026-11-13 07:09:56
+
+> 🔧 **mcp__open-pencil__set_fill**: `{"id": "1325410829:66", "color": "#1F4E79", "page_id": "1325410829:13"}`
+
+
+### 🤖 **Claude** · 2026-11-13 07:09:56
+
+> 🔧 **mcp__open-pencil__set_fill**: `{"id": "1325410829:67", "color": "#FFFFFF", "page_id": "1325410829:13"}`
+
+
+### 🤖 **Claude** · 2026-11-13 07:09:57
+
+> 🔧 **mcp__open-pencil__rename_node**: `{"id": "1325410829:64", "name": "Lang EN", "page_id": "1325410829:13"}`
+
+
+### 🤖 **Claude** · 2026-11-13 07:09:58
+
+> 🔧 **mcp__open-pencil__rename_node**: `{"id": "1325410829:66", "name": "Lang ES (selected)", "page_id": "1325410829:13"}`
+
+
+### 🤖 **Claude** · 2026-11-13 07:10:01
+
+Ahora la comprobación a 360x780, con la variante ES, que tiene el texto más largo:
+
+
+### 🤖 **Claude** · 2026-11-13 07:10:01
+
+> 🔧 **mcp__open-pencil__clone_node**: `{"id": "1325410829:60", "page_id": "1325410829:13"}`
+
+
+### 🤖 **Claude** · 2026-11-13 07:10:04
+
+> 🔧 **mcp__open-pencil__update_node**: `{"id": "1325410829:104", "page_id": "1325410829:13", "name": "Home – ES @360x780 (check)", "x": 940, "y": 0, "width": 360, "height": 780}`
+
+
+### 🤖 **Claude** · 2026-11-13 07:10:05
+
+> 🔧 **mcp__open-pencil__export_image**: `{"ids": ["1325410829:60", "1325410829:104"], "page_id": "1325410829:13", "maxEdge": 900}`
+
+
+### 🤖 **Claude** · 2026-11-13 07:10:11
+
+> 🔧 **mcp__open-pencil__find_nodes**: `{"name": "Headline", "type": "TEXT", "page_id": "1325410829:13"}`
+
+
+### 🤖 **Claude** · 2026-11-13 07:10:13
+
+> 🔧 **mcp__open-pencil__set_text**: `{"id": "1325410829:24", "text": "Design your new kitchen and know its price before you start.", "page_id": "1325410829:13"}`
+
+
+### 🤖 **Claude** · 2026-11-13 07:10:14
+
+> 🔧 **mcp__open-pencil__set_text**: `{"id": "1325410829:70", "text": "Diseña tu nueva cocina y conoce su precio antes de empezar.", "page_id": "1325410829:13"}`
+
+
+### 🤖 **Claude** · 2026-11-13 07:10:15
+
+> 🔧 **mcp__open-pencil__set_text**: `{"id": "1325410829:114", "text": "Diseña tu nueva cocina y conoce su precio antes de empezar.", "page_id": "1325410829:13"}`
+
+
+### 🤖 **Claude** · 2026-11-13 07:10:16
+
+> 🔧 **mcp__open-pencil__export_image**: `{"ids": ["1325410829:14", "1325410829:60", "1325410829:104"], "page_id": "1325410829:13", "maxEdge": 1280}`
+
+
+### 🤖 **Claude** · 2026-11-13 07:10:30
+
+> 🔧 **mcp__open-pencil__render**: `{"page_id": "1325410829:13", "x": 1380, "y": 0, "jsx": "<Frame name=\"ServiceStatus – states\" w={480} flex=\"col\" gap={16} p={24} bg=\"#FFFFFF\" rounded={20} stroke=\"#E2E0DA\">\n  <Text size={16} weight={600} color=\"#1C1C1E\" lineHeight={24}>ServiceStatus states (dot + label, 14/20 textMuted)</T`
+
+
+### 🤖 **Claude** · 2026-11-13 07:10:32
+
+> 🔧 **mcp__open-pencil__render**: `{"page_id": "1325410829:13", "x": 1380, "y": 420, "jsx": "<Frame name=\"App icon 512 (maskable)\" w={512} h={512} bg=\"#1F4E79\" flex=\"col\" justify=\"center\" items=\"center\" gap={20}>\n  <Text name=\"Monogram\" size={200} weight={700} color=\"#FFFFFF\" lineHeight={200}>BM</Text>\n  <Frame name=\`
+
+
+### 🤖 **Claude** · 2026-11-13 07:10:35
+
+> 🔧 **mcp__open-pencil__render**: `{"page_id": "1325410829:13", "x": 1912, "y": 420, "jsx": "<Frame name=\"App icon – safe zone check\" w={512} h={512} bg=\"#1F4E79\" flex=\"col\" justify=\"center\" items=\"center\">\n  <Frame name=\"Safe zone (inner 80%, r=205)\" w={410} h={410} rounded={999} stroke=\"#E07A3F\" flex=\"col\" justify=`
+
+
+### 🤖 **Claude** · 2026-11-13 07:10:38
+
+> 🔧 **mcp__open-pencil__render**: `{"page_id": "1325410829:13", "x": 1380, "y": 960, "jsx": "<Frame name=\"Manifest colors\" w={480} flex=\"col\" gap={8} p={24} bg=\"#FFFFFF\" rounded={20} stroke=\"#E2E0DA\">\n  <Text size={16} weight={600} color=\"#1C1C1E\" lineHeight={24}>Web app manifest</Text>\n  <Text size={14} color=\"#6B6B70\"`
+
+
+### 🤖 **Claude** · 2026-11-13 07:10:38
+
+> 🔧 **mcp__open-pencil__export_image**: `{"ids": ["1325410829:152", "1325410829:174", "1325410829:177"], "page_id": "1325410829:13", "maxEdge": 1100}`
+
+
+### 🤖 **Claude** · 2026-11-13 07:10:43
+
+El monograma "BM" queda dentro de la zona segura del icono maskable. Guardo el `.fig`:
+
+
+### 🤖 **Claude** · 2026-11-13 07:10:43
+
+> 🔧 **mcp__open-pencil__save_file**: `{}`
+
+
+### 🤖 **Claude** · 2026-11-13 07:10:44
+
+> 🔧 **Bash**: `{"command": "ls -la /home/juanmi/Proyectos/hardwaremission.bricomission/design/openpencil/", "description": "Confirm the .fig file was saved"}`
+
+
+### 🤖 **Claude** · 2026-11-13 07:10:51
+
+He terminado la primera propuesta de diseño y la he guardado en `design/openpencil/bricomission_B2C_app.fig`, página **Home**. La tienes abierta en OpenPencil.
+
+| Marco | Contenido |
+| --- | --- |
+| **Home – EN** (390x844) | Cabecera con el nombre BricoMission y el selector EN/ES; titular; frase con la propuesta de valor; 3 pasos (Captura, Diseño, Presupuesto) con iconos Lucide (licencia ISC); barra fija abajo con el estado del servicio y el botón principal |
+| **Home – ES** (390x844) | El mismo marco en español, con ES seleccionado |
+| **Home – ES @360x780** | Comprobación a 360 px. El paso 3 queda por debajo de la barra fija y se ve al hacer scroll. El botón principal siempre es visible |
+| **ServiceStatus – states** | Los 4 estados del indicador (comprobando, disponible, degradado, sin conexión), cada uno con su color de punto y su texto en EN/ES |
+| **App icon 512 (maskable)** | Monograma "BM" en blanco sobre el azul `primary`, con una barra de acento naranja. A su lado, el mismo icono con la zona segura del 80 % marcada |
+| **Manifest colors** | `theme_color` #1F4E79 y `background_color` #FAFAF8 |
+
+**Textos:**
+- **Titular:** EN "Design your new kitchen and know its price before you start." / ES "Diseña tu nueva cocina y conoce su precio antes de empezar."
+- **Botón:** EN "Start your Kitchen Project" / ES "Empieza tu proyecto de cocina".
+
+Solo he usado tokens de `DESIGN.md`, y el lint de accesibilidad de OpenPencil no da ningún error.
+
+¿Lo apruebas tal cual o quieres cambios (textos, orden, colores, icono…)? Cuando lo apruebes, lo leo de vuelta y genero `docs/design/web-pwa-shell-home.md` para el implementer.
+
+
+### 🧑 **Juan Miguel** · 2026-11-13 07:14:51
+
+en el documento PRD del documento se indicaban más requisitos para la aplicación como el multiidioma. Podrías replanificar con todo ese contexto? Después de eso rediseña. Me interesa que el diseño de openpencil esté solo en inglés para no sobrecargar con diseños redundantes.,
+
+
+### 🤖 **Claude** · 2026-11-13 07:15:03
+
+Entendido: replanifico `web-pwa-shell` con el contexto completo del PRD y después rediseño solo en inglés. Antes, el planner:
+
+
+### 🤖 **Claude** · 2026-11-13 07:15:13
+
+> 🔧 **SendMessage**: `{"to": "af1b744aa57895a87", "summary": "Replan web-pwa-shell with full PRD context", "message": "Developer request (2026-11-13): re-plan web-pwa-shell using the full PRD context, then the orchestrator redesigns in OpenPencil. Update docs/specs/web-pwa-shell.md and, where needed, feature_list.json (y`
+
+
+### 🤖 **Claude** · 2026-11-13 07:15:18
+
+El planner está replanificando `web-pwa-shell` con el PRD completo. Le he pedido:
+- **Multiidioma desde el primer día:**
+  - los 11 idiomas del MVP;
+  - detección del idioma del navegador;
+  - pantalla de **selección de idioma** cuando el idioma no está soportado (desplegable con inglés preseleccionado);
+  - selector con los 11 idiomas en lugar del botón EN/ES.
+- **Idioma guardado en la cuenta:** como necesita login, pasa a una feature posterior. Ajustará `feature_list.json` en consecuencia.
+- **Revisar el resto del PRD:** login solo cuando haga falta, diseño minimalista, funcionamiento sin conexión, y si la portada necesita un acceso discreto para profesionales.
+- **Brief de diseño solo en inglés:**
+  - Home (comprobada también a 360x780);
+  - pantalla de selección de idioma;
+  - selector abierto;
+  - los 4 estados del indicador;
+  - icono y colores del manifest.
+
+Cuando termine, rehago el diseño en OpenPencil.
+
+
+### 🤖 **Claude** · 2026-11-13 07:18:15
+
+> 🔧 **Bash**: `{"command": "python3 -I -c \"\nimport json;f=json.load(open('feature_list.json'));ids={x['id'] for x in f}\nbad=[(x['id'],d) for x in f for d in x['depends_on'] if d not in ids];print('valid JSON, features',len(f),'bad deps',bad)\"; sed -n 500,503p \"Documentación del Proyecto_BricoMission.md\" | cu`
+
+
+### 🤖 **Claude** · 2026-11-13 07:18:17
+
+The planner ha terminado y `feature_list.json` es válido (34 features, dependencias correctas). Antes de rediseñar, confírmame estas decisiones:
+
+
+### 🤖 **Claude** · 2026-11-13 07:18:24
+
+> 🔧 **AskUserQuestion**: `{"questions": [{"question": "¿Qué hacemos con el acceso para profesionales en la portada (Home)?", "header": "Profesional", "multiSelect": false, "options": [{"label": "Hueco reservado, oculto (Recomendado)", "description": "El diseño reserva un enlace terciario discreto \"Are you a professional?\" `
+
+
+### 🤖 **Claude** · 2026-11-13 07:19:48
+
+> 🔧 **Bash**: `{"command": "sed -i 's/`google-sso-login`, `i18n-all-locales`/`google-sso-login`, `language-preference-account`/' \"Documentación del Proyecto_BricoMission.md\" && grep -c 'language-preference-account' \"Documentación del Proyecto_BricoMission.md\"; grep -n -i 'professional?\\|professional-registrat`
+
+
+### 🤖 **Claude** · 2026-11-13 07:19:51
+
+> 🔧 **Bash**: `{"command": "sed -n 35,36p docs/specs/web-pwa-shell.md; sed -n 182,186p docs/specs/web-pwa-shell.md; sed -n 263,267p docs/specs/web-pwa-shell.md; grep -n 'professional' feature_list.json | cut -c1-220 | head", "description": "Show the exact spec lines about the professional link"}`
+
+
+### 🤖 **Claude** · 2026-11-13 07:20:00
+
+> 🔧 **Bash**: `{"command": "python3 -I - <<'EOF'\np='docs/specs/web-pwa-shell.md'; s=open(p).read()\nrep={\n\"1. **Professionals on Home:** not rendered now. Home has one primary action for the Homeowner (DESIGN.md: one primary action per screen), and a link to a page that does not exist yet would be dead. The Hom`
+
+
+### 🤖 **Claude** · 2026-11-13 07:20:03
+
+> 🔧 **Bash**: `{"command": "python3 -I - <<'EOF'\np='feature_list.json'; s=open(p).read()\na=\"Also enables the tertiary 'Are you a professional?' link reserved on the B2C Home (web-pwa-shell designs the slot but does not render it).\"\nb=\"Builds /professionals/register, the target of the tertiary 'Are you a prof`
+
+
+### 🤖 **Claude** · 2026-11-13 07:20:13
+
+> 🔧 **mcp__open-pencil__delete_node**: `{"id": "1325410829:60", "page_id": "1325410829:13"}`
+
+
+### 🤖 **Claude** · 2026-11-13 07:20:13
+
+> 🔧 **mcp__open-pencil__delete_node**: `{"id": "1325410829:104", "page_id": "1325410829:13"}`
+
+
+### 🤖 **Claude** · 2026-11-13 07:20:14
+
+> 🔧 **mcp__open-pencil__delete_node**: `{"id": "1325410829:152", "page_id": "1325410829:13"}`
+
+
+### 🤖 **Claude** · 2026-11-13 07:20:14
+
+> 🔧 **mcp__open-pencil__fetch_icons**: `{"names": ["lucide:globe", "lucide:chevron-down", "lucide:check", "lucide:x"]}`
+
+
+### 🤖 **Claude** · 2026-11-13 07:20:15
+
+> 🔧 **mcp__open-pencil__update_node**: `{"id": "1325410829:14", "name": "Home", "page_id": "1325410829:13"}`
+
+
+### 🤖 **Claude** · 2026-11-13 07:20:17
+
+Sustituyo el botón EN/ES por el selector de idioma compacto:
+
+
+### 🤖 **Claude** · 2026-11-13 07:20:19
+
+> 🔧 **mcp__open-pencil__render**: `{"page_id": "1325410829:13", "replace_id": "1325410829:17", "jsx": "<Frame name=\"LanguageSelector (closed)\" h={44} flex=\"row\" gap={6} items=\"center\" px={14} bg=\"#F2F1ED\" rounded={999}>\n  <Frame name=\"Globe icon slot\" w={18} h={18} />\n  <Text name=\"Current language\" size={14} weight={60`
+
+
+### 🤖 **Claude** · 2026-11-13 07:20:20
+
+> 🔧 **mcp__open-pencil__render**: `{"page_id": "1325410829:13", "parent_id": "1325410829:22", "jsx": "<Frame name=\"ProfessionalLink\" w=\"fill\" h={44} flex=\"row\" justify=\"center\" items=\"center\"><Text name=\"Professional link label\" size={14} weight={500} color=\"#1F4E79\" lineHeight={20} textDecoration=\"underline\">Are you `
+
+
+### 🤖 **Claude** · 2026-11-13 07:20:22
+
+> 🔧 **mcp__open-pencil__insert_icon**: `{"name": "lucide:globe", "parent_id": "1325410829:189", "color": "#1C1C1E", "size": 18}`
+
+
+### 🤖 **Claude** · 2026-11-13 07:20:23
+
+> 🔧 **mcp__open-pencil__insert_icon**: `{"name": "lucide:chevron-down", "parent_id": "1325410829:191", "color": "#1C1C1E", "size": 16}`
+
+
+### 🤖 **Claude** · 2026-11-13 07:20:24
+
+> 🔧 **mcp__open-pencil__export_image**: `{"ids": ["1325410829:14"], "page_id": "1325410829:13", "maxEdge": 900}`
+
+
+### 🤖 **Claude** · 2026-11-13 07:20:36
+
+> 🔧 **mcp__open-pencil__clone_node**: `{"id": "1325410829:14", "page_id": "1325410829:13"}`
+
+
+### 🤖 **Claude** · 2026-11-13 07:20:37
+
+> 🔧 **mcp__open-pencil__clone_node**: `{"id": "1325410829:14", "page_id": "1325410829:13"}`
+
+
+### 🤖 **Claude** · 2026-11-13 07:20:41
+
+> 🔧 **mcp__open-pencil__update_node**: `{"id": "1325410829:201", "page_id": "1325410829:13", "name": "Home – full length (scroll view)", "x": 470, "y": 0, "height": 940}`
+
+
+### 🤖 **Claude** · 2026-11-13 07:20:42
+
+> 🔧 **mcp__open-pencil__update_node**: `{"id": "1325410829:251", "page_id": "1325410829:13", "name": "Home @360x780 (check)", "x": 940, "y": 0, "width": 360, "height": 780}`
+
+
+### 🤖 **Claude** · 2026-11-13 07:20:43
+
+> 🔧 **mcp__open-pencil__export_image**: `{"ids": ["1325410829:14", "1325410829:201", "1325410829:251"], "page_id": "1325410829:13", "maxEdge": 1280}`
+
+
+### 🤖 **Claude** · 2026-11-13 07:20:48
+
+Las tres vistas de Home están bien. En la de 360 px, lo que sale por debajo es el contenido desplazable (OpenPencil no recorta el marco). Ahora la **pantalla de selección de idioma**:
+
+
+### 🤖 **Claude** · 2026-11-13 07:20:55
+
+> 🔧 **mcp__open-pencil__render**: `{"page_id": "1325410829:13", "x": 1380, "y": 0, "jsx": "<Frame name=\"Language Selection\" w={390} h={844} bg=\"#FAFAF8\" flex=\"col\">\n  <Frame name=\"Header\" w=\"fill\" h={64} flex=\"row\" items=\"center\" px={16}>\n    <Text name=\"Wordmark\" size={22} weight={700} color=\"#1F4E79\" lineHeight=`
+
+
+### 🤖 **Claude** · 2026-11-13 07:20:59
+
+> 🔧 **mcp__open-pencil__find_nodes**: `{"name": "slot", "page_id": "1325410829:13"}`
+
+
+### 🤖 **Claude** · 2026-11-13 07:20:59
+
+> 🔧 **mcp__open-pencil__find_nodes**: `{"name": "Globe badge", "page_id": "1325410829:13"}`
+
+
+### 🤖 **Claude** · 2026-11-13 07:21:03
+
+> 🔧 **mcp__open-pencil__insert_icon**: `{"name": "lucide:chevron-down", "parent_id": "1325410829:315", "color": "#1C1C1E", "size": 20}`
+
+
+### 🤖 **Claude** · 2026-11-13 07:21:04
+
+> 🔧 **mcp__open-pencil__insert_icon**: `{"name": "lucide:globe", "parent_id": "1325410829:308", "color": "#1F4E79", "size": 26}`
+
+
+### 🤖 **Claude** · 2026-11-13 07:21:09
+
+Ahora el **selector de idioma abierto**, como hoja inferior con los 11 idiomas:
+
+
+### 🤖 **Claude** · 2026-11-13 07:21:18
+
+> 🔧 **mcp__open-pencil__render**: `{"page_id": "1325410829:13", "x": 1850, "y": 0, "jsx": "<Frame name=\"LanguageSelector – open (bottom sheet)\" w={390} h={844} bg=\"#1C1C1E66\" flex=\"col\" justify=\"end\">\n  <Frame name=\"Sheet\" w=\"fill\" flex=\"col\" gap={4} px={16} pt={8} pb={24} bg=\"#FFFFFF\" rounded={20} shadow=\"0 -8 32 #`
+
+
+### 🤖 **Claude** · 2026-11-13 07:21:21
+
+> 🔧 **mcp__open-pencil__find_nodes**: `{"name": "Close button", "page_id": "1325410829:13"}`
+
+
+### 🤖 **Claude** · 2026-11-13 07:21:21
+
+> 🔧 **mcp__open-pencil__find_nodes**: `{"name": "Check slot", "page_id": "1325410829:13"}`
+
+
+### 🤖 **Claude** · 2026-11-13 07:21:24
+
+> 🔧 **mcp__open-pencil__insert_icon**: `{"name": "lucide:x", "parent_id": "1325410829:328", "color": "#1C1C1E", "size": 20}`
+
+
+### 🤖 **Claude** · 2026-11-13 07:21:25
+
+> 🔧 **mcp__open-pencil__insert_icon**: `{"name": "lucide:check", "parent_id": "1325410829:331", "color": "#1F4E79", "size": 20}`
+
+
+### 🤖 **Claude** · 2026-11-13 07:21:31
+
+> 🔧 **mcp__open-pencil__render**: `{"page_id": "1325410829:13", "x": 2320, "y": 0, "jsx": "<Frame name=\"ServiceStatus – states\" w={420} flex=\"col\" gap={16} p={24} bg=\"#FFFFFF\" rounded={20} stroke=\"#E2E0DA\">\n  <Text size={16} weight={600} color=\"#1C1C1E\" lineHeight={24}>ServiceStatus (dot 8px + label 14/20 textMuted)</Text>`
+
+
+### 🤖 **Claude** · 2026-11-13 07:21:31
+
+> 🔧 **mcp__open-pencil__update_node**: `{"id": "1325410829:174", "page_id": "1325410829:13", "x": 2320, "y": 420}`
+
+
+### 🤖 **Claude** · 2026-11-13 07:21:32
+
+> 🔧 **mcp__open-pencil__update_node**: `{"id": "1325410829:177", "page_id": "1325410829:13", "x": 2852, "y": 420}`
+
+
+### 🤖 **Claude** · 2026-11-13 07:21:33
+
+> 🔧 **mcp__open-pencil__update_node**: `{"id": "1325410829:181", "page_id": "1325410829:13", "x": 2320, "y": 960}`
+
+
+### 🤖 **Claude** · 2026-11-13 07:21:37
+
+> 🔧 **mcp__open-pencil__export_image**: `{"ids": ["1325410829:303", "1325410829:324", "1325410829:356"], "page_id": "1325410829:13", "maxEdge": 1280}`
+
+
+### 🤖 **Claude** · 2026-11-13 07:21:37
+
+> 🔧 **mcp__open-pencil__lint**: `{"preset": "accessibility", "page_id": "1325410829:13"}`
+
+
+### 🤖 **Claude** · 2026-11-13 07:21:40
+
+> 🔧 **mcp__open-pencil__save_file**: `{}`
+
+
+### 🤖 **Claude** · 2026-11-13 07:21:47
+
+He rehecho el diseño **solo en inglés**, siguiendo la spec replanificada, y lo he guardado en `design/openpencil/bricomission_B2C_app.fig`, página **Home**:
+
+| Marco | Contenido |
+| --- | --- |
+| **Home** (390x844) | Nombre BricoMission y, en lugar del botón EN/ES, un selector compacto con globo, "English" y flecha; titular, propuesta de valor y 3 pasos; barra fija abajo con el estado del servicio y "Start your Kitchen Project" |
+| **Home – full length (scroll view)** | La misma pantalla completa: al final del contenido aparece el enlace terciario subrayado "Are you a professional?" |
+| **Home @360x780 (check)** | Comprobación a 360 px. El contenido se desplaza por debajo de la barra fija (OpenPencil no recorta el marco) |
+| **Language Selection** (390x844) | Icono de globo, "Choose your language", texto de ayuda, desplegable con English preseleccionado y botón "Continue" en la barra fija |
+| **LanguageSelector – open (bottom sheet)** | Hoja inferior con los 11 idiomas por su nombre nativo: English marcado con check, Deutsch con el anillo de foco de teclado, y botón de cerrar de 44 px |
+| **ServiceStatus – states** | Los 4 estados: punto de color y texto, nunca solo color |
+| **App icon 512 (maskable)**, con su comprobación de zona segura, y **Manifest colors** | Sin cambios |
+
+El lint de accesibilidad de OpenPencil no da ningún error. Las traducciones no van en el diseño: saldrán de los ficheros de mensajes de los 11 idiomas.
+
+¿Lo apruebas o quieres cambios?
+
+
+### 🧑 **Juan Miguel** · 2026-11-13 07:24:30
+
+Aprobado
+
+
+### 🤖 **Claude** · 2026-11-13 07:24:35
+
+Aprobado. Leo el diseño de vuelta por MCP y genero el artefacto para el implementer:
+
+
+### 🤖 **Claude** · 2026-11-13 07:24:36
+
+> 🔧 **mcp__open-pencil__get_jsx**: `{"id": "1325410829:14", "page_id": "1325410829:13", "path": "design/openpencil/web-pwa-shell/home.jsx"}`
+
+
+### 🤖 **Claude** · 2026-11-13 07:24:36
+
+> 🔧 **mcp__open-pencil__get_jsx**: `{"id": "1325410829:303", "page_id": "1325410829:13", "path": "design/openpencil/web-pwa-shell/language-selection.jsx"}`
+
+
+### 🤖 **Claude** · 2026-11-13 07:24:37
+
+> 🔧 **mcp__open-pencil__get_jsx**: `{"id": "1325410829:324", "page_id": "1325410829:13", "path": "design/openpencil/web-pwa-shell/language-selector-open.jsx"}`
+
+
+### 🤖 **Claude** · 2026-11-13 07:24:38
+
+> 🔧 **mcp__open-pencil__get_jsx**: `{"id": "1325410829:356", "page_id": "1325410829:13", "path": "design/openpencil/web-pwa-shell/service-status-states.jsx"}`
+
+
+### 🤖 **Claude** · 2026-11-13 07:24:39
+
+> 🔧 **mcp__open-pencil__get_jsx**: `{"id": "1325410829:174", "page_id": "1325410829:13", "path": "design/openpencil/web-pwa-shell/app-icon.jsx"}`
+
+
+### 🤖 **Claude** · 2026-11-13 07:24:41
+
+> 🔧 **ToolSearch**: `{"query": "select:mcp__open-pencil__export_svg", "max_results": 1}`
+
+
+### 🤖 **Claude** · 2026-11-13 07:24:43
+
+> 🔧 **mcp__open-pencil__export_svg**: `{"ids": ["1325410829:174"], "page_id": "1325410829:13", "path": "design/openpencil/web-pwa-shell/app-icon-512.svg"}`
+
+
+### 🤖 **Claude** · 2026-11-13 07:24:44
+
+> 🔧 **mcp__open-pencil__export_image**: `{"ids": ["1325410829:174"], "page_id": "1325410829:13", "maxEdge": 512, "path": "design/openpencil/web-pwa-shell/app-icon-512.png"}`
+
+
+### 🤖 **Claude** · 2026-11-13 07:24:45
+
+> 🔧 **mcp__open-pencil__export_image**: `{"ids": ["1325410829:14", "1325410829:201", "1325410829:251", "1325410829:303", "1325410829:324", "1325410829:356"], "page_id": "1325410829:13", "maxEdge": 2400, "path": "design/openpencil/web-pwa-shell/overview.png"}`
+
+
+### 🤖 **Claude** · 2026-11-13 07:24:46
+
+> 🔧 **Bash**: `{"command": "cd /home/juanmi/Proyectos/hardwaremission.bricomission/design/openpencil/web-pwa-shell && ls -la && cat home.jsx", "description": "List read-back files and show Home JSX"}`
+
+
+### 🤖 **Claude** · 2026-11-13 07:24:50
+
+El diseño leído de vuelta está en `design/openpencil/web-pwa-shell/` (JSX de cada marco, icono en SVG y PNG, imagen de conjunto). Escribo el artefacto `docs/design/web-pwa-shell.md`:
+
+
+### 🤖 **Claude** · 2026-11-13 07:25:22
+
+> 🔧 **Write**: `{"file_path": "/home/juanmi/Proyectos/hardwaremission.bricomission/docs/design/web-pwa-shell.md", "content": "# Design Read-Back: web-pwa-shell\n\nApproved by developer on 2026-11-13.\n\n- Source of truth: `design/openpencil/bricomission_B2C_app.fig`, page **Home**, designed and read back through th`
+
+
+### 🤖 **Claude** · 2026-11-13 07:25:24
+
+> 🔧 **Bash**: `{"command": "ls -la /home/juanmi/Proyectos/hardwaremission.bricomission/design/openpencil/web-pwa-shell/; grep -n 'docs/design/web-pwa-shell' /home/juanmi/Proyectos/hardwaremission.bricomission/docs/specs/web-pwa-shell.md | head -3", "description": "Confirm exports exist and spec points to artifact"`
+
+
+### 🤖 **Claude** · 2026-11-13 07:25:28
+
+Artefacto listo, todo lo exportado está en su sitio y la spec ya apunta a él. Lanzo el **implementer**:
+
+
+### 🤖 **Claude** · 2026-11-13 07:25:36
+
+> 🔧 **Agent**: `{"description": "Implement web-pwa-shell", "subagent_type": "implementer", "prompt": "Repository: /home/juanmi/Proyectos/hardwaremission.bricomission (branch feature/web-pwa-shell, base 5d468e5, work directly in this checkout).\nSelected feature id: web-pwa-shell\nRole: implementer. Spec: docs/specs`
+
+
+### 🤖 **Claude** · 2026-11-13 07:25:41
+
+Ya he guardado el diseño aprobado y su lectura de vuelta:
+- **Lectura de vuelta:** los ficheros en `design/openpencil/web-pwa-shell/` (JSX de cada marco, icono en SVG y PNG, imagen de conjunto).
+- **Artefacto para el implementer:** `docs/design/web-pwa-shell.md`, con tokens, tamaños, textos en inglés por elemento y la línea "Approved by developer on 2026-11-13".
+
+El **implementer** ya está trabajando en `web-pwa-shell`:
+- `apps/web` con Next.js y Tailwind;
+- los 11 idiomas y la pantalla `/language`;
+- el proxy `/api`;
+- el cliente generado a partir del OpenAPI;
+- la PWA;
+- los tests E2E de Playwright.
+
+Es la feature más grande hasta ahora y tardará. Te aviso cuando termine; después le toca al validator.
+
+
+### 🤖 **Claude** · 2026-11-13 07:46:53
+
+El implementer la ha marcado `passing`. Antes del validator corrijo dos líneas de la spec que se quedaron desfasadas con tu decisión sobre el enlace de profesionales:
+
+
+### 🤖 **Claude** · 2026-11-13 07:46:54
+
+> 🔧 **Bash**: `{"command": "cd /home/juanmi/Proyectos/hardwaremission.bricomission && grep -n -i 'professional' docs/specs/web-pwa-shell.md | cut -c1-230", "description": "Find stale professional-link lines in spec"}`
+
+
+### 🤖 **Claude** · 2026-11-13 07:46:58
+
+> 🔧 **Bash**: `{"command": "python3 -I - <<'EOF'\np='docs/specs/web-pwa-shell.md'; s=open(p).read()\na=\"- Professional registration or a B2B entry point. The design reserves a tertiary slot, but this feature does not render it (see Decisions).\"\nb=\"- Professional registration itself (`professional-registration``
+
+
+### 🤖 **Claude** · 2026-11-13 07:47:08
+
+> 🔧 **Agent**: `{"description": "Validate web-pwa-shell", "subagent_type": "validator", "prompt": "Repository: /home/juanmi/Proyectos/hardwaremission.bricomission (branch feature/web-pwa-shell, base 5d468e5, uncommitted working tree = this feature).\nSelected feature id: web-pwa-shell (status: passing)\nRole: valid`
+
+
+### 🤖 **Claude** · 2026-11-13 07:47:10
+
+El implementer ha terminado `web-pwa-shell` y la ha marcado `passing`, con todas las comprobaciones en verde:
+- **Tests:** 255 entre lint y tests unitarios, 45 E2E de Playwright y Lighthouse instalable.
+- **Stack:** 6 servicios sanos y `init.sh` termina con código 0.
+- **Idioma:** `de-DE` muestra alemán, `nb-NO` noruego y `ja` redirige a `/language`.
+
+Ahora el **validator** lo está verificando de forma independiente. Antes de lanzarlo he corregido dos líneas de la spec que aún decían que el enlace de profesionales no se mostraba.
+
+Ya puedes probarlo en http://localhost:3100/. El stack está levantado.

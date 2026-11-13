@@ -8,9 +8,51 @@ pnpm workspace (`pnpm-workspace.yaml`), pnpm pinned through `packageManager` in 
 
 - `apps/api` (`@bricomission/api`): NestJS 12 REST API, ESM (`"type": "module"`, `module: nodenext`, relative imports end in `.js`). Prisma 7 with the `@prisma/adapter-pg` driver adapter.
 - `packages/shared-types` (`@bricomission/shared-types`): type-only contracts (`HealthResponse`, `RealmRole`, `MeResponse`, `AdminPingResponse`, `GpuJobView`, `GpuJobEvent`, ...). No runtime code and no build step. Consumers use `import type`; the API lists it as a devDependency.
-- Planned: `apps/web` (Next.js PWA) and a generated API client (`web-pwa-shell`).
+- `apps/web` (`@bricomission/web`): Next.js 16 App Router PWA (React 19, Tailwind CSS 4, `next-intl` 4). See "apps/web layout" below.
+- `packages/api-client` (`@bricomission/api-client`): typed API client. `openapi.json` is a committed snapshot of the API's `/docs-json`; `src/schema.ts` is committed `openapi-typescript` output; `src/index.ts` exports `createApiClient(baseUrl, fetch?)` (`openapi-fetch`). Source-only (no build step); `apps/web` consumes it through `transpilePackages`.
 
-Root configs: `tsconfig.base.json` (strict), `eslint.config.mjs` (flat config, typescript-eslint recommended, `consistent-type-imports`). Every package exposes `lint` (ESLint + `tsc --noEmit`) and `test`.
+Root configs: `tsconfig.base.json` (strict), `eslint.config.mjs` (flat config, typescript-eslint recommended, `consistent-type-imports`; ignores `.next`, `next-env.d.ts`, test output and the generated `schema.ts`). Every package exposes `lint` (ESLint + `tsc --noEmit`) and `test`.
+
+### OpenAPI client regeneration loop
+
+1. Change an API route or DTO.
+2. `pnpm --filter @bricomission/api openapi:export`: `apps/api/test/openapi-snapshot.spec.ts` builds the app like the HTTP tests (`PrismaService` stubbed, default env, no debug routes), runs `createOpenApiDocument` (`src/app.setup.ts`, the same document `/docs-json` serves) and, with `UPDATE_OPENAPI_SNAPSHOT=1`, writes `packages/api-client/openapi.json`. It then runs `pnpm --filter @bricomission/api-client generate` (`scripts/generate.ts`, programmatic `openapi-typescript`) to rewrite `src/schema.ts`.
+3. Commit both files. Drift fails `pnpm -r test` twice: the api snapshot test deep-equals the committed JSON, and `packages/api-client/test/schema.spec.ts` fails when `schema.ts` is stale.
+
+## apps/web layout
+
+- `src/app/layout.tsx`: root layout; `<html lang>` from the resolved locale, `viewport` (`themeColor` `#1F4E79`, `viewport-fit=cover`), metadata (apple-touch icon), `NextIntlClientProvider`, service worker registration (production builds only).
+- `src/app/page.tsx`: Home (dynamic). Wordmark, `LanguageSelector`, hero, 3 steps, the professional link (`/professionals/register`), sticky bottom bar with `ApiStatus` and the primary CTA (`/kitchen-projects/new`). Header fixed, content scrolls in `main`, bottom bar fixed, all inside an `h-dvh` column.
+- `src/app/language/page.tsx`: Language Selection, always English; a plain `<form method="post" action="/locale">` with a native `<select>` (English preselected), so it works without JavaScript.
+- `src/app/locale/route.ts` (`src/lib/locale-cookie.ts`): `POST /locale` is the only writer of the `NEXT_LOCALE` cookie. Form field `locale` must be in `LOCALES` (else 400); a present `Origin` must match `Host` (else 403). Success: `Set-Cookie: NEXT_LOCALE=<l>; Path=/; Max-Age=31536000; SameSite=Lax` and 303 to `/`.
+- `src/app/api/[...path]/route.ts` (`src/lib/api-proxy.ts`): same-origin proxy to the API, see below.
+- `src/app/manifest.ts`: `/manifest.webmanifest` (`standalone`, `start_url`/`scope` `/`, theme `#1F4E79`, background `#FAFAF8`, icons 192, 512, 512 maskable).
+- `src/proxy.ts` (Next 16 proxy, formerly middleware): locale resolution for page routes, see i18n.
+- `src/components/`: `LanguageSelector` (pill + modal `<dialog>` bottom sheet; options are buttons with `aria-current` on the current language, then `POST /locale` and `router.refresh()`), `ApiStatus` (client; `data-state` `checking|online|degraded|offline`, `aria-live="polite"`, dot plus label), `Wordmark`, `ServiceWorkerRegistration`.
+- `src/app/globals.css`: Tailwind 4 `@theme` mirroring every DESIGN.md token (colors, Inter, type scale `display|h1|h2|body|small`, radii, `shadow-card|sheet`, spacing `xs..xxl`) and the self-hosted Inter `@font-face` (latin + latin-ext woff2 from `@fontsource-variable/inter`). Icons: `lucide-react` (inline SVG).
+- `public/sw.js`: hand-written service worker, versioned cache. Install precaches the manifest and icons only; navigations are network-first (200 non-redirected responses cached, the cached copy served offline with `ignoreVary`); `/_next/static/*`, fonts and icons are cache-first; `/api/*` and non-GET requests are never intercepted; activate deletes old caches and claims clients. `/sw.js` is served with `cache-control: no-cache`.
+- `public/icons/`: PNGs scaled from the approved design export by `scripts/render-icons.ts` (run in the Playwright image; committed).
+- `messages/<locale>.json`: one file per locale, namespaces `meta`, `home`, `language`, `status`.
+
+### i18n (11 locales, no locale in the URL)
+
+- `src/i18n/locales.ts`: `LOCALES` (en, es, fr, de, it, pt, nl, sv, no, da, fi), `DEFAULT_LOCALE` `en`, `LOCALE_NATIVE_NAMES` (constants, never translated) and the pure `resolveLocale(cookie, acceptLanguage)`.
+- Resolution order: a valid `NEXT_LOCALE` cookie, then the highest-q supported primary subtag of `Accept-Language` (ties keep header order; `nb`/`nn` map to `no` (Bokmål); `pt-BR`/`pt-PT` to `pt`; `*` and `q=0` are unsupported), else none.
+- `src/proxy.ts`: `/` with no resolved locale redirects 307 to `/language`. Other pages get the resolved locale (fallback `en`; always `en` on `/language`) in the request header `x-bricomission-locale`, overwriting any client value. `src/i18n/request.ts` (next-intl "without i18n routing") reads it and loads the messages.
+- Detection never writes the cookie; only an explicit choice does, so a later browser-language change is followed until the visitor chooses. Saving the language on the account is `language-preference-account`.
+- Offline, the service worker serves Home in the locale it was cached in.
+
+### Same-origin API proxy (no CORS)
+
+The browser calls `/api/*` on the web origin; `src/lib/api-proxy.ts` forwards to `API_INTERNAL_URL` (runtime env; compose `http://api:3000`, dev default `http://127.0.0.1:3000`). A route handler, not `rewrites`, because standalone output bakes rewrites in at build time. Rules:
+
+- Target = fixed base + re-encoded path segments + original query. Segments that decode to `.`/`..` or contain `/` or `\`, and bad percent-encoding, give 400 before any upstream call.
+- Forwarded request headers: `accept`, `accept-language`, `authorization`, `content-type`, `last-event-id` only (never cookies); method and streamed body (`duplex: 'half'`).
+- Returned: upstream status, `content-type`, `cache-control` (default `no-store`), `www-authenticate`, streamed body.
+- Upstream unreachable: 502 `{"status":"error"}`; the log line carries the error class name only.
+- The future native iOS client calls the API directly.
+
+`ApiStatus` calls `client.GET('/health')` through `@bricomission/api-client` with a 5 s `AbortSignal.timeout`, on mount and on the `online` event: 200 `database: up` is `online`, 503 `database: down` is `degraded`, anything else (network error, timeout, proxy 502) is `offline`.
 
 ## apps/api layout
 
@@ -73,11 +115,15 @@ OpenAPI (`/docs-json`) is the contract for the web PWA and the future native iOS
 | mailpit | `axllent/mailpit:v1.33.1` | 8025 / 1025 | `MAILPIT_UI_PORT` / `MAILPIT_SMTP_PORT` |
 | keycloak | built from `infra/keycloak/Dockerfile` (`quay.io/keycloak/keycloak:26.8.2` + email-OTP provider jar) | 8180 | `KEYCLOAK_PORT` |
 | api | built from `apps/api/Dockerfile` (`node:26.13.1-bookworm-slim`) | 3000 | `API_PORT` |
+| web | built from `apps/web/Dockerfile` (`node:26.13.1-bookworm-slim`, Next standalone) | 3100 | `WEB_PORT` |
+| web-e2e (profile `e2e`, on demand) | `mcr.microsoft.com/playwright:v1.65.0-noble` | host network | `E2E_BASE_URL` |
 | embedder (profile `rag`, opt-in) | `ghcr.io/ggml-org/llama.cpp:server-b12316` (CPU build, no devices) | 8090 | `EMBEDDING_PORT` |
 
 The GPU services (`llama-server`, `comfyui`; profile `ai`) are covered in AGENTS.md. `embedder-fetch` (profile `rag-fetch`) downloads the embedding GGUF into `bricomission_embedding-models`. The api gets `EMBEDDING_URL=http://embedder:8080` and has no `depends_on` on the embedder.
 
 Keycloak runs `start-dev --import-realm` with `KC_DB=dev-file` (H2 in the `keycloak-data` volume). On the first start it imports realm `BricoMission` from `infra/keycloak/import/BricoMission-realm.json` (Keycloak requires the `<realm>-realm.json` file name); later starts skip the import (`IGNORE_EXISTING`). Issuer and backchannel are split. `KC_HOSTNAME=http://localhost:$KEYCLOAK_PORT` fixes the token `iss` for every caller, and `KC_HOSTNAME_BACKCHANNEL_DYNAMIC=true` lets the api container fetch the JWKS at `http://keycloak:8080`. The api has no `depends_on` on keycloak, because `/health` must not need it. The management port 9000 (health) stays inside the container.
+
+The web image is multi-stage: `pnpm install --frozen-lockfile --filter @bricomission/web...`, `next build` (`output: 'standalone'`, `outputFileTracingRoot` = repo root), then a runtime stage with `.next/standalone`, `.next/static` and `public`, running `node apps/web/server.js` as user `node` (`HOSTNAME=0.0.0.0`, `PORT=3000`, telemetry off). Env `API_INTERNAL_URL=http://api:3000`; healthcheck fetches `/manifest.webmanifest`; no `depends_on` (Home reports the API state itself). `web-e2e` mounts the repo at `/repo` (workdir `apps/web`, `HOME=/tmp`), uses `network_mode: host` (installability needs a `localhost` secure context) and `ipc: host`, and runs as the calling user.
 
 The api image is multi-stage: frozen install, `prisma generate` + `tsc`, then `pnpm deploy --prod --legacy` into a runtime stage that runs as user `node`. Build context is the repo root (`.dockerignore`). The api waits for postgres to be healthy and has its own `/health` healthcheck.
 
@@ -88,4 +134,6 @@ The api image is multi-stage: frozen install, `prisma generate` + `tsc`, then `p
 - Real Keycloak behavior is checked by `scripts/keycloak-smoke.sh` against the running stack: seeded role tokens, API 401/403/200 with real tokens, SMTP to Mailpit, and the email-code browser login (Authorization Code + PKCE driven with curl).
 - AI tests run without GPU, Docker or network: the broker is driven with gated fakes (`test/gpu-test-helpers.ts`: `Gate`, `GateQueue`, `flush`, injected clock and ids), SSE is read with `fetch` against `app.listen(0)`, and `LlamaServerLlmAdapter` is tested against a local `node:http` stub on port 0.
 - Real-database behavior (DB up/down/recovery) is checked against the compose stack (`./init.sh` checks `/health` reports `database: up` and the realm discovery issuer). Real pgvector and embedder behavior (ingest, idempotency, search) is checked with `scripts/catalog/ingest.sh` and curl against the stack plus the `rag` profile.
-- Persistent browser E2E (Playwright) arrives with `web-pwa-shell`.
+- `apps/web` unit tests (Vitest, node environment): `resolveLocale` and tag mapping, message parity (exactly 11 files, the English key set, no empty values, the same ICU placeholders per key), DESIGN.md color tokens equal the `@theme` variables, the API proxy (forwarding, header allowlist, no cookies, traversal 400, 502, 503 passthrough), the cookie setter (400/403/303 and cookie attributes), `checkApiHealth` state mapping, and the manifest plus icon PNG sizes. `packages/api-client` tests: schema freshness and typed calls with a fake `fetch`.
+- Persistent browser E2E: `pnpm test:e2e` (`scripts/web/e2e.sh`) runs Playwright (`apps/web/e2e/`, project `mobile-390`: 390x844, `isMobile`, `hasTouch`, Chromium) inside the `web-e2e` image against the running `web` service. No host browsers, no `webServer`. Specs: locale detection and mappings, Language Selection flow and cookie, selector (mouse and keyboard), status states (online through the real proxy; degraded/offline via `page.route` with service workers blocked), manifest, service worker control, CDP `Page.getInstallabilityErrors`, offline reload, origin-only requests, self-hosted Inter, and per-locale overflow / CTA visibility / 44 px targets at 390x844 and 360x780.
+- `bash scripts/web/lighthouse-pwa.sh`: Lighthouse 11.7.1 (`apps/web` devDependency, last major with the PWA category) in the same image with its Chromium; exits 0 only when `installable-manifest` scores 1 (report in `apps/web/test-results/lighthouse/`).

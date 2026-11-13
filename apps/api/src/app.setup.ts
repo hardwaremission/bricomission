@@ -1,6 +1,6 @@
 import { createRequire } from 'node:module';
 import type { INestApplication } from '@nestjs/common';
-import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { DocumentBuilder, type OpenAPIObject, SwaggerModule } from '@nestjs/swagger';
 
 const require = createRequire(import.meta.url);
 const { version } = require('../package.json') as { version: string };
@@ -13,13 +13,20 @@ const { version } = require('../package.json') as { version: string };
  */
 export function configureApp(app: INestApplication): INestApplication {
   app.enableShutdownHooks();
+  SwaggerModule.setup('docs', app, createOpenApiDocument(app));
+  return app;
+}
+
+/**
+ * The OpenAPI document served at /docs-json. Also used by test/openapi-snapshot.spec.ts
+ * to keep packages/api-client/openapi.json (the web client's contract) in sync.
+ */
+export function createOpenApiDocument(app: INestApplication): OpenAPIObject {
   const config = new DocumentBuilder()
     .setTitle('BricoMission API')
     .setDescription('REST API for the BricoMission PWA and future native clients.')
     .setVersion(version)
     .addBearerAuth({ type: 'http', scheme: 'bearer', bearerFormat: 'JWT', description: 'Keycloak access token (realm BricoMission)' })
     .build();
-  const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('docs', app, document);
-  return app;
+  return SwaggerModule.createDocument(app, config);
 }

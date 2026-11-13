@@ -1,0 +1,25 @@
+{
+  "name": "@bricomission/api-client",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Typed BricoMission API client: openapi-fetch over paths generated from the committed OpenAPI snapshot.",
+  "types": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "generate": "node scripts/generate.ts",
+    "lint": "eslint . && tsc --noEmit -p tsconfig.json",
+    "test": "vitest run --reporter=verbose"
+  },
+  "dependencies": {
+    "openapi-fetch": "0.17.0"
+  },
+  "devDependencies": {
+    "@types/node": "26.6.6",
+    "openapi-typescript": "7.13.0",
+    "typescript": "6.0.3",
+    "vitest": "5.1.0"
+  }
+}

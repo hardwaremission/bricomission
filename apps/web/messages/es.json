@@ -1,0 +1,41 @@
+{
+  "meta": {
+    "title": "BricoMission",
+    "description": "Convierte fotos de tu cocina en diseños fotorrealistas y un presupuesto con precios de catálogos reales."
+  },
+  "home": {
+    "headline": "Diseña tu nueva cocina y conoce su precio antes de empezar.",
+    "valueProposition": "Sube fotos y medidas de tu cocina. Mira diseños fotorrealistas, obtén un presupuesto con precios de catálogos reales de tiendas y después hazlo tú mismo o recibe ofertas de profesionales validados.",
+    "steps": {
+      "capture": {
+        "title": "1. Captura",
+        "description": "Fotos de tu cocina y sus medidas."
+      },
+      "design": {
+        "title": "2. Diseño",
+        "description": "Diseños fotorrealistas que respetan la distribución de tu cocina."
+      },
+      "budget": {
+        "title": "3. Presupuesto",
+        "description": "Cuatro niveles de precio con catálogos reales. Hazlo tú mismo o recibe ofertas."
+      }
+    },
+    "cta": "Empieza tu proyecto de cocina",
+    "professionalLink": "¿Eres profesional?"
+  },
+  "language": {
+    "title": "Elige tu idioma",
+    "helper": "No hemos podido reconocer el idioma de tu dispositivo. Puedes cambiarlo más tarde desde cualquier pantalla.",
+    "fieldLabel": "Idioma",
+    "continue": "Continuar",
+    "sheetTitle": "Idioma",
+    "close": "Cerrar",
+    "selectorLabel": "Idioma: {language}"
+  },
+  "status": {
+    "checking": "Comprobando el servicio…",
+    "online": "Servicio disponible",
+    "degraded": "Algunas funciones no están disponibles temporalmente",
+    "offline": "Estás sin conexión o no se puede acceder al servicio"
+  }
+}

@@ -93,18 +93,31 @@
   {
     "id": "web-pwa-shell",
     "area": "frontend",
-    "title": "Installable PWA shell with design tokens and en/es i18n",
-    "user_visible_behavior": "apps/web (Next.js + Tailwind with DESIGN.md tokens) serves an installable home screen in English or Spanish chosen from the browser language, and shows API health.",
+    "title": "Installable PWA shell with design tokens and 11-locale i18n",
+    "user_visible_behavior": "apps/web (Next.js + Tailwind with DESIGN.md tokens) serves an installable Home in any of the 11 MVP locales (en, es, fr, de, it, pt, nl, sv, no, da, fi) detected from the browser language; an unsupported language first sees the Language Selection screen (English preselected); a compact language selector switches language and the choice persists on the device; Home shows API health.",
     "depends_on": ["api-skeleton"],
-    "status": "not_started",
+    "status": "accepted",
     "verification": [
       "Lighthouse PWA installability passes on the home screen",
-      "Browser language es shows Spanish strings, en shows English",
+      "Test: all 11 message files have exactly the English key set, no empty values, matching placeholders",
+      "Playwright: browser language de shows German Home, es Spanish, en English; ja shows Language Selection with English preselected, choosing Deutsch shows German Home and survives a reload",
       "Home screen calls the API health endpoint through the generated client",
-      "Playwright smoke test at 390x844 passes"
+      "Playwright smoke test at 390x844 passes; no horizontal overflow at 360px in de and fi"
     ],
-    "evidence": [],
-    "notes": "UI gate: design the home screen in design/openpencil/bricomission_B2C_app.fig via open-pencil MCP before implementing. Remaining 9 locales are feature i18n-all-locales."
+    "evidence": [
+      "2026-11-13 independent validator ACCEPT: gate api 130 / api-client 3 / web 122 tests, openapi drift none, 6 services healthy (web as node on 127.0.0.1:3100), locale probes (de/nb-NO/pt-BR/fi/en; ja, *, empty, bad cookie -> 307 /language), POST /locale 303/400/403/405, /api proxy guards (traversal 400, no cookie forwarding, header allowlist, 502 opaque), E2E 45 passed, Lighthouse installable-manifest 1, ./init.sh exit 0.",
+      "2026-11-13 implementer (base checkout, default compose project, default ports, WEB_PORT=3100). No sudo, no GPU, .env not read. Design input: docs/design/web-pwa-shell.md, approved by developer on 2026-11-13; exports in design/openpencil/web-pwa-shell/.",
+      "Versions: next 16.4.6, react/react-dom 19.3.1, tailwindcss + @tailwindcss/postcss 4.3.5, next-intl 4.15.1, lucide-react 1.72.0, @fontsource-variable/inter 5.3.0, openapi-typescript 7.13.0, openapi-fetch 0.17.0, @playwright/test 1.65.0 + image mcr.microsoft.com/playwright:v1.65.0-noble @ sha256:9beb546099e11f52d62e505537914870e01a67e0e6b00ae41da4775324e73dbe (Node 26.13.1, Chromium 158.0.8127.18), lighthouse 11.7.1. Base node:26.13.1-bookworm-slim @ sha256:5df79989ed685e09f0a98019db4cebfb22fb9df1a53c0161664a011f7ff6b0f1.",
+      "Workspace gate: pnpm install --frozen-lockfile exit 0 (lockfile not rewritten); pnpm -r lint exit 0; pnpm -r test exit 0: api 130, api-client 3, web 122 tests. Same results with no network: unshare -rn + 'ip link set lo up' (install --offline, lint, test all exit 0). Web test names include resolveLocale cases (de-DE->de, nb-NO->no, pt-BR->pt, ja->null, cookie wins), per-locale parity (11 files x key set / non-empty / ICU placeholders), 14 DESIGN.md color tokens, proxy, cookie setter, health mapping, manifest + icon PNG sizes.",
+      "OpenAPI drift: pnpm --filter @bricomission/api openapi:export exit 0; sha256 of packages/api-client/openapi.json and src/schema.ts identical before/after (no drift).",
+      "Compose: docker compose config -q ok; awk pin check: all images pinned; apps/web/Dockerfile FROM node:26.13.1-bookworm-slim (both stages); api image (Dockerfile unchanged) still builds. up -d --build --wait: 6 healthy (postgres, minio, mailpit, keycloak, api, web). docker compose exec -T web id -un -> node. ss -ltn: 127.0.0.1:3100 only.",
+      "curl http://127.0.0.1:3100: Accept-Language de-DE -> 200 lang=\"de\"; nb-NO -> lang=\"no\"; ja -> 307 /language; empty -> 307 /language; Cookie NEXT_LOCALE=fi + ja -> lang=\"fi\"; /language with de -> lang=\"en\" 'Choose your language'; POST /locale locale=xx -> 400 {\"status\":\"error\"}; locale=de -> 303 location / + 'NEXT_LOCALE=de; Path=/; Max-Age=31536000; SameSite=Lax'; /manifest.webmanifest 200; /api/health -> {\"status\":\"ok\",\"database\":\"up\"}; --path-as-is /api/..%2Fadmin -> 400 (rejected before any upstream call, unit-tested with a fetch spy); /sw.js cache-control no-cache. api stopped -> /api/health 502 {\"status\":\"error\"}, web log 'api proxy: upstream unreachable (TypeError)'; api restarted -> 200.",
+      "pnpm test:e2e: 45 passed (13.8 s), project mobile-390. i18n.spec: en-US/es-ES/de-DE/fi-FI/nb-NO/pt-BR -> en/es/de/fi/no/pt Home without redirect or cookie; ja -> /language (lang en, English preselected, 11 native names); choose Deutsch -> German Home, cookie de/path //Lax/~365 d, survives reload; selector lists 11, aria-current English, Français -> fr + cookie fr, wins over en-US on reload; keyboard open/Escape/Enter; all 11 locales via cookie. status.spec: online (observed same-origin 200 /api/health), degraded 503, offline 502 / connection refused (es, no raw details) / 5 s timeout. pwa.spec: manifest fields + 3 PNG icons; SW controls after one reload, CDP Page.getInstallabilityErrors == []; offline reload shows cached Home + offline status. layout.spec: no foreign-origin requests; Inter loaded and covers åäöøæßéçñ; no horizontal overflow (document and scroll containers), CTA fully in viewport and all targets >= 44x44 for Home in 11 locales (+ open sheet) and /language at 390x844 and 360x780.",
+      "bash scripts/web/lighthouse-pwa.sh exit 0: lighthouse 11.7.1 on HeadlessChrome/158 (Playwright image Chromium), installable-manifest score 1 (PWA category 1; maskable-icon, splash-screen, themed-omnibox, viewport 1). Report apps/web/test-results/lighthouse/report.json (git-ignored).",
+      "./init.sh exit 0 with the new Web step: 'GET / (Accept-Language: es) -> 200, lang=\"es\"', 'GET / (Accept-Language: ja) -> 307 http://127.0.0.1:3100/language', manifest 200, '/api/health (proxy) -> {\"status\":\"ok\",\"database\":\"up\"}'. Failure path: COMPOSE_FILE=compose.yaml:<override API_INTERNAL_URL=http://127.0.0.1:9> ./init.sh -> exit 1, 'ERROR: web check failed: GET /api/health (proxy) is '{\"status\":\"error\"}'...' plus the web logs; a normal ./init.sh afterwards restored the stack (exit 0). bash -n init.sh scripts/web/*.sh ok. grep -rEi 'fonts.googleapis|gstatic|cdn|unpkg|jsdelivr' apps/web/src apps/web/public: no matches.",
+      "Translations for es, fr, de, it, pt, nl, sv, no, da, fi are agent-generated without native review (developer decision); only the parity test guards them. Deviations listed in docs/specs/web-pwa-shell.md 'Implementation Notes' (src/proxy.ts locale header, POST /locale with Origin check, icons scaled from the design PNG, aria-current options, professional link rendered per Decision 1)."
+    ],
+    "notes": "UI gate: design Home, Language Selection, the language selector open state, the 4 service-status states and the app icon in design/openpencil/bricomission_B2C_app.fig via open-pencil MCP before implementing. Designs are English only; translations come from message files. Saving the language on the account is feature language-preference-account."
   },
   {
     "id": "keycloak-realm-roles",
@@ -347,7 +360,7 @@
       "Playwright: registration ends on the pending screen; Dossier routes return 403"
     ],
     "evidence": [],
-    "notes": "Self-employed = one-member Company with NIF. UI gate: design in bricomission_B2B_dashboard.fig."
+    "notes": "Self-employed = one-member Company with NIF. UI gate: design in bricomission_B2B_dashboard.fig. Builds /professionals/register, the target of the tertiary 'Are you a professional?' link already shown on the B2C Home by web-pwa-shell (404 until this feature ships)."
   },
   {
     "id": "admin-company-validation",
@@ -563,18 +576,19 @@
     "notes": "Requires Google OAuth client credentials in .env. Apple SSO and SMS OTP are non-goals."
   },
   {
-    "id": "i18n-all-locales",
+    "id": "language-preference-account",
     "area": "frontend",
-    "title": "App is available in all 11 locales with language persistence",
-    "user_visible_behavior": "All UI strings exist in en, es, fr, de, it, pt, nl, sv, no, da, fi; unsupported browser languages see the Language Selection screen (English default); the choice is saved on the account.",
+    "title": "Language preference persists on the account",
+    "user_visible_behavior": "A signed-in user's language choice is saved on their account and restored at sign-in on any device (account choice wins over the device cookie and the browser language); changing the language while signed in updates the account.",
     "depends_on": ["web-pwa-shell", "homeowner-password-login"],
     "status": "not_started",
     "verification": [
-      "Test: no missing keys in any locale",
-      "Playwright: browser locale ja shows Language Selection; choosing de persists after logout/login",
-      "Visual check of the longest strings (de, fi) on 360px width"
+      "API test: the authenticated user can read and update their language (only the 11 MVP locales accepted)",
+      "Playwright: sign in, choose de, sign out, clear cookies, sign in again: German is restored",
+      "Test: no missing keys in any of the 11 locales (all strings added so far)",
+      "Visual check of the longest strings (de, fi) on 360px width across the screens built so far"
     ],
     "evidence": [],
-    "notes": "UI gate: Language Selection screen. Run late so all strings exist."
+    "notes": "Replaces i18n-all-locales (2026-11-13): the 11 locales, detection, Language Selection screen and device persistence moved into web-pwa-shell. PRD: persist the user's choice in the database. Every UI feature must add its strings to all 11 message files (missing-key test)."
   }
 ]

@@ -25,9 +25,10 @@ Before writing code:
 1. Confirm the working directory with `pwd`.
 2. Read `PROGRESS.md` for current verified state and next step.
 3. Read `feature_list.json` and pick the first ready unfinished feature in list order (all `depends_on` accepted).
-4. Run `./init.sh`. It runs the workspace gate (`pnpm install --frozen-lockfile`, `pnpm -r lint`, `pnpm -r test`), then the compose gate (`docker compose up -d --build --wait`, then `/health` must report `database: up` and Keycloak must serve realm `BricoMission` with issuer `http://localhost:$KEYCLOAK_PORT/realms/BricoMission`). If it reports Docker missing or the daemon unreachable, ask the developer to run `./scripts/install-host-prereqs.sh` in their own terminal (it uses sudo) and re-login. Agents never run the install mode or `sudo`; they only run `./scripts/install-host-prereqs.sh --check`.
+4. Run `./init.sh`. It runs the workspace gate (`pnpm install --frozen-lockfile`, `pnpm -r lint`, `pnpm -r test`), then the compose gate (`docker compose up -d --build --wait` for the 6 core services, then `/health` must report `database: up`, Keycloak must serve realm `BricoMission` with issuer `http://localhost:$KEYCLOAK_PORT/realms/BricoMission`, and the Web step must pass: `/` with `Accept-Language: es` is 200 with `lang="es"`, `/` with `ja` is 307 to `/language`, `/manifest.webmanifest` is 200 and `/api/health` through the web proxy reports `database: up`). If it reports Docker missing or the daemon unreachable, ask the developer to run `./scripts/install-host-prereqs.sh` in their own terminal (it uses sudo) and re-login. Agents never run the install mode or `sudo`; they only run `./scripts/install-host-prereqs.sh --check`.
    - pnpm (version pinned in `package.json` `packageManager`) must be resolvable as `pnpm` or `corepack pnpm`. Without sudo: `corepack enable --install-directory "$HOME/.local/bin" pnpm`, or `npx --yes corepack@0.36.0 enable --install-directory "$HOME/.local/bin" pnpm`, or `npm install --prefix "$HOME/.local" pnpm@<pinned>`. Set `COREPACK_ENABLE_DOWNLOAD_PROMPT=0` in headless shells.
-   - Baseline commands: `pnpm -r lint` and `pnpm -r test` (no database needed). Parallel worktrees set `COMPOSE_PROJECT_NAME` and the port env vars (including `API_PORT` and `KEYCLOAK_PORT`) before any `docker compose` command.
+   - Baseline commands: `pnpm -r lint` and `pnpm -r test` (no database, Docker or browser needed). Parallel worktrees set `COMPOSE_PROJECT_NAME` and the port env vars (including `API_PORT`, `KEYCLOAK_PORT` and `WEB_PORT`) before any `docker compose` command.
+   - Browser E2E against the running stack: `pnpm test:e2e` (Playwright in the pinned `web-e2e` image; extra args go to `playwright test`). PWA installability: `bash scripts/web/lighthouse-pwa.sh`. `./init.sh` never runs either.
 5. If baseline verification fails, fix the baseline before adding new feature work.
 
 ## Working Rules
@@ -38,6 +39,8 @@ Before writing code:
 - Infrastructure runs in Docker Compose v2 (`compose.yaml` at repo root), pinned image tags, named volumes, healthchecks. Anything native needs a written justification.
 - GPU: ~14.5 GB free VRAM. Never assume the LLM and the image model are co-resident; go through the API GPU job broker.
 - Never let the LLM produce an amount: it extracts cited Line Items, code computes (ADR 0002).
+- i18n: every UI string goes into all 11 `apps/web/messages/<locale>.json` files (en canonical; same keys and ICU placeholders; the parity test fails otherwise). Designs are English only.
+- API contract changes: run `pnpm --filter @bricomission/api openapi:export` (rewrites `packages/api-client/openapi.json` and `src/schema.ts`) and commit both; `pnpm -r test` fails on drift. The web calls the API only through `@bricomission/api-client` and the same-origin `/api` proxy.
 - UI gate: for any new or changed screen, ask the developer to open the matching `.fig` in `design/openpencil/` in OpenPencil, wait for confirmation that the `open-pencil` MCP is connected, design through it, iterate until approved, then implement strictly from the design read back via MCP.
 - Do not mark a feature done just because code exists. Do not silently change verification rules.
 - Git: repository-local identity only, never `gh`, never merge PRs. Subagents never commit.

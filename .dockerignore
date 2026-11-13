@@ -2,6 +2,9 @@
 **/dist
 **/coverage
 **/src/generated
+**/.next
+**/test-results
+**/playwright-report
 .git
 .env
 .env.*

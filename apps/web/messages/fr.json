@@ -1,0 +1,41 @@
+{
+  "meta": {
+    "title": "BricoMission",
+    "description": "Transformez des photos de votre cuisine en designs photoréalistes et en un devis basé sur de vrais catalogues."
+  },
+  "home": {
+    "headline": "Concevez votre nouvelle cuisine et connaissez son prix avant de commencer.",
+    "valueProposition": "Téléversez des photos et les mesures de votre cuisine. Découvrez des designs photoréalistes, obtenez un devis chiffré à partir de vrais catalogues de magasins, puis réalisez-le vous-même ou recevez des offres de professionnels vérifiés.",
+    "steps": {
+      "capture": {
+        "title": "1. Capturer",
+        "description": "Des photos de votre cuisine et ses mesures."
+      },
+      "design": {
+        "title": "2. Concevoir",
+        "description": "Des designs photoréalistes qui respectent l'agencement de votre pièce."
+      },
+      "budget": {
+        "title": "3. Chiffrer",
+        "description": "Quatre niveaux de prix issus de vrais catalogues. Faites-le vous-même ou recevez des offres."
+      }
+    },
+    "cta": "Commencer mon projet de cuisine",
+    "professionalLink": "Vous êtes un professionnel ?"
+  },
+  "language": {
+    "title": "Choisissez votre langue",
+    "helper": "Nous n'avons pas pu reconnaître la langue de votre appareil. Vous pourrez la changer plus tard depuis n'importe quel écran.",
+    "fieldLabel": "Langue",
+    "continue": "Continuer",
+    "sheetTitle": "Langue",
+    "close": "Fermer",
+    "selectorLabel": "Langue : {language}"
+  },
+  "status": {
+    "checking": "Vérification du service…",
+    "online": "Service disponible",
+    "degraded": "Certaines fonctionnalités sont temporairement indisponibles",
+    "offline": "Vous êtes hors ligne ou le service est injoignable"
+  }
+}
