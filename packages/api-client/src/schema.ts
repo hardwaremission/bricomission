@@ -453,10 +453,44 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Compute the Budget of the kitchen (costly; placeholder)
-         * @description Placeholder until budget-tier-computation: it never calls the GPU job broker or an AI adapter. That feature keeps the path, the guards and the 409 rule.
+         * Compute the Budget of the kitchen (costly; queued on the GPU)
+         * @description Retrieves Catalog chunks, asks the LLM for four tiers (Luxury, High, Medium, Low) whose Line Items cite a Catalog chunk, verifies every quoted price against that chunk and computes all amounts in code (integer cents). Answers 202 with the `queued` Budget; poll `GET .../budgets/{budgetId}`. One active Budget per project; failed Budgets do not count towards the limit.
          */
         post: operations["KitchenProjectsController_requestBudget"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/kitchen-projects/{projectId}/budgets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The Budgets of an owned project, newest first */
+        get: operations["KitchenProjectsController_listBudgets"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/kitchen-projects/{projectId}/budgets/{budgetId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One Budget of an owned project (status, queue position, tiers with verified Line Items) */
+        get: operations["KitchenProjectsController_getBudget"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -803,7 +837,7 @@ export interface components {
             statusCode: number;
             message: string;
             /** @enum {string} */
-            code: "project_incomplete" | "not_available_yet" | "storage_unavailable" | "render_photo_unknown" | "render_in_progress" | "render_limit_reached" | "gpu_queue_full";
+            code: "project_incomplete" | "storage_unavailable" | "render_photo_unknown" | "render_in_progress" | "render_limit_reached" | "gpu_queue_full" | "budget_in_progress" | "budget_limit_reached" | "catalog_empty" | "embedding_unavailable";
         };
         RenderListResponseDto: {
             /** @description Newest first */
@@ -813,6 +847,89 @@ export interface components {
              * @example 10
              */
             maxRenders: number;
+        };
+        BudgetLineItemViewDto: {
+            /** @example Oak laminate worktop 300 cm */
+            name: string;
+            /** @example BM-SYN-WTP-300 */
+            sku: string;
+            /** @description Catalog the price was verified against */
+            catalogName: string;
+            pageNumber: number;
+            /** @example unit */
+            unit: string;
+            /**
+             * @description Decimal string, at most two decimals
+             * @example 2.5
+             */
+            quantity: string;
+            /**
+             * @description The price exactly as the Catalog prints it
+             * @example 189.90
+             */
+            quotedPrice: string;
+            /** @example 18990 */
+            unitPriceCents: number;
+            /**
+             * @description round_half_up(unitPriceCents x quantity), computed by code
+             * @example 47475
+             */
+            subtotalCents: number;
+        };
+        BudgetTierViewDto: {
+            /** @enum {string} */
+            tier: "luxury" | "high" | "medium" | "low";
+            /** @description Part before VAT (total - vat) */
+            subtotalCents: number;
+            /** @description VAT part of the total */
+            vatCents: number;
+            /** @description Sum of the item subtotals (catalog prices are VAT-inclusive) */
+            totalCents: number;
+            items: components["schemas"]["BudgetLineItemViewDto"][];
+        };
+        BudgetViewDto: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            status: "queued" | "running" | "succeeded" | "failed";
+            /** @description 1-based GPU queue position while queued (when known) */
+            position: number | null;
+            /**
+             * @description Kind of GPU work it waits behind while queued
+             * @enum {string|null}
+             */
+            waitingFor: "image" | "llm" | null;
+            /** @enum {string} */
+            currency: "EUR";
+            /**
+             * @description VAT rate in percent
+             * @example 21
+             */
+            vatPercent: number;
+            /** @enum {string|null} */
+            errorCode: "adapter_error" | "timeout" | "interrupted" | "verification_failed" | null;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            startedAt: string | null;
+            /** Format: date-time */
+            finishedAt: string | null;
+            /** @description Verified Line Items over all tiers (0 until succeeded) */
+            lineItemsCount: number;
+            /** @description Empty until succeeded; luxury, high, medium, low */
+            tiers: components["schemas"]["BudgetTierViewDto"][];
+        };
+        CreateBudgetResponseDto: {
+            budget: components["schemas"]["BudgetViewDto"];
+        };
+        BudgetListResponseDto: {
+            /** @description Newest first */
+            budgets: components["schemas"]["BudgetViewDto"][];
+            /**
+             * @description Non-failed Budgets allowed per project
+             * @example 5
+             */
+            maxBudgets: number;
         };
     };
     responses: never;
@@ -2144,6 +2261,14 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreateBudgetResponseDto"];
+                };
+            };
             /** @description Malformed project id */
             400: {
                 headers: {
@@ -2172,7 +2297,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description `project_incomplete`: needs a photo, all three measurements and a Moodboard Item */
+            /** @description `project_incomplete` (needs a photo, all three measurements and a Moodboard Item), `catalog_empty`, `budget_in_progress` or `budget_limit_reached` */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -2181,14 +2306,135 @@ export interface operations {
                     "application/json": components["schemas"]["KitchenProjectErrorDto"];
                 };
             };
-            /** @description `not_available_yet` */
-            501: {
+            /** @description `gpu_queue_full`: no Budget was created */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["KitchenProjectErrorDto"];
                 };
+            };
+            /**
+             * @description Database unreachable
+             *
+             *     `embedding_unavailable` (the Catalog search is down), or database unreachable
+             */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KitchenProjectErrorDto"];
+                };
+            };
+        };
+    };
+    KitchenProjectsController_listBudgets: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Id of a Kitchen Project the caller owns */
+                projectId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BudgetListResponseDto"];
+                };
+            };
+            /** @description Malformed project id */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Missing, invalid or expired bearer token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Caller lacks the user (Homeowner) realm role */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unknown project, still a draft, or owned by another Account (same generic body) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Database unreachable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    KitchenProjectsController_getBudget: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                budgetId: string;
+                /** @description Id of a Kitchen Project the caller owns */
+                projectId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BudgetViewDto"];
+                };
+            };
+            /** @description Malformed project id */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Missing, invalid or expired bearer token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Caller lacks the user (Homeowner) realm role */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unknown project, still a draft, or owned by another Account (same generic body) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Database unreachable */
             503: {

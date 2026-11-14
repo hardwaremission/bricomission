@@ -219,11 +219,10 @@
   },
   "project": {
     "title": "Je keukenproject",
-    "helper": "Maak een ontwerp van je nieuwe keuken. Offertes volgen binnenkort.",
+    "helper": "Maak een ontwerp van je nieuwe keuken of vraag je budget op.",
     "claimed": "Je keuken is bewaard in je account.",
     "dismiss": "Sluiten",
     "newProject": "Een nieuw keukenproject starten",
-    "budgetsSoon": "Offertes: binnenkort beschikbaar",
     "seeDesigns": "Mijn ontwerpen bekijken",
     "signedOut": {
       "title": "Log in om dit keukenproject te zien",
@@ -233,7 +232,8 @@
       "title": "We konden dit keukenproject niet vinden",
       "home": "Naar Home"
     },
-    "offline": "Je bent offline. Je keukenproject is veilig; maak opnieuw verbinding om het te zien."
+    "offline": "Je bent offline. Je keukenproject is veilig; maak opnieuw verbinding om het te zien.",
+    "seeBudget": "Mijn budget bekijken"
   },
   "results": {
     "back": "Terug naar mijn keuken",
@@ -281,6 +281,62 @@
       "queueFull": "De ontwerper is nu bezet. Probeer het over een minuut opnieuw.",
       "uploadsOnly": "Je eigen foto's kunnen de stijl nog niet sturen, daarom hebben we een neutrale moderne stijl gebruikt.",
       "offline": "Je bent offline. Je renders zijn veilig; maak opnieuw verbinding om nieuwe te zien."
+    }
+  },
+  "budget": {
+    "back": "Terug naar mijn keuken",
+    "title": "Het budget voor je keuken",
+    "helper": "Vier opties, van premium tot basis. De prijzen komen uit de productcatalogus; tik op een optie om alle artikelen te zien.",
+    "titleActive": "Je budget wordt berekend",
+    "helperActive": "We stemmen je keuken af op de productcatalogus. Dit duurt ongeveer een minuut.",
+    "tiers": {
+      "luxury": "Luxe",
+      "high": "Hoog",
+      "medium": "Midden",
+      "low": "Basis"
+    },
+    "meta": "{count, plural, one {# artikel} other {# artikelen}} · incl. btw",
+    "detail": "{unitPrice} × {quantity} {unit} · Art.nr. {sku}",
+    "citation": "{catalog}, pagina {page}",
+    "more": "+ {count, plural, one {# artikel meer} other {# artikelen meer}}",
+    "totals": {
+      "subtotal": "Subtotaal (excl. btw)",
+      "vat": "Btw {percent}%",
+      "total": "Totaal (incl. btw)"
+    },
+    "history": {
+      "title": "Je budgetten",
+      "counter": "{count} van {max}",
+      "item": "Budget {n}"
+    },
+    "status": {
+      "running": "Berekenen…",
+      "queued": "Wachten op de GPU",
+      "ahead": "{count, plural, one {# taak voor de jouwe} other {# taken voor de jouwe}}"
+    },
+    "note": "Je kunt deze pagina verlaten; het budget wordt doorberekend en verschijnt hier zodra het klaar is.",
+    "hints": {
+      "oneAtATime": "Eén budget tegelijk.",
+      "limit": "Je hebt {max} budgetten gemaakt, het maximum voor dit project."
+    },
+    "empty": {
+      "title": "Nog geen budget",
+      "helper": "Vraag vier opties voor je keuken op, van premium tot basis."
+    },
+    "cta": {
+      "again": "Opnieuw berekenen",
+      "retry": "Opnieuw proberen",
+      "start": "Mijn budget opvragen",
+      "back": "Terug naar mijn keuken"
+    },
+    "alerts": {
+      "failed": "We konden dit budget niet berekenen. Probeer het zo meteen opnieuw.",
+      "interrupted": "Dit budget is onderbroken. Probeer het opnieuw.",
+      "catalogEmpty": "De productcatalogus is nog niet klaar. Probeer het later opnieuw.",
+      "searchDown": "Het zoeken naar prijzen is nu niet beschikbaar. Probeer het over een minuut opnieuw.",
+      "queueFull": "De ontwerper is nu bezig. Probeer het over een minuut opnieuw.",
+      "incomplete": "Voeg eerst je foto's en maten toe en vraag dan je budget op.",
+      "offline": "Je bent offline. Je budgetten zijn veilig; maak weer verbinding om nieuwe te zien."
     }
   }
 }

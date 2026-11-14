@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl';
 import { Plus, ReceiptText, Sparkles } from 'lucide-react';
 import { createApiClient, type ApiClient } from '@bricomission/api-client';
 import { loadProject, type ProjectLoad } from '../../lib/kitchen-draft/project-client';
+import { loadBudgets } from '../../lib/budget/budget-client';
 import { loadRenders } from '../../lib/renders/render-client';
 import { GenerateAlert } from './GenerateAlert';
 import { ProjectSummary } from './ProjectSummary';
@@ -14,8 +15,8 @@ import { ProjectSummary } from './ProjectSummary';
  * Owned Kitchen Project (docs/design/login-gate-claim.md, frame 5 and panel 6): read-only summary
  * of a claimed project, the "saved" confirmation after a claim (`?claimed=1`), and the costly
  * actions (docs/design/controlnet-render.md, panel 4): "Generate my kitchen" opens AI Results and
- * starts a Render (`?start=1`), "See my designs" once a Render succeeded; "Get my budget" stays
- * disabled until budget-tier-computation.
+ * starts a Render (`?start=1`), "See my designs" once a Render succeeded; "Get my budget" opens the
+ * Budget page (docs/design/budget-tier-computation.md, panel 5), "See my budget" once a Budget succeeded.
  * Signed out: a sign-in prompt that returns here. Unknown or another Account's project: not found.
  */
 export function OwnedProjectScreen({ projectId }: { projectId: string }) {
@@ -24,14 +25,16 @@ export function OwnedProjectScreen({ projectId }: { projectId: string }) {
   const [result, setResult] = useState<ProjectLoad | null>(null);
   const [claimed, setClaimed] = useState(false);
   const [hasDesigns, setHasDesigns] = useState(false);
+  const [hasBudget, setHasBudget] = useState(false);
   const clientRef = useRef<ApiClient | null>(null);
   const client = useCallback(() => (clientRef.current ??= createApiClient(`${window.location.origin}/api`)), []);
 
   const load = useCallback(async () => {
     if (!navigator.onLine) return setResult({ kind: 'offline' });
-    const [project, renders] = await Promise.all([loadProject(client(), projectId), loadRenders(client(), projectId)]);
+    const [project, renders, budgets] = await Promise.all([loadProject(client(), projectId), loadRenders(client(), projectId), loadBudgets(client(), projectId)]);
     setResult(project);
     if (renders.kind === 'ok') setHasDesigns(renders.value.renders.some((render) => render.status === 'succeeded'));
+    if (budgets.kind === 'ok') setHasBudget(budgets.value.budgets.some((budget) => budget.status === 'succeeded'));
   }, [client, projectId]);
 
   useEffect(() => {
@@ -129,19 +132,27 @@ export function OwnedProjectScreen({ projectId }: { projectId: string }) {
             <span>{tGen('cta.render')}</span>
           </button>
         )}
-        <button
-          type="button"
-          data-testid="project-budget"
-          aria-disabled="true"
-          aria-describedby="project-budgets-soon"
-          className="flex min-h-[52px] w-full cursor-not-allowed items-center justify-center gap-sm rounded-pill border border-border bg-surface-muted px-md py-[13px] text-center text-body font-semibold text-text-muted"
-        >
-          <ReceiptText size={20} aria-hidden="true" className="shrink-0" />
-          <span>{tGen('cta.budget')}</span>
-        </button>
-        <p id="project-budgets-soon" className="text-center text-small leading-5 text-text-muted" data-testid="project-budgets-soon">
-          {t('budgetsSoon')}
-        </p>
+        {project ? (
+          <Link
+            href={`/kitchen-projects/${projectId}/budget`}
+            prefetch={false}
+            data-testid="project-budget"
+            className="flex min-h-[52px] w-full items-center justify-center gap-sm rounded-pill border border-border bg-surface px-md py-[13px] text-center text-body font-semibold text-primary"
+          >
+            <ReceiptText size={20} aria-hidden="true" className="shrink-0" />
+            <span>{hasBudget ? t('seeBudget') : tGen('cta.budget')}</span>
+          </Link>
+        ) : (
+          <button
+            type="button"
+            data-testid="project-budget"
+            aria-disabled="true"
+            className="flex min-h-[52px] w-full cursor-not-allowed items-center justify-center gap-sm rounded-pill border border-border bg-surface-muted px-md py-[13px] text-center text-body font-semibold text-text-muted"
+          >
+            <ReceiptText size={20} aria-hidden="true" className="shrink-0" />
+            <span>{tGen('cta.budget')}</span>
+          </button>
+        )}
       </footer>
     </>
   );

@@ -154,6 +154,9 @@ services:
       RENDER_CONTROL_END: ${RENDER_CONTROL_END:-0.5}
       RENDER_DEPTH_ASSIST_STRENGTH: ${RENDER_DEPTH_ASSIST_STRENGTH:-0.7}
       RENDER_DEPTH_ASSIST_END: ${RENDER_DEPTH_ASSIST_END:-1}
+      # Budgets (budget-tier-computation): VAT rate of the VAT-inclusive Catalog prices, history cap.
+      BUDGET_VAT_PERCENT: ${BUDGET_VAT_PERCENT:-21}
+      BUDGET_MAX_PER_PROJECT: ${BUDGET_MAX_PER_PROJECT:-5}
       # Catalog RAG (ADR 0004). No depends_on: the embedder is opt-in (profile rag);
       # /catalog/search answers 503 while it is down.
       EMBEDDING_URL: http://embedder:8080

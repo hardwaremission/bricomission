@@ -28,12 +28,13 @@ const GENERATE = '/kitchen-projects/new/generate';
 const DRAFTS = '/api/kitchen-projects/drafts';
 const CURRENT = `${DRAFTS}/current`;
 const CLAIM = `${CURRENT}/claim`;
-const PROJECT_URL = /\/kitchen-projects\/([0-9a-f-]{36})(\?claimed=1)?$/;
 // Since controlnet-render the render intent lands on AI Results (the page strips ?claimed=1&start=1).
+const BUDGET_URL = /\/kitchen-projects\/([0-9a-f-]{36})\/budget$/;
 const RESULTS_URL = /\/kitchen-projects\/([0-9a-f-]{36})\/results$/;
 const PROFESSIONAL = 'bm-professional';
 const PROFESSIONAL_EMAIL = 'professional@bricomission.local';
 const professionalPassword = () => process.env.E2E_SEED_PROFESSIONAL_PASSWORD ?? 'bm-professional-dev';
+const escape = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const fixture = (name: string) => fileURLToPath(new URL(`./fixtures/${name}`, import.meta.url));
 
 interface GenerateMessages {
@@ -48,7 +49,7 @@ interface GenerateMessages {
 interface ProjectMessages {
   title: string;
   claimed: string;
-  budgetsSoon: string;
+  seeBudget: string;
   seeDesigns: string;
   signedOut: { title: string };
   notFound: { title: string };
@@ -121,9 +122,10 @@ async function keycloakSignIn(page: Page, request: APIRequestContext, username =
   await page.locator('#kc-login').click();
 }
 
-async function waitForProject(page: Page): Promise<string> {
-  await page.waitForURL(PROJECT_URL, { timeout: 30_000 });
-  return PROJECT_URL.exec(new URL(page.url()).pathname)?.[1] ?? '';
+/** The budget intent lands on the Budget page and starts the first Budget (budget-tier-computation); returns the project id. */
+async function waitForBudgetPage(page: Page): Promise<string> {
+  await page.waitForURL(BUDGET_URL, { timeout: 30_000 });
+  return BUDGET_URL.exec(new URL(page.url()).pathname)?.[1] ?? '';
 }
 
 async function waitForResults(page: Page): Promise<string> {
@@ -215,12 +217,14 @@ test.describe.serial('login gate and claim', () => {
     expect(cookieBefore).toBeDefined();
     homeownerDraftToken = cookieBefore!.value;
     await page.goto(GENERATE);
-    // Budget intent: the claim lands on the owned page (the render intent opens AI Results: e2e/results.spec.ts).
+    // Budget intent: the claim lands on the Budget page (e2e/budget.spec.ts; the render intent opens AI Results:
+    // e2e/results.spec.ts); the owned page is opened with the "saved" banner by URL.
     await page.getByTestId('generate-budget').click();
     await page.getByTestId('login-gate-sign-in').click();
     await keycloakSignIn(page, request);
-    ownedId = await waitForProject(page);
+    ownedId = await waitForBudgetPage(page);
     expect(ownedId).toBe(draftId);
+    await page.goto(`/kitchen-projects/${ownedId}?claimed=1`);
 
     const p = pm('en');
     await expect(page.getByTestId('project-claimed')).toHaveText(p.claimed);
@@ -234,9 +238,10 @@ test.describe.serial('login gate and claim', () => {
     // controlnet-render: "Generate my kitchen" opens AI Results and starts a Render; budget stays disabled.
     await expect(page.getByTestId('project-render')).toHaveText(gm('en').cta.render);
     await expect(page.getByTestId('project-render')).toHaveAttribute('href', `/kitchen-projects/${ownedId}/results?start=1`);
-    await expect(page.getByTestId('project-budget')).toHaveAttribute('aria-disabled', 'true');
-    await expect(page.getByTestId('project-budget')).toHaveAttribute('aria-describedby', 'project-budgets-soon');
-    await expect(page.getByTestId('project-budgets-soon')).toHaveText(p.budgetsSoon);
+    // budget-tier-computation: "Get my budget" (or "See my budget" once the auto-started Budget succeeded) opens the Budget page.
+    await expect(page.getByTestId('project-budget')).toHaveAttribute('href', `/kitchen-projects/${ownedId}/budget`);
+    await expect(page.getByTestId('project-budget')).toHaveText(new RegExp(`^(${escape(gm('en').cta.budget)}|${escape(p.seeBudget)})$`));
+    await expect(page.getByTestId('project-budgets-soon')).toHaveCount(0);
     await expect(page.getByTestId('project-new')).toHaveAttribute('href', '/kitchen-projects/new');
     await checkLayout(page);
     await page.screenshot({ path: 'test-results/login-gate/5-owned-en.png' });
@@ -248,9 +253,10 @@ test.describe.serial('login gate and claim', () => {
     expect((await pageFetch(page, CURRENT)).status).toBe(404);
     expect(await draftCookie(page)).toBeUndefined();
     expect(await page.evaluate(() => window.localStorage.getItem('bm_draft_started'))).toBeNull();
-    // Costly actions on the owned, ready project: Renders are real since controlnet-render (202), budget is still 501.
+    // Costly actions on the owned, ready project are real: Renders (controlnet-render) and Budgets (budget-tier-computation).
     expect((await apiJson(page, `/api/kitchen-projects/${ownedId}/renders`, 'POST', {})).status).toBe(202);
-    expect((await pageFetch(page, `/api/kitchen-projects/${ownedId}/budget`, { method: 'POST' })).status).toBe(501);
+    // The Budget started by the claim landing may still be running (409 budget_in_progress) or be done (202).
+    expect([202, 409]).toContain((await pageFetch(page, `/api/kitchen-projects/${ownedId}/budget`, { method: 'POST' })).status);
 
     // Idempotent: the same draft token again with the same Account gives the same project.
     await page.context().addCookies([{ name: 'bm_draft', value: cookieBefore!.value, url: WEB, httpOnly: true, sameSite: 'Lax' }]);
@@ -308,7 +314,8 @@ test.describe.serial('login gate and claim', () => {
     const mail = await mailpitCode(request, email, () => page.locator('#kc-register').click());
     await page.locator('#emailCode').fill(mail.code);
     await page.locator('#kc-login').click();
-    expect(await waitForProject(page)).toBe(draftId);
+    expect(await waitForBudgetPage(page)).toBe(draftId);
+    await page.goto(`/kitchen-projects/${draftId}?claimed=1`);
     await expect(page.getByTestId('project-claimed')).toBeVisible();
     const me = JSON.parse((await pageFetch(page, '/api/me')).body) as { username: string; roles: string[] };
     expect(me).toMatchObject({ username: id, roles: ['user'] });

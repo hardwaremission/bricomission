@@ -35,12 +35,12 @@ model CatalogDocument {
 /// A page-bounded text chunk of a Catalog document with its embedding
 /// (vector(1024) = CATALOG_EMBEDDING_DIMENSIONS, HNSW cosine index in the migration).
 model CatalogChunk {
-  id         String                       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  documentId String                       @map("document_id") @db.Uuid
-  document   CatalogDocument              @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  id         String                      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  documentId String                      @map("document_id") @db.Uuid
+  document   CatalogDocument             @relation(fields: [documentId], references: [id], onDelete: Cascade)
   /// 1-based page number in the source PDF.
-  pageNumber Int                          @map("page_number")
-  chunkIndex Int                          @map("chunk_index")
+  pageNumber Int                         @map("page_number")
+  chunkIndex Int                         @map("chunk_index")
   text       String
   embedding  Unsupported("vector(1024)")
 
@@ -79,6 +79,7 @@ model KitchenProject {
   photos         KitchenPhoto[]
   moodboardItems MoodboardItem[]
   renders        KitchenRender[]
+  budgets        Budget[]
 
   @@index([expiresAt])
   @@index([ownerSub])
@@ -88,16 +89,16 @@ model KitchenProject {
 /// A normalized kitchen photo: two metadata-free JPEG objects in MinIO (`full`, `thumb`).
 /// `width`, `height` and `byteSize` describe `full`. Positions are 0-based and compacted.
 model KitchenPhoto {
-  id               String         @id @db.Uuid
-  kitchenProjectId String         @map("kitchen_project_id") @db.Uuid
-  kitchenProject   KitchenProject @relation(fields: [kitchenProjectId], references: [id], onDelete: Cascade)
+  id               String          @id @db.Uuid
+  kitchenProjectId String          @map("kitchen_project_id") @db.Uuid
+  kitchenProject   KitchenProject  @relation(fields: [kitchenProjectId], references: [id], onDelete: Cascade)
   position         Int
-  fullKey          String         @map("full_key")
-  thumbKey         String         @map("thumb_key")
+  fullKey          String          @map("full_key")
+  thumbKey         String          @map("thumb_key")
   width            Int
   height           Int
-  byteSize         Int            @map("byte_size")
-  createdAt        DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
+  byteSize         Int             @map("byte_size")
+  createdAt        DateTime        @default(now()) @map("created_at") @db.Timestamptz(3)
   renders          KitchenRender[]
 
   @@index([kitchenProjectId, position])
@@ -182,4 +183,89 @@ model KitchenRender {
 
   @@index([kitchenProjectId, createdAt])
   @@map("kitchen_render")
+}
+
+enum BudgetStatus {
+  queued
+  running
+  succeeded
+  failed
+
+  @@map("budget_status")
+}
+
+enum BudgetTierName {
+  luxury
+  high
+  medium
+  low
+
+  @@map("budget_tier_name")
+}
+
+/// A Budget of a claimed Kitchen Project (feature budget-tier-computation): four tiers of verified
+/// Line Items, all amounts integer cents computed by code (ADR 0002). Pure database rows (no MinIO).
+/// `prompt`, token counts and `gpuJobId` are internal, never returned by a route.
+/// Hand-written CHECKs in the migration tie the finish time and the error code to `status`.
+model Budget {
+  id               String           @id @db.Uuid
+  kitchenProjectId String           @map("kitchen_project_id") @db.Uuid
+  kitchenProject   KitchenProject   @relation(fields: [kitchenProjectId], references: [id], onDelete: Cascade)
+  status           BudgetStatus     @default(queued)
+  errorCode        String?          @map("error_code")
+  currency         String           @db.Char(3)
+  /// VAT rate in basis points (21 % = 2100); catalog prices are VAT-inclusive.
+  vatBps           Int              @map("vat_bps")
+  attempts         Int              @default(0)
+  prompt           String
+  promptTokens     Int?             @map("prompt_tokens")
+  completionTokens Int?             @map("completion_tokens")
+  gpuJobId         String?          @map("gpu_job_id") @db.Uuid
+  createdAt        DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
+  startedAt        DateTime?        @map("started_at") @db.Timestamptz(3)
+  finishedAt       DateTime?        @map("finished_at") @db.Timestamptz(3)
+  tiers            BudgetTier[]
+  lineItems        BudgetLineItem[]
+
+  @@index([kitchenProjectId, createdAt])
+  @@map("budget")
+}
+
+/// One tier of a succeeded Budget. `totalCents` = sum of its Line Item subtotals; `subtotalCents`
+/// is the part before VAT and `vatCents` the VAT part (`subtotal + vat = total`).
+model BudgetTier {
+  id            String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  budgetId      String         @map("budget_id") @db.Uuid
+  budget        Budget         @relation(fields: [budgetId], references: [id], onDelete: Cascade)
+  tier          BudgetTierName
+  subtotalCents BigInt         @map("subtotal_cents")
+  vatCents      BigInt         @map("vat_cents")
+  totalCents    BigInt         @map("total_cents")
+
+  @@unique([budgetId, tier])
+  @@map("budget_tier")
+}
+
+/// A verified Line Item. The citation (catalog name, page, quote) is stored as data: there is no
+/// foreign key to `catalog_chunk`, because re-ingesting a Catalog replaces its chunks.
+model BudgetLineItem {
+  id             String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  budgetId       String         @map("budget_id") @db.Uuid
+  budget         Budget         @relation(fields: [budgetId], references: [id], onDelete: Cascade)
+  tier           BudgetTierName
+  position       Int
+  productName    String         @map("product_name")
+  sku            String
+  catalogName    String         @map("catalog_name")
+  pageNumber     Int            @map("page_number")
+  sourceQuote    String         @map("source_quote") @db.VarChar(200)
+  quotedPrice    String         @map("quoted_price")
+  unitPriceCents BigInt         @map("unit_price_cents")
+  quantity       String
+  quantityH      Int            @map("quantity_h")
+  unit           String
+  subtotalCents  BigInt         @map("subtotal_cents")
+
+  @@index([budgetId, tier, position])
+  @@map("budget_line_item")
 }

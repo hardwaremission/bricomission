@@ -219,11 +219,10 @@
   },
   "project": {
     "title": "Kjøkkenprosjektet ditt",
-    "helper": "Lag et design av det nye kjøkkenet ditt. Tilbud kommer snart.",
+    "helper": "Lag et design av det nye kjøkkenet ditt eller få budsjettet ditt.",
     "claimed": "Kjøkkenet ditt er lagret på kontoen din.",
     "dismiss": "Lukk",
     "newProject": "Start et nytt kjøkkenprosjekt",
-    "budgetsSoon": "Tilbud: kommer snart",
     "seeDesigns": "Se designene mine",
     "signedOut": {
       "title": "Logg inn for å se dette kjøkkenprosjektet",
@@ -233,7 +232,8 @@
       "title": "Vi fant ikke dette kjøkkenprosjektet",
       "home": "Gå til forsiden"
     },
-    "offline": "Du er frakoblet. Kjøkkenprosjektet ditt er trygt; koble til igjen for å se det."
+    "offline": "Du er frakoblet. Kjøkkenprosjektet ditt er trygt; koble til igjen for å se det.",
+    "seeBudget": "Se budsjettet mitt"
   },
   "results": {
     "back": "Tilbake til kjøkkenet mitt",
@@ -281,6 +281,62 @@
       "queueFull": "Designeren er opptatt akkurat nå. Prøv igjen om et minutt.",
       "uploadsOnly": "Dine egne bilder kan ikke styre stilen ennå, så vi brukte en nøytral moderne stil.",
       "offline": "Du er frakoblet. Renderingene dine er trygge; koble til igjen for å se nye."
+    }
+  },
+  "budget": {
+    "back": "Tilbake til kjøkkenet mitt",
+    "title": "Budsjett for kjøkkenet ditt",
+    "helper": "Fire alternativer, fra premium til grunnleggende. Prisene kommer fra produktkatalogen; trykk på et alternativ for å se alle varene.",
+    "titleActive": "Budsjettet beregnes",
+    "helperActive": "Vi matcher kjøkkenet ditt mot produktkatalogen. Det tar omtrent ett minutt.",
+    "tiers": {
+      "luxury": "Luksus",
+      "high": "Høy",
+      "medium": "Middels",
+      "low": "Lav"
+    },
+    "meta": "{count, plural, one {# vare} other {# varer}} · inkl. mva.",
+    "detail": "{unitPrice} × {quantity} {unit} · Varenr. {sku}",
+    "citation": "{catalog}, side {page}",
+    "more": "+ {count, plural, one {# vare til} other {# varer til}}",
+    "totals": {
+      "subtotal": "Delsum (eks. mva.)",
+      "vat": "Mva. {percent} %",
+      "total": "Totalt (inkl. mva.)"
+    },
+    "history": {
+      "title": "Budsjettene dine",
+      "counter": "{count} av {max}",
+      "item": "Budsjett {n}"
+    },
+    "status": {
+      "running": "Beregner…",
+      "queued": "Venter på GPU-en",
+      "ahead": "{count, plural, one {# jobb før din} other {# jobber før din}}"
+    },
+    "note": "Du kan forlate siden; budsjettet fortsetter og vises her når det er ferdig.",
+    "hints": {
+      "oneAtATime": "Ett budsjett om gangen.",
+      "limit": "Du har laget {max} budsjetter, maksimum for dette prosjektet."
+    },
+    "empty": {
+      "title": "Ingen budsjett ennå",
+      "helper": "Få fire alternativer for kjøkkenet ditt, fra premium til grunnleggende."
+    },
+    "cta": {
+      "again": "Beregn på nytt",
+      "retry": "Prøv igjen",
+      "start": "Få budsjettet mitt",
+      "back": "Tilbake til kjøkkenet mitt"
+    },
+    "alerts": {
+      "failed": "Vi kunne ikke beregne budsjettet. Prøv igjen om litt.",
+      "interrupted": "Budsjettet ble avbrutt. Prøv igjen.",
+      "catalogEmpty": "Produktkatalogen er ikke klar ennå. Prøv igjen senere.",
+      "searchDown": "Prissøket er ikke tilgjengelig akkurat nå. Prøv igjen om ett minutt.",
+      "queueFull": "Designeren er opptatt akkurat nå. Prøv igjen om ett minutt.",
+      "incomplete": "Legg først til bildene og målene dine, og få deretter budsjettet.",
+      "offline": "Du er frakoblet. Budsjettene dine er trygge; koble til igjen for å se nye."
     }
   }
 }

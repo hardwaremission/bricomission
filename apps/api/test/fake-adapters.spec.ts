@@ -17,6 +17,34 @@ describe('fake AI adapters', () => {
     expect(other.text).not.toBe(a.text);
   });
 
+  it('FakeLlmAdapter JSON mode derives a deterministic Budget from the prompt chunks, with printed prices only', async () => {
+    const chunk = [
+      '[source 1] Sample, page 3',
+      'BM-SYN-WTP-300 Oak laminate worktop 300 cm unit 189.90 EUR',
+      'BM-SYN-WTP-240 White quartz worktop 240 cm unit 649.00 EUR',
+      'BM-SYN-ADH-310 Worktop adhesive 310 ml unit 9.75 EUR',
+      '[/source 1]',
+    ].join('\n');
+    const req = { messages: [{ role: 'user' as const, content: `Catalog sources:\n\n${chunk}` }], jsonSchema: { type: 'object' } };
+    const a = await new FakeLlmAdapter().complete(req, signal());
+    const b = await new FakeLlmAdapter().complete(structuredClone(req), signal());
+    expect(a).toEqual(b);
+    const json = JSON.parse(a.text) as { tiers: Record<string, { items: Array<{ sku: string; chunkRef: number; quotedPrice: string; quantity: string }> }> };
+    expect(Object.keys(json.tiers)).toEqual(['luxury', 'high', 'medium', 'low']);
+    for (const tier of Object.values(json.tiers)) {
+      expect(tier.items.length).toBeGreaterThanOrEqual(1);
+      for (const item of tier.items) {
+        expect(chunk).toContain(`${item.sku} `);
+        expect(chunk).toContain(`${item.quotedPrice} EUR`);
+        expect(item.chunkRef).toBe(1);
+        expect(['1', '2', '3']).toContain(item.quantity);
+      }
+    }
+    expect(json.tiers.luxury?.items[0]?.sku).toBe('BM-SYN-WTP-240');
+    // Without a schema it keeps the plain deterministic text.
+    expect((await new FakeLlmAdapter().complete({ messages: req.messages }, signal())).text).toMatch(/^fake:/);
+  });
+
   it('FakeImageAdapter is a deterministic, visible transform of the input (same input, same PNG of the request size)', async () => {
     const req = imageRequest({ seed: 7 });
     const a = await new FakeImageAdapter().render(req, signal());

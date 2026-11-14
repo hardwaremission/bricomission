@@ -219,11 +219,10 @@
   },
   "project": {
     "title": "Il tuo progetto di cucina",
-    "helper": "Genera un design della tua nuova cucina. I preventivi arriveranno presto.",
+    "helper": "Genera un progetto della tua nuova cucina oppure ottieni il tuo preventivo.",
     "claimed": "La tua cucina è salvata nel tuo account.",
     "dismiss": "Chiudi",
     "newProject": "Inizia un nuovo progetto di cucina",
-    "budgetsSoon": "Preventivi: disponibili a breve",
     "seeDesigns": "Vedi i miei design",
     "signedOut": {
       "title": "Accedi per vedere questo progetto di cucina",
@@ -233,7 +232,8 @@
       "title": "Non abbiamo trovato questo progetto di cucina",
       "home": "Vai alla home"
     },
-    "offline": "Sei offline. Il tuo progetto di cucina è al sicuro; riconnettiti per vederlo."
+    "offline": "Sei offline. Il tuo progetto di cucina è al sicuro; riconnettiti per vederlo.",
+    "seeBudget": "Vedi il mio preventivo"
   },
   "results": {
     "back": "Torna alla mia cucina",
@@ -281,6 +281,62 @@
       "queueFull": "Il designer è occupato in questo momento. Riprova tra un minuto.",
       "uploadsOnly": "Le tue foto non possono ancora guidare lo stile, quindi abbiamo usato uno stile moderno neutro.",
       "offline": "Sei offline. I tuoi render sono al sicuro; riconnettiti per vedere quelli nuovi."
+    }
+  },
+  "budget": {
+    "back": "Torna alla mia cucina",
+    "title": "Il preventivo della tua cucina",
+    "helper": "Quattro opzioni, dal premium all'essenziale. I prezzi arrivano dal catalogo prodotti; tocca un'opzione per vedere ogni articolo.",
+    "titleActive": "Calcolo del preventivo",
+    "helperActive": "Stiamo abbinando la tua cucina al catalogo prodotti. Ci vuole circa un minuto.",
+    "tiers": {
+      "luxury": "Lusso",
+      "high": "Alta",
+      "medium": "Media",
+      "low": "Base"
+    },
+    "meta": "{count, plural, one {# articolo} other {# articoli}} · IVA inclusa",
+    "detail": "{unitPrice} × {quantity} {unit} · Cod. {sku}",
+    "citation": "{catalog}, pagina {page}",
+    "more": "+ {count, plural, one {# articolo in più} other {# articoli in più}}",
+    "totals": {
+      "subtotal": "Subtotale (IVA esclusa)",
+      "vat": "IVA {percent}%",
+      "total": "Totale (IVA inclusa)"
+    },
+    "history": {
+      "title": "I tuoi preventivi",
+      "counter": "{count} di {max}",
+      "item": "Preventivo {n}"
+    },
+    "status": {
+      "running": "Calcolo in corso…",
+      "queued": "In attesa della GPU",
+      "ahead": "{count, plural, one {# lavoro davanti al tuo} other {# lavori davanti al tuo}}"
+    },
+    "note": "Puoi lasciare questa pagina; il preventivo continua e comparirà qui quando sarà pronto.",
+    "hints": {
+      "oneAtATime": "Un preventivo alla volta.",
+      "limit": "Hai creato {max} preventivi, il massimo per questo progetto."
+    },
+    "empty": {
+      "title": "Ancora nessun preventivo",
+      "helper": "Ottieni quattro opzioni per la tua cucina, dal premium all'essenziale."
+    },
+    "cta": {
+      "again": "Calcola di nuovo",
+      "retry": "Riprova",
+      "start": "Ottieni il mio preventivo",
+      "back": "Torna alla mia cucina"
+    },
+    "alerts": {
+      "failed": "Non siamo riusciti a calcolare questo preventivo. Riprova tra un momento.",
+      "interrupted": "Questo preventivo è stato interrotto. Riprova.",
+      "catalogEmpty": "Il catalogo prodotti non è ancora pronto. Riprova più tardi.",
+      "searchDown": "La ricerca dei prezzi non è disponibile al momento. Riprova tra un minuto.",
+      "queueFull": "Il progettista è occupato in questo momento. Riprova tra un minuto.",
+      "incomplete": "Aggiungi prima foto e misure, poi ottieni il preventivo.",
+      "offline": "Sei offline. I tuoi preventivi sono al sicuro; riconnettiti per vedere i nuovi."
     }
   }
 }

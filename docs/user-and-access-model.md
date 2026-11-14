@@ -41,6 +41,7 @@ The API is default-deny. Every route needs a valid Keycloak access token unless 
 | --- | --- | --- | --- | --- |
 | Upload photos, Measurements, Moodboard (draft) | yes | yes | no | no |
 | Generate Render / Budget (costly AI) | no (Login Gate) | yes, within quota | no | no |
+| Read own Budgets (`GET .../budgets`) | no | yes, own claimed projects only (others 404) | 403 | 403 |
 | Chat with Persona | no | yes, own projects | no | no |
 | Shopping List PDF / publish Dossier | no | own projects | no | no |
 | View open Dossiers | no | own only | all, if Company validated | all |

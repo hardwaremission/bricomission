@@ -219,11 +219,10 @@
   },
   "project": {
     "title": "Keittiöprojektisi",
-    "helper": "Luo suunnitelma uudesta keittiöstäsi. Tarjoukset tulevat pian.",
+    "helper": "Luo suunnitelma uudesta keittiöstäsi tai pyydä budjettisi.",
     "claimed": "Keittiösi on tallennettu tilillesi.",
     "dismiss": "Sulje",
     "newProject": "Aloita uusi keittiöprojekti",
-    "budgetsSoon": "Tarjoukset: tulossa pian",
     "seeDesigns": "Näytä suunnitelmani",
     "signedOut": {
       "title": "Kirjaudu sisään nähdäksesi tämän keittiöprojektin",
@@ -233,7 +232,8 @@
       "title": "Emme löytäneet tätä keittiöprojektia",
       "home": "Siirry etusivulle"
     },
-    "offline": "Olet offline-tilassa. Keittiöprojektisi on tallessa; yhdistä uudelleen nähdäksesi sen."
+    "offline": "Olet offline-tilassa. Keittiöprojektisi on tallessa; yhdistä uudelleen nähdäksesi sen.",
+    "seeBudget": "Näytä budjettini"
   },
   "results": {
     "back": "Takaisin keittiööni",
@@ -281,6 +281,62 @@
       "queueFull": "Suunnittelija on juuri nyt varattu. Yritä minuutin kuluttua uudelleen.",
       "uploadsOnly": "Omat kuvasi eivät vielä voi ohjata tyyliä, joten käytimme neutraalia modernia tyyliä.",
       "offline": "Olet offline-tilassa. Renderöintisi ovat tallessa; yhdistä uudelleen nähdäksesi uudet."
+    }
+  },
+  "budget": {
+    "back": "Takaisin keittiööni",
+    "title": "Keittiösi budjetti",
+    "helper": "Neljä vaihtoehtoa premiumista perustasoon. Hinnat tulevat tuotekatalogista; napauta vaihtoehtoa nähdäksesi kaikki tuotteet.",
+    "titleActive": "Budjettia lasketaan",
+    "helperActive": "Yhdistämme keittiösi tuotekatalogiin. Tämä kestää noin minuutin.",
+    "tiers": {
+      "luxury": "Luksus",
+      "high": "Korkea",
+      "medium": "Keski",
+      "low": "Edullinen"
+    },
+    "meta": "{count, plural, one {# tuote} other {# tuotetta}} · sis. alv:n",
+    "detail": "{unitPrice} × {quantity} {unit} · Tuotenro {sku}",
+    "citation": "{catalog}, sivu {page}",
+    "more": "+ {count, plural, one {# tuote lisää} other {# tuotetta lisää}}",
+    "totals": {
+      "subtotal": "Välisumma (ilman alv:ta)",
+      "vat": "Alv {percent} %",
+      "total": "Yhteensä (sis. alv:n)"
+    },
+    "history": {
+      "title": "Budjettisi",
+      "counter": "{count} / {max}",
+      "item": "Budjetti {n}"
+    },
+    "status": {
+      "running": "Lasketaan…",
+      "queued": "Odotetaan GPU:ta",
+      "ahead": "{count, plural, one {# työ ennen sinun omaasi} other {# työtä ennen sinun omaasi}}"
+    },
+    "note": "Voit poistua sivulta; budjetti valmistuu taustalla ja ilmestyy tähän, kun se on valmis.",
+    "hints": {
+      "oneAtATime": "Yksi budjetti kerrallaan.",
+      "limit": "Olet luonut {max} budjettia, joka on tämän projektin enimmäismäärä."
+    },
+    "empty": {
+      "title": "Ei vielä budjettia",
+      "helper": "Pyydä neljä vaihtoehtoa keittiöösi premiumista perustasoon."
+    },
+    "cta": {
+      "again": "Laske uudelleen",
+      "retry": "Yritä uudelleen",
+      "start": "Pyydä budjettini",
+      "back": "Takaisin keittiööni"
+    },
+    "alerts": {
+      "failed": "Budjettia ei voitu laskea. Yritä hetken kuluttua uudelleen.",
+      "interrupted": "Budjetin laskenta keskeytyi. Yritä uudelleen.",
+      "catalogEmpty": "Tuotekatalogi ei ole vielä valmis. Yritä myöhemmin uudelleen.",
+      "searchDown": "Hintahaku ei ole juuri nyt käytettävissä. Yritä minuutin kuluttua uudelleen.",
+      "queueFull": "Suunnittelija on juuri nyt kiireinen. Yritä minuutin kuluttua uudelleen.",
+      "incomplete": "Lisää ensin kuvasi ja mittasi ja pyydä sitten budjettisi.",
+      "offline": "Olet offline-tilassa. Budjettisi ovat turvassa; yhdistä uudelleen nähdäksesi uudet."
     }
   }
 }

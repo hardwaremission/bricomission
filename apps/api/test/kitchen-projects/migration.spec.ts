@@ -120,3 +120,34 @@ describe('controlnet render migration', () => {
     expect(names.indexOf(dir ?? '')).toBeGreaterThan(names.findIndex((name) => name.endsWith('_login_gate_claim')));
   });
 });
+
+describe('budget tier computation migration', () => {
+  const names = readdirSync(migrationsDir).filter((name) => /^\d+_/.test(name)).sort();
+  const dir = names.find((name) => name.endsWith('_budget_tier_computation'));
+  const sql = readFileSync(join(migrationsDir, dir ?? 'missing', 'migration.sql'), 'utf8');
+
+  it('creates budget, budget_tier and budget_line_item with enums, indexes and cascading foreign keys', () => {
+    expect(sql).toContain(`CREATE TYPE "budget_status" AS ENUM ('queued', 'running', 'succeeded', 'failed')`);
+    expect(sql).toContain(`CREATE TYPE "budget_tier_name" AS ENUM ('luxury', 'high', 'medium', 'low')`);
+    for (const table of ['budget', 'budget_tier', 'budget_line_item']) expect(sql).toContain(`CREATE TABLE "${table}"`);
+    expect(sql).toMatch(/CREATE UNIQUE INDEX "budget_tier_budget_id_tier_key" ON "budget_tier"\("budget_id", "tier"\)/);
+    expect(sql).toMatch(/CREATE INDEX "budget_line_item_budget_id_tier_position_idx"/);
+    expect(sql).toMatch(/"budget" ADD CONSTRAINT "budget_kitchen_project_id_fkey" FOREIGN KEY \("kitchen_project_id"\) REFERENCES "kitchen_project"\("id"\) ON DELETE CASCADE/);
+    expect(sql).toMatch(/"budget_tier" ADD CONSTRAINT "budget_tier_budget_id_fkey" FOREIGN KEY \("budget_id"\) REFERENCES "budget"\("id"\) ON DELETE CASCADE/);
+    expect(sql).toContain('"unit_price_cents" BIGINT NOT NULL');
+  });
+
+  it('ties the finish time and the error code to the status and keeps tier amounts consistent with CHECKs', () => {
+    expect(sql).toContain('CONSTRAINT "budget_status_columns" CHECK');
+    expect(sql).toMatch(/"status" = 'succeeded' AND "finished_at" IS NOT NULL AND "error_code" IS NULL/);
+    expect(sql).toMatch(/"status" = 'failed' AND "error_code" IS NOT NULL AND "finished_at" IS NOT NULL/);
+    expect(sql).toContain(`"error_code" IN ('adapter_error', 'timeout', 'interrupted', 'verification_failed')`);
+    expect(sql).toContain('"subtotal_cents" + "vat_cents" = "total_cents"');
+  });
+
+  it('has no foreign key to catalog_chunk (citations are data), never drops anything and runs after controlnet_render', () => {
+    expect(sql).not.toMatch(/REFERENCES "catalog_chunk"/);
+    expect(sql).not.toMatch(/DROP\s+(INDEX|TABLE|EXTENSION|CONSTRAINT)/i);
+    expect(names.indexOf(dir ?? '')).toBeGreaterThan(names.findIndex((name) => name.endsWith('_controlnet_render')));
+  });
+});

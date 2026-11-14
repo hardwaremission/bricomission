@@ -1470,7 +1470,7 @@
     },
     "/kitchen-projects/{projectId}/budget": {
       "post": {
-        "description": "Placeholder until budget-tier-computation: it never calls the GPU job broker or an AI adapter. That feature keeps the path, the guards and the 409 rule.",
+        "description": "Retrieves Catalog chunks, asks the LLM for four tiers (Luxury, High, Medium, Low) whose Line Items cite a Catalog chunk, verifies every quoted price against that chunk and computes all amounts in code (integer cents). Answers 202 with the `queued` Budget; poll `GET .../budgets/{budgetId}`. One active Budget per project; failed Budgets do not count towards the limit.",
         "operationId": "KitchenProjectsController_requestBudget",
         "parameters": [
           {
@@ -1485,6 +1485,16 @@
           }
         ],
         "responses": {
+          "202": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateBudgetResponseDto"
+                }
+              }
+            }
+          },
           "400": {
             "description": "Malformed project id"
           },
@@ -1498,7 +1508,7 @@
             "description": "Unknown project, still a draft, or owned by another Account (same generic body)"
           },
           "409": {
-            "description": "`project_incomplete`: needs a photo, all three measurements and a Moodboard Item",
+            "description": "`project_incomplete` (needs a photo, all three measurements and a Moodboard Item), `catalog_empty`, `budget_in_progress` or `budget_limit_reached`",
             "content": {
               "application/json": {
                 "schema": {
@@ -1507,8 +1517,8 @@
               }
             }
           },
-          "501": {
-            "description": "`not_available_yet`",
+          "429": {
+            "description": "`gpu_queue_full`: no Budget was created",
             "content": {
               "application/json": {
                 "schema": {
@@ -1516,6 +1526,66 @@
                 }
               }
             }
+          },
+          "503": {
+            "description": "Database unreachable\n\n`embedding_unavailable` (the Catalog search is down), or database unreachable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KitchenProjectErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Compute the Budget of the kitchen (costly; queued on the GPU)",
+        "tags": [
+          "kitchen-projects"
+        ]
+      }
+    },
+    "/kitchen-projects/{projectId}/budgets": {
+      "get": {
+        "operationId": "KitchenProjectsController_listBudgets",
+        "parameters": [
+          {
+            "name": "projectId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Id of a Kitchen Project the caller owns"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BudgetListResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed project id"
+          },
+          "401": {
+            "description": "Missing, invalid or expired bearer token"
+          },
+          "403": {
+            "description": "Caller lacks the user (Homeowner) realm role"
+          },
+          "404": {
+            "description": "Unknown project, still a draft, or owned by another Account (same generic body)"
           },
           "503": {
             "description": "Database unreachable"
@@ -1526,7 +1596,69 @@
             "bearer": []
           }
         ],
-        "summary": "Compute the Budget of the kitchen (costly; placeholder)",
+        "summary": "The Budgets of an owned project, newest first",
+        "tags": [
+          "kitchen-projects"
+        ]
+      }
+    },
+    "/kitchen-projects/{projectId}/budgets/{budgetId}": {
+      "get": {
+        "operationId": "KitchenProjectsController_getBudget",
+        "parameters": [
+          {
+            "name": "budgetId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "projectId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Id of a Kitchen Project the caller owns"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BudgetViewDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed project id"
+          },
+          "401": {
+            "description": "Missing, invalid or expired bearer token"
+          },
+          "403": {
+            "description": "Caller lacks the user (Homeowner) realm role"
+          },
+          "404": {
+            "description": "Unknown project, still a draft, or owned by another Account (same generic body)"
+          },
+          "503": {
+            "description": "Database unreachable"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "One Budget of an owned project (status, queue position, tiers with verified Line Items)",
         "tags": [
           "kitchen-projects"
         ]
@@ -2437,12 +2569,15 @@
             "type": "string",
             "enum": [
               "project_incomplete",
-              "not_available_yet",
               "storage_unavailable",
               "render_photo_unknown",
               "render_in_progress",
               "render_limit_reached",
-              "gpu_queue_full"
+              "gpu_queue_full",
+              "budget_in_progress",
+              "budget_limit_reached",
+              "catalog_empty",
+              "embedding_unavailable"
             ]
           }
         },
@@ -2471,6 +2606,224 @@
         "required": [
           "renders",
           "maxRenders"
+        ]
+      },
+      "BudgetLineItemViewDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Oak laminate worktop 300 cm"
+          },
+          "sku": {
+            "type": "string",
+            "example": "BM-SYN-WTP-300"
+          },
+          "catalogName": {
+            "type": "string",
+            "description": "Catalog the price was verified against"
+          },
+          "pageNumber": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "unit": {
+            "type": "string",
+            "example": "unit"
+          },
+          "quantity": {
+            "type": "string",
+            "example": "2.5",
+            "description": "Decimal string, at most two decimals"
+          },
+          "quotedPrice": {
+            "type": "string",
+            "example": "189.90",
+            "description": "The price exactly as the Catalog prints it"
+          },
+          "unitPriceCents": {
+            "type": "integer",
+            "example": 18990
+          },
+          "subtotalCents": {
+            "type": "integer",
+            "example": 47475,
+            "description": "round_half_up(unitPriceCents x quantity), computed by code"
+          }
+        },
+        "required": [
+          "name",
+          "sku",
+          "catalogName",
+          "pageNumber",
+          "unit",
+          "quantity",
+          "quotedPrice",
+          "unitPriceCents",
+          "subtotalCents"
+        ]
+      },
+      "BudgetTierViewDto": {
+        "type": "object",
+        "properties": {
+          "tier": {
+            "type": "string",
+            "enum": [
+              "luxury",
+              "high",
+              "medium",
+              "low"
+            ]
+          },
+          "subtotalCents": {
+            "type": "integer",
+            "description": "Part before VAT (total - vat)"
+          },
+          "vatCents": {
+            "type": "integer",
+            "description": "VAT part of the total"
+          },
+          "totalCents": {
+            "type": "integer",
+            "description": "Sum of the item subtotals (catalog prices are VAT-inclusive)"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BudgetLineItemViewDto"
+            }
+          }
+        },
+        "required": [
+          "tier",
+          "subtotalCents",
+          "vatCents",
+          "totalCents",
+          "items"
+        ]
+      },
+      "BudgetViewDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "queued",
+              "running",
+              "succeeded",
+              "failed"
+            ]
+          },
+          "position": {
+            "type": "integer",
+            "nullable": true,
+            "description": "1-based GPU queue position while queued (when known)"
+          },
+          "waitingFor": {
+            "type": "string",
+            "enum": [
+              "image",
+              "llm"
+            ],
+            "nullable": true,
+            "description": "Kind of GPU work it waits behind while queued"
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "EUR"
+            ]
+          },
+          "vatPercent": {
+            "type": "number",
+            "example": 21,
+            "description": "VAT rate in percent"
+          },
+          "errorCode": {
+            "type": "string",
+            "enum": [
+              "adapter_error",
+              "timeout",
+              "interrupted",
+              "verification_failed"
+            ],
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "startedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "finishedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "lineItemsCount": {
+            "type": "integer",
+            "description": "Verified Line Items over all tiers (0 until succeeded)"
+          },
+          "tiers": {
+            "description": "Empty until succeeded; luxury, high, medium, low",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BudgetTierViewDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "position",
+          "waitingFor",
+          "currency",
+          "vatPercent",
+          "errorCode",
+          "createdAt",
+          "startedAt",
+          "finishedAt",
+          "lineItemsCount",
+          "tiers"
+        ]
+      },
+      "CreateBudgetResponseDto": {
+        "type": "object",
+        "properties": {
+          "budget": {
+            "$ref": "#/components/schemas/BudgetViewDto"
+          }
+        },
+        "required": [
+          "budget"
+        ]
+      },
+      "BudgetListResponseDto": {
+        "type": "object",
+        "properties": {
+          "budgets": {
+            "description": "Newest first",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BudgetViewDto"
+            }
+          },
+          "maxBudgets": {
+            "type": "integer",
+            "example": 5,
+            "description": "Non-failed Budgets allowed per project"
+          }
+        },
+        "required": [
+          "budgets",
+          "maxBudgets"
         ]
       }
     }

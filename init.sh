@@ -239,6 +239,9 @@ echo "  API POST /kitchen-projects/<id>/renders (no token) -> 401"
 api_renders=$(curl -sS --max-time 10 -o /dev/null -w '%{http_code}' "http://127.0.0.1:${api_port}/kitchen-projects/00000000-0000-4000-8000-000000000000/renders" 2>/dev/null || true)
 [ "$api_renders" = "401" ] || web_fail "API GET /kitchen-projects/<id>/renders without a token gave '${api_renders:-<none>}', expected 401"
 echo "  API GET /kitchen-projects/<id>/renders (no token) -> 401"
+api_budgets=$(curl -sS --max-time 10 -o /dev/null -w '%{http_code}' "http://127.0.0.1:${api_port}/kitchen-projects/00000000-0000-4000-8000-000000000000/budgets" 2>/dev/null || true)
+[ "$api_budgets" = "401" ] || web_fail "API GET /kitchen-projects/<id>/budgets without a token gave '${api_budgets:-<none>}', expected 401"
+echo "  API GET /kitchen-projects/00000000-0000-4000-8000-000000000000/budgets (no token) -> 401"
 
 echo
 echo "Stack is up and healthy (detached)."
