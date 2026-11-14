@@ -429,11 +429,30 @@
     "notes": "ADR 0002. Schema-constrained JSON output from llama-server. UI gate: Budget Tier Overview screen."
   },
   {
+    "id": "simulations-ux-overhaul",
+    "area": "ux-simulations",
+    "title": "Homeowner works with style-blended Simulations across every kitchen photo",
+    "user_visible_behavior": "Pressing Generate renders one image per kitchen photo, all sharing one calculated style that blends what the Homeowner liked (Style Gallery picks and Moodboard references). Each 'Generate again' recalculates a slightly different style with random weights and creates a new Simulation, a group of Renders. The project page lists 'My simulations' (open, select, delete, unlimited for now); a Budget is computed for the selected Simulation from the elements a vision model sees in all its images, with Luxury > High > Medium > Low totals enforced by code. Measurements are entered in cm by default and the Style Gallery filters wrap instead of scrolling out of view.",
+    "depends_on": ["controlnet-render", "budget-tier-computation"],
+    "status": "not_started",
+    "verification": [
+      "Unit tests: calculated style weights (first Simulation equal weights, 'Generate again' random weights within bounds, reproducible from a stored seed); the blend mode setting (ip_adapter | vlm_text | both) is read from stored settings with a safe default",
+      "API tests: Generate creates one Simulation with one Render per kitchen photo; list, get and delete a Simulation (Renders, MinIO objects and its Budget removed); no per-project cap; ownership 401/403/404 as Renders",
+      "Budget tests: a Budget belongs to one Simulation (one current, replaced on recompute, removed with the Simulation); the element inventory comes from the vision model over all the Simulation's images; ADR 0002 unchanged (the model never produces an amount, code verifies and computes); tier totals strictly ordered Luxury > High > Medium > Low or the attempt is rejected and retried, with a unit test for the ordering check",
+      "Real GPU run under flock: a project with 3+ photos and 2+ Moodboard or Style Gallery references yields one Simulation whose Renders share the calculated style, in each blend mode, plus a Budget from the multimodal model with ordered tiers; record VRAM peak and timings",
+      "Playwright with fake adapters: progress 'n of N' while a Simulation renders; Renders grouped by Simulation; slider position survives switching Renders; photo picker and history wrap at 360 px with no horizontal overflow; project page 'My simulations' open/select/delete and the budget button enabled only with a selected Simulation; measurements default to cm; Style Gallery filters wrap",
+      "UI gate: designs for Results (grouped Simulations), the project page 'My simulations' block, Capture measurements in cm and the wrapping Moodboard filters, approved through OpenPencil before implementation",
+      "Docs: ADR 0001 amended for the multimodal model, new ADR for the calculated style, ARCHITECTURE.md, AGENTS.md, CONTEXT.md and docs/domain-model.md (Simulation), risks updated"
+    ],
+    "evidence": [],
+    "notes": "Developer feedback 2026-11-14 after trying the real stack; one UX-improvement feature (developer decision), inserted before every remaining feature. Decisions: blend with IP-Adapter in ComfyUI AND with a vision model that describes the references, switchable by the Administrator (mode ip_adapter | vlm_text | both); switch the LLM to a multimodal model of the same family (Qwen3-VL-30B-A3B class, ADR 0001 amended) that also inventories the visible elements of a Simulation for the Budget; one current Budget per Simulation; Simulations unlimited for now; the ordering Luxury > High > Medium > Low is enforced in code. Slider position persists when switching Renders; thumbnails and history are responsive (wrap, no horizontal overflow). Open points for the planner to put to the developer: no admin UI exists yet, so the blend mode lives in a stored setting with an API now and the switch UI joins admin-service-endpoints; handling of partial batch failures and the maximum photo count; what happens to existing Renders (dev data only); how daily-quota-enforcement counts a batch. GPU: the ComfyUI peak was 16,217 of 16,304 MiB on 2026-11-14 with the text LLM resident; IP-Adapter (about 2 GB weights, new ComfyUI node) and the multimodal model change that, so co-residency must be re-measured and unloads decided. UI gate."
+  },
+  {
     "id": "budget-chat-personas",
     "area": "ai-budget",
     "title": "Homeowner refines the Budget by chat with a switchable Persona",
     "user_visible_behavior": "The Homeowner chats about materials; answers stream in the selected Persona's voice; switching Persona changes the tone of the next answer; Line Item changes recompute totals in code.",
-    "depends_on": ["budget-tier-computation"],
+    "depends_on": ["budget-tier-computation", "simulations-ux-overhaul"],
     "status": "not_started",
     "verification": [
       "Test: four Persona system prompts selectable; switching does not alter totals",
@@ -462,7 +481,7 @@
     "area": "outcomes",
     "title": "Homeowner downloads the DIY Shopping List PDF",
     "user_visible_behavior": "From a selected tier the Homeowner downloads a PDF with exact products, SKUs, quantities, unit prices, sources and totals; the Kitchen Project moves to diy_completed.",
-    "depends_on": ["budget-tier-computation"],
+    "depends_on": ["budget-tier-computation", "simulations-ux-overhaul"],
     "status": "not_started",
     "verification": [
       "PDF text extraction test: totals and SKUs match the stored Budget",
@@ -476,7 +495,7 @@
     "area": "marketplace",
     "title": "Homeowner publishes a locked Dossier",
     "user_visible_behavior": "The Homeowner publishes the project to the Marketplace; an immutable Dossier snapshot (Renders, Measurements, chosen tier, Line Items) is created with an open Bidding Window.",
-    "depends_on": ["budget-tier-computation", "controlnet-render"],
+    "depends_on": ["budget-tier-computation", "controlnet-render", "simulations-ux-overhaul"],
     "status": "not_started",
     "verification": [
       "API test: Dossier content cannot be modified after publication",
@@ -697,7 +716,7 @@
       "Secrets stored encrypted at rest and never returned in clear to the UI"
     ],
     "evidence": [],
-    "notes": "Enables swapping to a cloud endpoint or an Avalon experiment (ADR 0001)."
+    "notes": "Enables swapping to a cloud endpoint or an Avalon experiment (ADR 0001). Also holds the style-blend mode switch (ip_adapter | vlm_text | both) introduced by simulations-ux-overhaul."
   },
   {
     "id": "google-sso-login",
@@ -734,7 +753,7 @@
     "area": "ai-visuals",
     "title": "Renders show a decluttered kitchen without structural changes",
     "user_visible_behavior": "Before a Render, loose objects in the kitchen photo (kettles, dish racks, bottles, small appliances, clutter) are detected and removed by masked inpainting, so the Render shows clean counters while walls, doors, windows, openings and cabinet positions stay exactly as in the photo.",
-    "depends_on": ["controlnet-render"],
+    "depends_on": ["controlnet-render", "simulations-ux-overhaul"],
     "status": "not_started",
     "verification": [
       "Real GPU: the landscape and portrait samples render with no kettle, dish racks, bottles or plants on counters, and the tall cabinet stays a cabinet (side-by-side evidence, several seeds)",

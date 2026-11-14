@@ -1,6 +1,6 @@
 # Registro de conversación con Claude Code · 2026-11-14
 
-_Actualizado: 2026-11-14 17:50_
+_Actualizado: 2026-11-14 18:48_
 
 
 ---
@@ -7417,3 +7417,356 @@ Estos cambios están sin commitear en `main`, junto a los tres logs de conversac
 Una errata que dejó la implementación: `AGENTS.md` línea 73 aún dice que `POST /kitchen-projects/:id/budget` es un placeholder 501, y ya devuelve 202. La corrijo con la rama del siguiente feature, si te parece.
 
 Siguiente feature: `budget-chat-personas`, `diy-shopping-list-pdf` o `dossier-publication`, todos listos. ¿Cuál arranco?
+
+
+### 🧑 **Juan Miguel** · 2026-11-14 17:50:38
+
+haz commit y push
+
+
+### 🤖 **Claude** · 2026-11-14 17:50:41
+
+Estoy en `main`, así que creo una rama antes de commitear. Los logs de conversación van incluidos, como indica `CLAUDE.md`.
+
+
+### 🤖 **Claude** · 2026-11-14 17:50:44
+
+> 🔧 **Bash**: `{"command": "git checkout -q -b chore/github-flow-no-worktrees && git add -A && git status --short && git commit -q -F - <<'EOF'\nchore: drop worktrees from github-flow\n\nFeatures run one at a time, so each branch is checked out in the main\ncheckout instead of a separate worktree. Subagents run in`
+
+
+### 🤖 **Claude** · 2026-11-14 17:51:04
+
+Commit `f18cf16` y push hechos en la rama `chore/github-flow-no-worktrees`, no en `main`, porque `main` es la rama por defecto. El commit incluye los siete archivos modificados: la skill y sus evals, `CLAUDE.md`, `AGENTS.md` y los tres logs de conversación.
+
+No he abierto PR porque no lo pediste. El enlace para crearlo está en la salida del push: `https://github.com/hardwaremission/bricomission/pull/new/chore/github-flow-no-worktrees`.
+
+Estoy en esa rama. Para el siguiente feature volveré a `main` y haré `pull`. Cuando fusiones esta rama, la borro junto con las demás ya fusionadas.
+
+Sigue pendiente elegir el siguiente feature: `budget-chat-personas`, `diy-shopping-list-pdf` o `dossier-publication`.
+
+
+### 🧑 **Juan Miguel** · 2026-11-14 17:52:11
+
+no hacía falta que hiceras una  rama para esto, haz commit a main y elimina esa rama
+
+
+### 🤖 **Claude** · 2026-11-14 17:52:15
+
+> 🔧 **Bash**: `{"command": "git checkout -q main && git merge --ff-only chore/github-flow-no-worktrees 2>&1 | tail -2 && GIT_TERMINAL_PROMPT=0 git push origin main 2>&1 | tail -3", "description": "Fast-forward main to the commit and push main"}`
+
+
+### 🤖 **Claude** · 2026-11-14 17:52:19
+
+El hook reescribió los logs tras el commit y bloquea el cambio de rama. Los aparto en un stash; el hook los regenera.
+
+
+### 🤖 **Claude** · 2026-11-14 17:52:21
+
+> 🔧 **Bash**: `{"command": "git stash push -q -m \"conversation logs rewritten by hook\" && git checkout -q main && git merge --ff-only chore/github-flow-no-worktrees 2>&1 | tail -2 && GIT_TERMINAL_PROMPT=0 git push origin main 2>&1 | tail -3 && git branch -d chore/github-flow-no-worktrees && GIT_TERMINAL_PROMPT=0`
+
+
+### 🤖 **Claude** · 2026-11-14 17:52:32
+
+Hecho: `main` local y remoto están en `f18cf16` y la rama `chore/github-flow-no-worktrees` está borrada en local y en origin. Solo queda `main`.
+
+El hook reescribe los logs de conversación después de cada commit. Para cambiar de rama los guardé en un stash y lo descarté, porque el hook los regenera en el siguiente turno.
+
+Lo apunto para el futuro: los cambios pequeños de configuración o docs van directo a `main`, sin rama intermedia. Las ramas quedan para los features.
+
+El siguiente feature sigue pendiente de elegir: `budget-chat-personas`, `diy-shopping-list-pdf` o `dossier-publication`.
+
+
+### 🧑 **Juan Miguel** · 2026-11-14 17:53:41
+
+Antes de continuar me gustaría ejecutar el programa completo de lo que tenemos hasta ahora pero ejecutando los modelos de verdad para ver cómo se generan las imágenes
+
+
+### 🤖 **Claude** · 2026-11-14 17:53:46
+
+Primero miro qué está levantado, si los pesos de IA están descargados y la GPU libre.
+
+
+### 🤖 **Claude** · 2026-11-14 17:53:49
+
+> 🔧 **Bash**: `{"command": "docker ps --format '{{.Names}}\\t{{.Status}}' ; echo \"--- volumes ---\"; docker volume ls --format '{{.Name}}' | grep -E '^(bricomission|hardwaremissionbricomission)_' ; echo \"--- env ---\"; grep -E '^(AI_ADAPTERS|LLAMA_PORT|COMFYUI_PORT|WEB_PORT|API_PORT)' .env 2>/dev/null; echo \"CO`
+
+
+### 🤖 **Claude** · 2026-11-14 17:53:56
+
+> 🔧 **Bash**: `{"command": "export PATH=\"$HOME/.local/bin:$PATH\" && timeout 560 docker compose up -d --build --wait 2>&1 | tail -14", "description": "Rebuild and start the 6 core services with merged code", "timeout": 580000}`
+
+
+### 🤖 **Claude** · 2026-11-14 17:54:33
+
+Core con el código nuevo. Ahora el embedder CPU con el catálogo de muestra (para los presupuestos) y ComfyUI solo, para los renders.
+
+
+### 🤖 **Claude** · 2026-11-14 17:54:34
+
+> 🔧 **Bash**: `{"command": "docker compose --profile rag up -d --wait embedder 2>&1 | tail -2 && ./scripts/catalog/ingest.sh infra/catalog/samples 2>&1 | tail -4; echo \"--- comfyui ---\"; docker compose --profile ai up -d --wait comfyui 2>&1 | tail -3; docker ps --format '{{.Names}}\\t{{.Status}}' | grep -E 'comf`
+
+
+### 🤖 **Claude** · 2026-11-14 17:55:04
+
+ComfyUI sano. Pongo la API en `AI_ADAPTERS=local` y compruebo que alcanza ComfyUI.
+
+
+### 🤖 **Claude** · 2026-11-14 17:55:06
+
+> 🔧 **Bash**: `{"command": "AI_ADAPTERS=local docker compose up -d --wait api 2>&1 | tail -3; docker compose exec -T api printenv AI_ADAPTERS; curl -s -o /dev/null -w \"web / -> %{http_code}\\n\" http://localhost:3100/; curl -s http://localhost:3000/health; echo; curl -s -o /dev/null -w \"comfyui -> %{http_code}\\`
+
+
+### 🤖 **Claude** · 2026-11-14 17:55:15
+
+Todo listo. Guardo de paso la preferencia sobre ramas que me diste.
+
+
+### 🤖 **Claude** · 2026-11-14 17:55:21
+
+> 🔧 **Bash**: `{"command": "D=/home/juanmi/.claude/projects/-home-juanmi-Proyectos-hardwaremission-bricomission/memory; cat > $D/feedback-small-changes-direct-to-main.md <<'EOF'\n---\nname: feedback-small-changes-direct-to-main\ndescription: Small config/docs/skill changes are committed directly to main, no interm`
+
+
+### 🤖 **Claude** · 2026-11-14 17:55:27
+
+Stack real listo en el checkout principal. Código de `main` (con presupuestos), `AI_ADAPTERS=local` y ComfyUI sano en `127.0.0.1:8188`. API sana, la web responde, y la GPU está libre (1,7 GB usados).
+
+**Para ver una imagen real**
+1. Abre `http://localhost:3100` (usa `localhost`, no `127.0.0.1`).
+2. Sube fotos de cocina en **Capture**.
+3. Elige estilos en **Moodboard**.
+4. En **Generate**, inicia sesión y arranca el Render.
+5. Verás el slider antes/después en `/kitchen-projects/<id>/results`.
+
+Cuentas de prueba (las contraseñas están en `.env.example`): `bm-homeowner`. El código por email lo lees en Mailpit, `http://localhost:8025`.
+
+**Qué esperar**
+- Una imagen tarda unos 20 s la primera vez (carga del modelo) y unos 10 s las siguientes.
+- La VRAM llega al límite (16,2 de 16,3 GB), así que no lances otras cargas de GPU a la vez.
+
+**Presupuestos reales**
+- Ahora mismo **no funcionan**: ComfyUI y el LLM no caben juntos en la GPU, así que `llama-server` está parado.
+- Los presupuestos fallarán con error del adaptador mientras ComfyUI esté activo.
+- Cuando acabes con las imágenes, avísame y cambio a la fase del LLM: paro ComfyUI, arranco `llama-server` y dejo la API en local.
+
+Al terminar todo, dejaré los servicios de GPU parados y la API otra vez en `fake`.
+
+Dime cuando quieras pasar a los presupuestos, o si te falla algo en el recorrido.
+
+
+### 🧑 **Juan Miguel** · 2026-11-14 18:07:56
+
+cuando se generan imágenes la VRAM oscila entre 10GB y 12GB. En espera solo ocupa 9.2GB. ¿no podría estar cargado el LLM? para la demo no estaré generando imágenes y usando el LLM
+
+
+### 🤖 **Claude** · 2026-11-14 18:08:02
+
+Es una pregunta medible, así que primero miro las cifras reales de ahora mismo y lo que midió la spike.
+
+
+### 🤖 **Claude** · 2026-11-14 18:08:04
+
+> 🔧 **Bash**: `{"command": "for c in /sys/class/drm/card*/device; do [ -f $c/mem_info_vram_used ] && echo \"$c used=$(( $(cat $c/mem_info_vram_used)/1048576 )) MiB total=$(( $(cat $c/mem_info_vram_total)/1048576 )) MiB\"; done; echo \"--- spike doc VRAM lines ---\"; grep -n -iE \"vram|GiB|MiB\" docs/spikes/local-a`
+
+
+### 🤖 **Claude** · 2026-11-14 18:08:21
+
+> 🔧 **Bash**: `{"command": "vr(){ echo $(( $(cat /sys/class/drm/card1/device/mem_info_vram_used)/1048576 )); }; echo \"before llama: $(vr) MiB\"; flock /tmp/bricomission-gpu.lock docker compose --profile ai up -d --wait llama-server 2>&1 | tail -2; sleep 5; echo \"after llama (idle, ComfyUI resident): $(vr) MiB of`
+
+
+### 🤖 **Claude** · 2026-11-14 18:08:34
+
+Los dos residentes caben: 12.161 de 16.304 MiB, con 4 GB de margen. Ahora una prueba real de presupuesto con ComfyUI aún cargado, muestreando la VRAM.
+
+
+### 🤖 **Claude** · 2026-11-14 18:08:37
+
+> 🔧 **Bash**: `{"command": "S=/tmp/claude-1000/-home-juanmi-Proyectos-hardwaremission-bricomission/00f4f1d0-f332-4a08-81fe-7c5370051c80/scratchpad; mkdir -p $S; : > $S/vram.log; ( while true; do echo $(( $(cat /sys/class/drm/card1/device/mem_info_vram_used)/1048576 )) >> $S/vram.log; sleep 0.5; done ) & SP=$!; ech`
+
+
+### 🤖 **Claude** · 2026-11-14 18:09:54
+
+Presupuesto real OK en 60 s: cuatro tiers con citas y totales verificados, con pico de 12.161 MiB. Pero la VRAM final bajó a 4.091 MiB, es decir, algo descargó ComfyUI. Miro qué fue.
+
+
+### 🤖 **Claude** · 2026-11-14 18:09:55
+
+> 🔧 **Bash**: `{"command": "echo \"VRAM now: $(( $(cat /sys/class/drm/card1/device/mem_info_vram_used)/1048576 )) MiB\"; grep -rn -iE \"unload|/free|free_memory\" scripts/ai/budget-smoke.sh apps/api/src/ai --include=*.ts --include=*.sh | cut -c1-170 | head", "description": "Find what unloads ComfyUI models between`
+
+
+### 🤖 **Claude** · 2026-11-14 18:09:57
+
+> 🔧 **Bash**: `{"command": "grep -rniE \"unload|/free|free_memory\" scripts/ai apps/api/src/ai | cut -c1-170 | head; echo ---; docker logs --since 15m hardwaremissionbricomission-comfyui-1 2>&1 | grep -iE \"unload|free|offload|loaded|Requested to load\" | tail -6", "description": "Search code and ComfyUI logs for `
+
+
+### 🤖 **Claude** · 2026-11-14 18:10:05
+
+> 🔧 **Bash**: `{"command": "S=/tmp/claude-1000/-home-juanmi-Proyectos-hardwaremission-bricomission/00f4f1d0-f332-4a08-81fe-7c5370051c80/scratchpad; : > $S/vram-render.log; nohup bash -c 'end=$((SECONDS+900)); while [ $SECONDS -lt $end ]; do echo $(( $(cat /sys/class/drm/card1/device/mem_info_vram_used)/1048576 )) `
+
+
+### 🤖 **Claude** · 2026-11-14 18:10:08
+
+Ojo: ComfyUI ya no aparece en `docker ps`, solo `llama-server`. Esto explica la caída de VRAM; averiguo por qué.
+
+
+### 🤖 **Claude** · 2026-11-14 18:10:09
+
+> 🔧 **Bash**: `{"command": "docker ps -a --format '{{.Names}}\\t{{.Status}}' | grep -E 'comfy|llama'; docker inspect hardwaremissionbricomission-comfyui-1 --format 'exit={{.State.ExitCode}} oom={{.State.OOMKilled}} finished={{.State.FinishedAt}}' 2>&1; grep -nE \"stop|comfyui\" scripts/ai/budget-smoke.sh | cut -c1`
+
+
+### 🤖 **Claude** · 2026-11-14 18:10:15
+
+> 🔧 **Bash**: `{"command": "flock /tmp/bricomission-gpu.lock docker compose --profile ai up -d --wait comfyui 2>&1 | tail -2; sleep 3; echo \"both services up, VRAM: $(( $(cat /sys/class/drm/card1/device/mem_info_vram_used)/1048576 )) MiB\"; docker ps --format '{{.Names}}\\t{{.Status}}' | grep -E 'llama|comfy'; do`
+
+
+### 🤖 **Claude** · 2026-11-14 18:10:36
+
+Sí, el LLM puede estar cargado a la vez que ComfyUI: lo que medí lo avala, y la prueba con un render de verdad la haces tú ahora. Tu observación era correcta y mi aviso de "no caben juntos" era demasiado conservador.
+
+**Lo medido**
+- ComfyUI cargado en reposo: 9.317 MiB.
+- ComfyUI y `llama-server` residentes a la vez en reposo: 12.161 MiB de 16.304, con unos 4 GB de margen.
+- Un render pico a 10-12 GB, como ves tú. La medición del 2026-11-15 ya había dado un render con el LLM cargado y sin OOM (pico de 16,23 GB).
+
+**Una corrección mía**: el presupuesto real de hace un momento no sirve como prueba de convivencia. `budget-smoke.sh` para ComfyUI a propósito, así que corrió con el LLM solo. Salió bien (60 s, cuatro tiers con citas y totales verificados), pero aquello no probaba nada sobre la convivencia. Lo probado es lo de arriba: los dos cargados en reposo y la medición del 15-11.
+
+**Estado ahora**
+- `llama-server` y ComfyUI están arriba a la vez, la API está en `AI_ADAPTERS=local`, y ComfyUI vuelve a estar «frío».
+- La VRAM está en 4,3 GB, así que el primer render tardará unos 20 s al cargar el modelo.
+
+Tengo un muestreador de VRAM corriendo 15 min: genera un render desde la web y mira el presupuesto. Después te doy el pico exacto con el LLM cargado.
+
+Queda un riesgo que sí es real: el orden de arranque. Si ComfyUI ya ha llenado la tarjeta tras varios renders, un `llama-server` que arranque después puede no encontrar sitio, así que el LLM debe arrancar primero. Si lo confirmamos con el muestreo, lo dejo apuntado en `AGENTS.md`, que ahora dice «serialización obligatoria», y en `docs/spikes/local-ai-gpu-spike.md`.
+
+
+### 🧑 **Juan Miguel** · 2026-11-14 18:21:06
+
+ya he terminado de probarlo y el workflow para el usuario es muy confuso. Analiza el log que habías habilitado y luego te doy feedback
+
+
+### 🤖 **Claude** · 2026-11-14 18:21:12
+
+> 🔧 **Bash**: `{"command": "S=/tmp/claude-1000/-home-juanmi-Proyectos-hardwaremission-bricomission/00f4f1d0-f332-4a08-81fe-7c5370051c80/scratchpad; python3 -I - <<EOF\nv=[int(x) for x in open(\"$S/vram-render.log\") if x.strip()]\nprint(\"samples\",len(v),\"(~%.1f min)\"%(len(v)*0.5/60))\nprint(\"min\",min(v),\"ma`
+
+
+### 🤖 **Claude** · 2026-11-14 18:21:13
+
+> 🔧 **Bash**: `{"command": "docker compose logs --since 40m api 2>&1 | grep -iE \"render|budget|gpu|broker|error|warn|failed|timeout|429|409\" | sed 's/\\x1b\\[[0-9;]*m//g' | cut -c1-230 | tail -50", "description": "Read recent API logs for renders, budgets and errors"}`
+
+
+### 🤖 **Claude** · 2026-11-14 18:21:15
+
+> 🔧 **Bash**: `{"command": "docker exec hardwaremissionbricomission-postgres-1 psql -U \"${POSTGRES_USER:-bricomission}\" -d \"${POSTGRES_DB:-bricomission}\" -c \"select substr(id::text,1,8) id, status, error_code, round(extract(epoch from (finished_at-started_at))::numeric,1) secs, created_at::time(0) at from kit`
+
+
+### 🤖 **Claude** · 2026-11-14 18:21:27
+
+> 🔧 **Bash**: `{"command": "pkill -f vram-render; S=/tmp/claude-1000/-home-juanmi-Proyectos-hardwaremission-bricomission/00f4f1d0-f332-4a08-81fe-7c5370051c80/scratchpad; python3 -I - <<EOF\nv=[int(x) for x in open(\"$S/vram-render.log\") if x.strip()]\npeaks=[]; i=0\nwhile i<len(v):\n    if v[i]>13000:\n        j=`
+
+
+### 🤖 **Claude** · 2026-11-14 18:21:30
+
+`pkill` se mató a sí mismo por coincidir con su propia línea de comandos. Repito solo el análisis; el muestreador termina solo a los 15 min.
+
+
+### 🤖 **Claude** · 2026-11-14 18:21:32
+
+> 🔧 **Bash**: `{"command": "S=/tmp/claude-1000/-home-juanmi-Proyectos-hardwaremission-bricomission/00f4f1d0-f332-4a08-81fe-7c5370051c80/scratchpad; python3 -I - <<EOF\nv=[int(x) for x in open(\"$S/vram-render.log\") if x.strip()]\npeaks=[]; i=0\nwhile i<len(v):\n    if v[i]>13000:\n        j=i\n        while j<len`
+
+
+### 🤖 **Claude** · 2026-11-14 18:21:39
+
+Analicé el muestreo de VRAM (11 min, 1.334 muestras) y la base de datos. El log de la API solo tiene las líneas de arranque, así que ahí no hay nada útil; la evidencia está en la VRAM y en las tablas.
+
+**Resultados con `llama-server` y ComfyUI cargados a la vez**
+- **Renders**: 12 de 12 `succeeded`. Cada render con ComfyUI «caliente» tarda 10-11 s; el primero en frío tardó 24,2 s. Dos de ellos corresponden a clics tuyos seguidos a los 17:19:08, 17:19:31 y 17:19:43.
+- **Presupuestos**: 3 de 3 `succeeded`. Los dos hechos desde la web, a las 17:13:32 y 17:16:05, corrieron con ambos servicios arriba.
+- **VRAM en reposo**: 8.609 MiB de mediana con los dos residentes. Durante un presupuesto la VRAM no se movió de ahí, porque el LLM ya estaba cargado y no reserva nada nuevo.
+- **VRAM en un render**: sube a 14,7-16,2 GB durante 8-13 s y vuelve a 8,6 GB. Fueron 8 ráfagas y el pico máximo fue 16.217 de 16.304 MiB. Tu monitor ve 10-12 GB porque probablemente muestrea más despacio y se pierde el pico.
+
+**Lectura**
+- La convivencia funciona en uso real, sin ningún fallo.
+- El margen en el pico es de unos 90 MiB. Eso es correcto con la configuración actual, pero está justo, y cualquier cosa que ocupe más VRAM (otra ventana pesada, un modelo mayor) podría provocar un fallo.
+
+Pendiente hasta tu OK: dejar apuntado en `AGENTS.md` y en la spike que la convivencia está medida y el pico es ~90 MiB de margen. Eso corrige el "serialización obligatoria" actual.
+
+Ahora cuéntame lo que viste del flujo de usuario. Dime qué pantallas o pasos te confundieron.
+
+
+### 🧑 **Juan Miguel** · 2026-11-14 18:41:55
+
+- La idea de añadir varias fotos de mi cocina es para que luego los renders se calculen con el mismo estilo al mismo tiempo de todas las perspectivas adjuntadas.
+- las medidas mejor que por defecto se introduzcan en CM en lugar de metros.
+- Los filtros de la galería de estilos no se pueden hacer scroll horizontal por lo que cuando superan el ancho de la ventana hay muchos que quedan fuera. o lo cambias para que se pueda deslizar o como una nube de tags responsive que se ajustan al ancho de la ventana (lo que consideres más UX friendly)
+- La idea de poder elegir varios estilos es que la imagen resultante de la cocina fuera una mezcla de los seleccionados, usando sus puntos en común. Actualmente, si se selecionan varios estilos las imagenes generadas por confy parecen usar un único estilo para todas las simulaciones cuando no debería ser así. Igual que si el usuario arrastra su moodboard vairas imágenes y selecciona de la galería a la vez, debe calcularse qué tienen en común que atraen al usuario y generar algo único que combine todo lo que le gusta
+- Cuando se pulsa en generar mi cocina, se deben hacer tantos renders como fotos de la cocina del usuario se han adjuntado. Por ejemplo, si hay 6 fotos de la cocina del usuario, se generarán 6 renders conservando ese "estilo calculado" entre las imágenes de referencia. Al cambiar el usuario entre las imágenes de los render para verlas en grande con el control deslizante, la posición del control deslizante debe permanecer en el último sitio en el que lo dejó el usuario ya que si se quiere ver solo el "despúes" de todas tocando rápidamente entre ellas, solo permite ver la mitad ya que siempre se "resetea" al medio en cada cambio de render seleccionado. La seccion de las miniaturas de foto para el próximo render y los renders se salen por la derecha si hay varios elementos. lo ideal es que sean responsive.
+- Como lo que se va a hacer a partir de ahora es generar una tanda de imágenes del mismo estilo calculado por cada una de las fotos de la cocina original del usuario, la sección de renders debe estar agrupada por el conjunto de fotos de ese estilo calculado. Cada vez que se pulsa en "Generar de nuevo", se recalcula un nuevo estilo algo variado dando más o menos peso a una imagen del moodboard o del estilo seleccionado de forma más o menos aleatoria y se generará otra agrupación de imágenes que comparten el nuevo "estilo calculado".
+- Cuando el usuario esté satisfecho con todos los estilos que ha generado, podrá volver a la ventana "Tu proyecto de cocina" y existrá un bloque de "Mis simulaciones". Para obtener un presupuesto deberá seleccionar una de las simulaciones y se le indicará fácilmente las instrucciones para hacerlo. una vez seleccionada la simulación, se activa el botón y se calcula el presupuesto teniendo en cuenta todos los elementos que se ven en todas las imagenes del grupo de imágenes de ese estilo calculado. Dede la ventana "Tu proyecto de cocina" siempre se podrán editar las fotos, medidas y modificar estilos. las simulaciones (grupos de imágnees) por ahora son ilimitadas para el usuario hasta que analicemos más adelante. EL usuario podrá eliminar las simulaciones que ya no le interesen desde esa misma ventana. Siempre podrá pulsar en una simulación para poder entrara en la ventana que muestra ese control deslizante del antes y después.
+- Para la demo sé que el RAG es ficticio pero al menos sé coherente que la suma de elementos sea más cara en el tier más lujoso y más económico en el tier más bajo que hay mucha incoherencia.
+- Hazme todas las preguntas que necesites para aclarar dudas antes de nada.
+- Después vas a crear una feature que implementaremos a continuación antes de cualquiera de las que nos faltan
+
+
+### 🤖 **Claude** · 2026-11-14 18:42:35
+
+Antes de preguntar, lo que ya decido yo salvo que me corrijas:
+- Medidas en cm por defecto, con el conmutador cm/m intacto.
+- Filtros de la galería como nube de etiquetas que salta de línea. Nada queda oculto fuera de pantalla.
+- Miniaturas y renders en una cuadrícula responsive.
+- Una posición del deslizador que se conserva al cambiar de render.
+- El primer «estilo calculado» pesa igual todas las referencias y cada «Generar de nuevo» reparte los pesos al azar.
+- Eliminar una simulación borra sus renders, sus archivos y su presupuesto.
+- El orden de los tiers (Luxury > High > Medium > Low) lo impone el código y rechaza o reintenta un presupuesto con totales incoherentes. Hoy el LLM elige a su aire. En la última prueba, High daba 500 € y Medium 1.476 €.
+
+Estas cuatro decisiones sí cambian lo que construyo:
+
+
+### 🤖 **Claude** · 2026-11-14 18:42:46
+
+> 🔧 **AskUserQuestion**: `{"questions": [{"question": "Todo esto son al menos 6 piezas independientes (cm por defecto y etiquetas responsive, lotes de renders por foto con estilo calculado, agrupación y deslizador, bloque 'Mis simulaciones' con selección y borrado, presupuesto por simulación, coherencia entre tiers). El arné`
+
+
+### 🤖 **Claude** · 2026-11-14 18:47:08
+
+> 🔧 **Bash**: `{"command": "git status --short | head -3; grep -n '\"id\": \"budget-chat-personas\"\\|\"id\": \"diy-shopping-list-pdf\"\\|\"id\": \"dossier-publication\"\\|\"id\": \"render-declutter\"\\|\"id\": \"budget-tier-computation\"' feature_list.json; S=$(grep -n '\"id\": \"budget-chat-personas\"' feature_l`
+
+
+### 🤖 **Claude** · 2026-11-14 18:47:36
+
+Añado la feature justo antes de lo pendiente, para que sea la siguiente. También actualizo las que dependen de ella.
+
+
+### 🤖 **Claude** · 2026-11-14 18:47:50
+
+> 🔧 **Bash**: `{"command": "python3 -I - <<'EOF'\nimport json,re\np='feature_list.json'\ns=open(p,encoding='utf-8').read()\nJ=lambda t: json.dumps(t,ensure_ascii=False)\nfid='simulations-ux-overhaul'\nverif=[\n\"Unit tests: calculated style weights (first Simulation equal weights, 'Generate again' random weights w`
+
+
+### 🤖 **Claude** · 2026-11-14 18:47:58
+
+Creé la feature `simulations-ux-overhaul` en `feature_list.json`: está en la posición 16 de 38, justo antes de `budget-chat-personas`, así que será la siguiente. El archivo sigue siendo JSON válido y el diff es limpio. Está sin commitear: dime si la subo a `main`.
+
+**Qué recoge**: tus nueve puntos en una sola feature de mejora de experiencia.
+- Un lote de renders por foto con un estilo calculado que mezcla galería y moodboard.
+- Simulaciones agrupadas.
+- Bloque «Mis simulaciones» en el proyecto, para seleccionar, abrir y borrar.
+- Presupuesto por simulación.
+- Totales de los tiers ordenados por el código.
+- Medidas en cm, filtros que saltan de línea y un deslizador que conserva la posición.
+
+**Decisiones registradas**
+- La mezcla de estilo usa IP-Adapter y un modelo de visión, y el administrador elige el modo (`ip_adapter`, `vlm_text` o `both`).
+- Cambio a un LLM multimodal de la familia Qwen3-VL.
+- Un presupuesto vigente por simulación.
+
+**Dependencias que cambié**: `budget-chat-personas`, `diy-shopping-list-pdf`, `dossier-publication` y `render-declutter` ahora dependen de ella. `admin-service-endpoints` guarda la nota de que contendrá el conmutador de modo.
+
+**Puntos que el planificador te preguntará al especificar**
+- **Panel de administración**: no existe todavía. El modo vivirá en un ajuste guardado con una API ahora, y su interfaz llegará con `admin-service-endpoints`.
+- **Fallos parciales de un lote**: qué pasa si fallan 2 de 6 renders.
+- **Límite de fotos**: cuántas fotos como máximo.
+- **Renders antiguos**: son solo datos de desarrollo.
+- **Cuota diaria**: cómo cuenta un lote entero.
+- **GPU**: IP-Adapter (unos 2 GB de pesos) y el modelo multimodal (unos 20 GB) cambian la VRAM. El pico actual deja ~90 MiB de margen, así que tocará volver a medir y decidir cuándo se descarga el LLM.
+
+Aún queda parado el stack real: `llama-server` y ComfyUI siguen arriba y la API en `local`. Dime cuándo lo dejo en `fake` y con los servicios de GPU parados.
+
+¿Subo `feature_list.json` a `main`, o arranco directamente `/github-flow` para `simulations-ux-overhaul`?
