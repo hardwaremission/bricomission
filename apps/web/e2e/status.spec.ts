@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures';
 import { messages } from './support';
 
 // Scenario 6: Home reads GET /api/health through the generated client.

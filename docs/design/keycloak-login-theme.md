@@ -2,6 +2,8 @@
 
 Approved by developer on 2026-11-13.
 
+> **Updated by `brand-logo-animation` on 2026-11-14 (approved by developer):** colors recolored to the new brand (primary `#2968EC`, text `#182231`, secondary `#E6EEFD`, focus `#2968EC`, overlay `#18223166`; `accent` removed) and the text wordmark replaced by the SVG wordmark logo 140×22. Logo, icons, favicon, email logo and splash: `docs/design/brand-logo-animation.md`. In the JSX exports the logo appears as an empty `Logo (wordmark SVG …)` frame; its artwork comes from the brand read-back.
+
 - Source of truth: `design/openpencil/bricomission_B2C_app.fig`, page **Auth – Keycloak**, designed and read back through the `open-pencil` MCP (OpenPencil 0.16.0).
 - Read-back exports (JSX round-trip format) in `design/openpencil/keycloak-login-theme/`:
   - `sign-in.jsx`, `sign-in-invalid.jsx`
@@ -22,14 +24,14 @@ All pages: background `background` `#FAFAF8`, single column, side padding 16.
 
 | Component | Spec |
 | --- | --- |
-| Header | row, full width, h 64, px 16; wordmark `BricoMission` 22/28 bold `primary` `#1F4E79` (no selector, no other actions) |
+| Header | row, full width, h 64, px 16; SVG wordmark logo 140×22 (name `BricoMission`) (no selector, no other actions) |
 | Content | column, gap 24, pt 32, px 16, pb 24 (pb 32 on Create account) |
-| Intro | column, gap 8 (gap 12 when it has a badge); Title 28/34 bold `text` `#1C1C1E`; Helper 16/24 regular `textMuted` `#6B6B70`; both full width, wrapping |
-| Badge | 56x56 circle, `secondary` `#E8DCC8`, Lucide icon 26 |
+| Intro | column, gap 8 (gap 12 when it has a badge); Title 28/34 bold `text` `#182231`; Helper 16/24 regular `textMuted` `#6B6B70`; both full width, wrapping |
+| Badge | 56x56 circle, `secondary` `#E6EEFD`, Lucide icon 26 |
 | Form | column, gap 16 |
 | Field | column, gap 8: Label 14/20 semibold `text`; Input row full width h 52, px 16, `surfaceMuted` `#F2F1ED` fill, 1 px `border` `#E2E0DA` stroke, radius 12 (`rounded.md`), value 16/24 `text` |
 | Password input | same, pl 16 / pr 4, trailing 44x44 show/hide toggle with `lucide:eye` 20 `textMuted` (accessible name "Show password"/"Hide password") |
-| Input – focus | stroke 2 px `focus` `#2F80ED` |
+| Input – focus | stroke 2 px `focus` `#2968EC` |
 | Input – error | stroke 2 px `danger` `#C0392B`, plus Field error row below |
 | Field error | row, gap 6, top-aligned: `lucide:circle-alert` 16 `danger` + text 14/20 `danger`, wraps; linked to the input with `aria-describedby` |
 | Alert (form level) | row, full width, gap 12, p 16, `surface` `#FFFFFF` fill, radius 12, 1 px stroke in the state color; icon 20 + text 14/20 `text`; role `alert` |
@@ -120,7 +122,7 @@ Non-field Keycloak errors (for example password policy) use the form-level Alert
 | --- | --- |
 | Outer | `background` `#FAFAF8`, padding 24 |
 | Card | `surface`, 1 px `border`, radius 20, padding 32, gap 24 |
-| Wordmark | `BricoMission` 22/28 bold `primary` (text, no image) |
+| Logo | PNG data URI 280×44 shown 140×22, alt `BricoMission` (styled 22/28 bold ink when images are blocked) |
 | Greeting | `Hi {firstName},` 16/24 `text` (fallback `Hi,` when no first name) |
 | Intro | `Use this code to confirm it's you and continue in BricoMission:` 16/24 `text` |
 | Code box | full width, h 72, `surfaceMuted`, radius 12; code 34/40 bold `primary`, letter spacing 10 |
@@ -136,6 +138,6 @@ Non-field Keycloak errors (for example password policy) use the form-level Alert
 - Verified at 390x844 and 360x780; text boxes have no fixed widths, so ~30 % longer strings (de, fi) wrap.
 - Touch targets ≥ 44 px (inputs 52/56, buttons 52, toggles and link rows 44).
 - Errors always combine icon + text (never color alone); `danger` text `#C0392B` on `#FAFAF8` meets WCAG AA for 14 px text.
-- Visible 2 px focus ring `#2F80ED` on every interactive element.
+- Visible 2 px focus ring `#2968EC` on every interactive element.
 - The OpenPencil accessibility lint (contrast, touch targets, text size) reported 0 issues on the approved page.
 - Icons: Lucide (ISC license), inline SVG in the theme; no runtime icon or font fetching.

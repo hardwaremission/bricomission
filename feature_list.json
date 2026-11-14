@@ -241,6 +241,31 @@
     "notes": "Spec: docs/specs/kitchen-capture-draft.md (planned 2026-11-13). UI gate: page Capture in bricomission_B2C_app.fig, read-back docs/design/kitchen-capture-draft.md (English only). Draft identity: API-generated token stored as sha256, held by the web in HttpOnly cookie bm_draft, forwarded by the /api proxy as X-Draft-Token; @Public() routes guarded by DraftTokenGuard (404 policy). Photos uploaded through the API, normalized with sharp (metadata stripped), stored in private MinIO bucket bricomission-media. Measurements in integer cm. Developer decisions 2026-11-13: ranges length/width 1.00-20.00 m, height 1.80-6.00 m (whole cm); metres default with m/cm toggle; max 8 photos, 15 MB, JPEG/PNG/WebP + HEIC/HEIF (decoded server-side, probe sharp first, else heic-decode/libheif-js WASM; stop-and-report if no license-clean offline decoder), shortest edge >= 480 px, <= 50 MP; 7-day expiry from the last change with an in-API cleanup sweeper (in scope); Continue -> /kitchen-projects/new/moodboard (404 until moodboard-selection). Implemented 2026-11-14: see the spec's Implementation Notes (HEIC via heic-decode/libheif-js after the sharp probe failed; deviations listed there)."
   },
   {
+    "id": "brand-logo-animation",
+    "area": "brand",
+    "title": "New BricoMission logo everywhere and a one-time welcome animation",
+    "user_visible_behavior": "The new BricoMission logo (wordmark and BM lettermark from design/logo) replaces the text wordmark and the app icon across the PWA, Keycloak pages, the code email and the OpenPencil designs. On first load a welcome animation plays once (lettermark animation on phones and narrow desktop windows, wordmark animation on tablets and wide screens) and then the first page shows.",
+    "depends_on": ["web-pwa-shell", "keycloak-login-theme", "homeowner-password-login", "kitchen-capture-draft"],
+    "status": "accepted",
+    "verification": [
+      "Developer supplies design/logo/{BM_lettermark,BricoMission_wordmark}.{jpg,svg} and the two animation HTML files; the orchestrator analyses them before planning",
+      "All OpenPencil pages/frames and exported design artifacts use the new logo (approved by the developer)",
+      "PWA header, manifest icons, Keycloak theme and code email use the new logo assets",
+      "Playwright: narrow viewport plays the lettermark animation once, wide viewport the wordmark animation once, then the first page; reduced motion shows the static final frame for about 1 s; no external requests"
+    ],
+    "evidence": [
+      "2026-11-14 implementer: pnpm install --frozen-lockfile (lockfile unchanged, no new dependencies); pnpm -r lint exit 0; pnpm -r test: api 203, web 416 (21 files; new contrast, brand-assets, splash-script tests; tokens threshold 13 + no accent), api-client 3",
+      "Render script: docker compose --profile e2e run --rm --user $(id -u):$(id -g) web-e2e node scripts/render-brand-assets.ts; second run byte-identical (sha256 of public/icons/*, public/favicon.ico and code-email.ftl unchanged); email PNG 280x44, ICO entries 16/32/48",
+      "docker compose up -d --build --wait keycloak web (keycloak image tag 26.8.2-emailotp26.7.2-theme2, no realm reset); ./init.sh exit 0 (6 healthy, Keycloak and Web steps ok)",
+      "pnpm test:e2e: 131 passed, 1 skipped (auth-persist, script-only), exit 0. New e2e/splash.spec.ts 19 tests (Scenarios 1-6: 390/767/768/1280 px, light/dark, reduced-motion static frame ~1.0 s, no JS, tap/key dismiss <= 0.3 s, frozen-clock CSS caps 3.2 s / 1.0 s, same-origin requests, clean console, offline new-tab replay with sw v3); new e2e/brand.spec.ts 9 tests (Scenarios 7-8); keycloak-theme.spec.ts checks the SVG wordmark (name BricoMission, 140x22), favicon links, ink color and the email <img src=data:image/png;base64 alt=BricoMission>",
+      "bash scripts/web/lighthouse-pwa.sh exit 0 (installable-manifest score=1); ./scripts/keycloak-smoke.sh exit 0",
+      "Greps: old hex (1f4e79|173b5c|e07a3f|e8dcc8|1c1c1e|2f80ed) in apps/web/src, apps/web/public, infra/keycloak/themes, DESIGN.md: 0 matches; https?:// in src/components/splash: 0; from '@playwright/test' only in e2e/fixtures.ts (+ import type in support.ts); browser.newContext( only in fixtures.ts",
+      "Final viewBoxes (approved read-back, asserted equal to the exports): lettermark 771.14 433.85 1227.35 634.10, wordmark 166.98 545.36 2420.08 380.51; header logo 140x22; screenshots in apps/web/test-results/brand/ (splash lettermark 390 light/dark, wordmark 1280 light/dark, Keycloak sign-in header)",
+      "Accepted 2026-11-14 by /feature-flow after independent validator verdict accept (re-ran lint, unit tests api 203/web 416/api-client 3, ./init.sh, pnpm test:e2e 131 passed 1 skipped, lighthouse-pwa installable, keycloak-smoke)."
+    ],
+    "notes": "Added by the developer on 2026-11-14 with priority over the remaining features. Only the animation itself is extracted from the HTML files (no preview scaffolding). Spec: docs/specs/brand-logo-animation.md (planned 2026-11-14). UI gate: re-export all B2C .fig pages plus new page Brand (splash, icon, favicon, email logo); read-back docs/design/brand-logo-animation.md. Developer decisions 2026-11-14: primary #2968EC, primaryHover #1F55C8, focus = primary, secondary #E6EEFD, text #182231, accent removed. Splash once per tab (sessionStorage), tap/key skips, dark bg #0F172A; reduced motion shows the static final frame ~1 s (no animation); no JS = no splash. Email logo as data-URI PNG with alt fallback. E2E skips the splash via e2e/fixtures.ts (addInitScript pre-sets sessionStorage bm.splash.seen; no production hook); splash.spec.ts opts in. Implemented 2026-11-14 (implementer): see the spec's Implementation Notes for deviations."
+  },
+  {
     "id": "moodboard-selection",
     "area": "homeowner-capture",
     "title": "Visitor builds a Moodboard from references",

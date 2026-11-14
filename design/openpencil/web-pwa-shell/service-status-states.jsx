@@ -1,5 +1,5 @@
 <Frame name="ServiceStatus – states" x={2320} flex="col" w={420} gap={16} p={24} bg="#FFFFFF" stroke="#E2E0DA" rounded={20}>
-  <Text name="Text" color="#1C1C1E" size={16} weight={600} lineHeight={24}>ServiceStatus (dot 8px + label 14/20 textMuted)</Text>
+  <Text name="Text" color="#182231" size={16} weight={600} lineHeight={24}>ServiceStatus (dot 8px + label 14/20 textMuted)</Text>
   <Frame name="State checking" flex="col" w="fill" gap={4}>
     <Text name="Text" color="#6B6B70" size={12} weight={600} lineHeight={16}>checking · dot textMuted #6B6B70</Text>
     <Frame name="Frame" flex="row" gap={8} items="center">

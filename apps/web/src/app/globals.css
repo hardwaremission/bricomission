@@ -21,20 +21,19 @@
 
 /* DESIGN.md tokens (front matter). test/tokens.test.ts keeps the colors in sync. */
 @theme {
-  --color-primary: #1F4E79;
-  --color-primary-hover: #173B5C;
-  --color-secondary: #E8DCC8;
-  --color-accent: #E07A3F;
+  --color-primary: #2968EC;
+  --color-primary-hover: #1F55C8;
+  --color-secondary: #E6EEFD;
   --color-background: #FAFAF8;
   --color-surface: #FFFFFF;
   --color-surface-muted: #F2F1ED;
   --color-border: #E2E0DA;
-  --color-text: #1C1C1E;
+  --color-text: #182231;
   --color-text-muted: #6B6B70;
   --color-success: #2E7D4F;
   --color-warning: #B7791F;
   --color-danger: #C0392B;
-  --color-focus: #2F80ED;
+  --color-focus: #2968EC;
 
   --font-sans: Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 
@@ -79,5 +78,9 @@
   :focus-visible {
     outline: 2px solid var(--color-focus);
     outline-offset: 2px;
+  }
+  /* Welcome splash (components/splash): no page scroll while it shows. */
+  html[data-splash] body {
+    overflow: hidden;
   }
 }

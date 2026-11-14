@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures';
 import { messages } from './support';
 
 // Scenarios 7 and 8: installable PWA, offline after the first controlled visit.
@@ -14,7 +14,7 @@ test('manifest has the installability fields and PNG icons', async ({ request })
     start_url: '/',
     scope: '/',
     display: 'standalone',
-    theme_color: '#1F4E79',
+    theme_color: '#2968EC',
     background_color: '#FAFAF8',
   });
   expect(manifest.icons.map((i: { sizes: string; purpose: string }) => `${i.sizes} ${i.purpose}`)).toEqual([

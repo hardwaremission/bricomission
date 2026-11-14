@@ -1,48 +1,48 @@
 <Frame name="Sign in – invalid credentials (password focused)" x={470} flex="col" h={844} w={390} bg="#FAFAF8">
   <Frame name="Header" flex="row" h={64} w="fill" items="center" py={0} px={16}>
-    <Text name="Wordmark" color="#1F4E79" size={22} weight="bold" lineHeight={28}>BricoMission</Text>
+    <Frame name="Logo (wordmark SVG 140x22, see docs/design/brand-logo-animation.md)" w={140} h={22} />
   </Frame>
   <Frame name="Content" flex="col" grow={1} w="fill" gap={24} pt={32} pr={16} pb={24} pl={16}>
     <Frame name="Intro" flex="col" w="fill" gap={8}>
-      <Text name="Title" w="fill" color="#1C1C1E" size={28} weight="bold" lineHeight={34}>Sign in</Text>
+      <Text name="Title" w="fill" color="#182231" size={28} weight="bold" lineHeight={34}>Sign in</Text>
       <Text name="Helper" w="fill" color="#6B6B70" size={16} lineHeight={24}>Use your BricoMission account to save and continue your kitchen projects.</Text>
     </Frame>
     <Frame name="Alert error" flex="row" w="fill" gap={12} p={16} bg="#FFFFFF" stroke="#C0392B" rounded={12}>
       <Frame name="Alert icon slot" w={20} h={20}>
         <Icon name="lucide:circle-alert" size={20} color="#C0392B" />
       </Frame>
-      <Text name="Alert text" grow={1} color="#1C1C1E" lineHeight={20}>Invalid username, email or password. Check them and try again.</Text>
+      <Text name="Alert text" grow={1} color="#182231" lineHeight={20}>Invalid username, email or password. Check them and try again.</Text>
     </Frame>
     <Frame name="Form" flex="col" w="fill" gap={16}>
       <Frame name="Field Username" flex="col" w="fill" gap={8}>
-        <Text name="Label" color="#1C1C1E" weight={600} lineHeight={20}>Username or email</Text>
+        <Text name="Label" color="#182231" weight={600} lineHeight={20}>Username or email</Text>
         <Frame name="Input" flex="row" h={52} w="fill" items="center" py={0} px={16} bg="#F2F1ED" stroke="#E2E0DA" rounded={12}>
-          <Text name="Value" color="#1C1C1E" size={16} lineHeight={24}>maria.lopez</Text>
+          <Text name="Value" color="#182231" size={16} lineHeight={24}>maria.lopez</Text>
         </Frame>
       </Frame>
       <Frame name="Field Password" flex="col" w="fill" gap={8}>
-        <Text name="Label" color="#1C1C1E" weight={600} lineHeight={20}>Password</Text>
-        <Frame name="Input" flex="row" h={52} w="fill" justify="between" items="center" pr={4} pl={16} bg="#F2F1ED" stroke="#2F80ED" strokeWidth={2} rounded={12}>
-          <Text name="Value (masked)" color="#1C1C1E" size={16} lineHeight={24}>|</Text>
+        <Text name="Label" color="#182231" weight={600} lineHeight={20}>Password</Text>
+        <Frame name="Input" flex="row" h={52} w="fill" justify="between" items="center" pr={4} pl={16} bg="#F2F1ED" stroke="#2968EC" strokeWidth={2} rounded={12}>
+          <Text name="Value (masked)" color="#182231" size={16} lineHeight={24}>|</Text>
           <Frame name="Show password toggle" flex="row" w={44} h={44} justify="center" items="center" rounded={999}>
             <Icon name="lucide:eye" size={20} color="#6B6B70" />
           </Frame>
         </Frame>
       </Frame>
-      <Frame name="PrimaryButton" flex="row" h={52} w="fill" justify="center" items="center" bg="#1F4E79" rounded={999}>
+      <Frame name="PrimaryButton" flex="row" h={52} w="fill" justify="center" items="center" bg="#2968EC" rounded={999}>
         <Text name="Label" color="#FFFFFF" size={16} weight={600} lineHeight={24}>Sign in</Text>
       </Frame>
     </Frame>
     <Frame name="Links" flex="col" w="fill" items="center">
       <Frame name="Register link row" flex="row" h={44} gap={4} items="center">
         <Text name="Text" color="#6B6B70" lineHeight={20}>New here?</Text>
-        <Text name="Register link" color="#1F4E79" weight="medium" lineHeight={20} textDecoration="underline">Create account</Text>
+        <Text name="Register link" color="#2968EC" weight="medium" lineHeight={20} textDecoration="underline">Create account</Text>
       </Frame>
       <Frame name="Back link" flex="row" h={44} gap={6} items="center">
         <Frame name="Back icon slot" w={16} h={16}>
-          <Icon name="lucide:arrow-left" size={16} color="#1F4E79" />
+          <Icon name="lucide:arrow-left" size={16} color="#2968EC" />
         </Frame>
-        <Text name="Text" color="#1F4E79" weight="medium" lineHeight={20} textDecoration="underline">Back to BricoMission</Text>
+        <Text name="Text" color="#2968EC" weight="medium" lineHeight={20} textDecoration="underline">Back to BricoMission</Text>
       </Frame>
     </Frame>
   </Frame>

@@ -22,7 +22,7 @@ describe('web app manifest', () => {
       start_url: '/',
       scope: '/',
       display: 'standalone',
-      theme_color: '#1F4E79',
+      theme_color: '#2968EC',
       background_color: '#FAFAF8',
     });
   });

@@ -83,7 +83,7 @@ services:
     # JSON on first start; later starts skip it (IGNORE_EXISTING) and keep the volume state.
     build:
       context: ./infra/keycloak
-    image: bricomission/keycloak:26.8.2-emailotp26.7.2-theme1
+    image: bricomission/keycloak:26.8.2-emailotp26.7.2-theme2
     restart: unless-stopped
     command: ["start-dev", "--import-realm"]
     depends_on:

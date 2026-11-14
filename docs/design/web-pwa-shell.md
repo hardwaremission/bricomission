@@ -2,13 +2,14 @@
 
 Approved by developer on 2026-11-13.
 
+> **Updated by `brand-logo-animation` on 2026-11-14 (approved by developer):** colors recolored to the new brand (primary `#2968EC`, text `#182231`, secondary `#E6EEFD`, focus `#2968EC`, overlay `#18223166`; `accent` removed) and the text wordmark replaced by the SVG wordmark logo 140×22. Logo, icons, favicon, email logo and splash: `docs/design/brand-logo-animation.md`. In the JSX exports the logo appears as an empty `Logo (wordmark SVG …)` frame; its artwork comes from the brand read-back.
+
 - Source of truth: `design/openpencil/bricomission_B2C_app.fig`, page **Home**, designed and read back through the `open-pencil` MCP (OpenPencil 0.16.0).
 - Read-back exports (JSX round-trip format, same syntax the MCP renders): `design/openpencil/web-pwa-shell/`
   - `home.jsx` — frame **Home** (390x844)
   - `language-selection.jsx` — frame **Language Selection** (390x844)
   - `language-selector-open.jsx` — frame **LanguageSelector – open (bottom sheet)** (390x844)
   - `service-status-states.jsx` — frame **ServiceStatus – states**
-  - `app-icon.jsx`, `app-icon-512.svg`, `app-icon-512.png` — frame **App icon 512 (maskable)**
   - `overview.png` — visual reference of all frames
 - Designs are **English only** (developer decision). Every string below is the canonical `en` message; the other 10 locales come from `apps/web/messages/<locale>.json`, never from designs.
 - Check frames (not separate screens): **Home – full length (scroll view)** shows the end of the scrollable content; **Home @360x780 (check)** shows that content scrolls under the sticky bar at 360 px while the CTA stays visible.
@@ -20,23 +21,22 @@ All values are DESIGN.md tokens; no new tokens were introduced.
 
 | Token | Value | Used for |
 | --- | --- | --- |
-| `colors.primary` | `#1F4E79` | wordmark, CTA fill, step icons, professional link, selected-option check, app icon background, `theme_color` |
-| `colors.secondary` | `#E8DCC8` | step icon circles, globe badge |
-| `colors.accent` | `#E07A3F` | app icon accent bar only |
+| `colors.primary` | `#2968EC` | logo accent, CTA fill, step icons, professional link, selected-option check, `theme_color` |
+| `colors.secondary` | `#E6EEFD` | step icon circles, globe badge |
 | `colors.background` | `#FAFAF8` | page background, `background_color` |
 | `colors.surface` | `#FFFFFF` | step cards, bottom action bar, bottom sheet |
 | `colors.surfaceMuted` | `#F2F1ED` | language selector pill, dropdown field, selected option, close button |
 | `colors.border` | `#E2E0DA` | dropdown field stroke |
-| `colors.text` | `#1C1C1E` | headline, titles, option labels |
+| `colors.text` | `#182231` | headline, titles, option labels |
 | `colors.textMuted` | `#6B6B70` | body copy, step descriptions, status label, checking dot |
 | `colors.success` / `warning` / `danger` | `#2E7D4F` / `#B7791F` / `#C0392B` | status dots |
-| `colors.focus` | `#2F80ED` | 2 px focus ring |
+| `colors.focus` | `#2968EC` | 2 px focus ring |
 | `elevation.card` | `0 4 16 #0000000F` | step cards |
 | `elevation.sheet` | `0 -8 32 #0000001F` | bottom action bar, bottom sheet |
 | `rounded.md` / `lg` / `pill` | 12 / 20 / 999 | field + options / cards + sheet / pills, CTA, circles |
 | Font | Inter (self-hosted, latin-ext) | all text |
 
-Overlay behind the bottom sheet: `#1C1C1E` at 40 % opacity (`#1C1C1E66`).
+Overlay behind the bottom sheet: `#182231` at 40 % opacity (`#18223166`).
 
 ## Frame: Home (390x844)
 
@@ -45,7 +45,7 @@ Vertical layout, background `#FAFAF8`. Three regions: Header (fixed top), Conten
 | Element | Layout and size | Style | Copy (en) |
 | --- | --- | --- | --- |
 | Header | row, full width, h 64, px 16, space-between, centered | — | — |
-| Wordmark | text | 22/28 bold, `primary` | `BricoMission` |
+| Logo | inline SVG wordmark 140×22 (`role="img"`, name `BricoMission`) | brand read-back | — |
 | LanguageSelector (closed) | row, h 44, px 14, gap 6, pill | `surfaceMuted` fill; globe icon 18 + label + chevron-down 16, all `text` | label = current language native name (`English`); opens the bottom sheet |
 | Current language label | text | 14/20 semibold (600), `text` | `English` |
 | Content | column, full width, grows, gap 24, pt 16, px 16, pb 24 | scrolls under the sticky bar | — |
@@ -82,7 +82,7 @@ Shown at `/language` when no supported language can be detected. Background `#FA
 
 ## Frame: LanguageSelector – open (bottom sheet)
 
-Opened from the Home selector. Full-screen overlay `#1C1C1E66`, sheet anchored to the bottom.
+Opened from the Home selector. Full-screen overlay `#18223166`, sheet anchored to the bottom.
 
 | Element | Layout and size | Style | Copy (en) |
 | --- | --- | --- | --- |
@@ -91,7 +91,7 @@ Opened from the Home selector. Full-screen overlay `#1C1C1E66`, sheet anchored t
 | Close button | 44x44 circle, `lucide:x` 20 | `surfaceMuted` fill, icon `text` | accessible name `Close` |
 | Option row (x11) | row, full width, h 48, px 12, radius 12 | label 16/24 regular `text` | `English`, `Español`, `Français`, `Deutsch`, `Italiano`, `Português`, `Nederlands`, `Svenska`, `Norsk`, `Dansk`, `Suomi` (native names, this order, never translated) |
 | Selected option | same row | `surfaceMuted` fill, label semibold (600), `lucide:check` 20 `primary` at the right; `aria-selected`/`aria-checked` | current language |
-| Keyboard focus (example on `Deutsch`) | same row | 2 px `focus` (`#2F80ED`) ring, radius 12 | — |
+| Keyboard focus (example on `Deutsch`) | same row | 2 px `focus` (`#2968EC`) ring, radius 12 | — |
 
 ## Service Status (4 states)
 
@@ -106,9 +106,7 @@ Dot 8x8 + label 14/20 `textMuted`, gap 8. Colour is never the only signal: the l
 
 ## App Icon and Manifest
 
-- Icon 512x512, full-bleed `primary` background, monogram `BM` 200/200 bold white, accent bar 120x16 pill `accent` 20 px below, both centered and inside the maskable safe zone (inner 80 %, radius 205, verified in the "App icon – safe zone check" frame).
-- Exports: `design/openpencil/web-pwa-shell/app-icon-512.svg` (vector) and `app-icon-512.png`; generate 192, 512 and 512 maskable PNGs from the SVG.
-- Manifest: `name` and `short_name` `BricoMission`, `theme_color` `#1F4E79`, `background_color` `#FAFAF8`, `display` `standalone`.
+Superseded by `docs/design/brand-logo-animation.md` (page **Brand**): white lettermark icon, `theme_color` `#2968EC`, `background_color` `#FAFAF8`, `display` `standalone`, `name`/`short_name` `BricoMission`.
 
 ## Responsive and Accessibility Notes
 

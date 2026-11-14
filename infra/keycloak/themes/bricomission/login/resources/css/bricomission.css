@@ -25,18 +25,18 @@
 }
 
 :root {
-  --bm-primary: #1f4e79;
-  --bm-primary-hover: #173b5c;
-  --bm-secondary: #e8dcc8;
+  --bm-primary: #2968ec;
+  --bm-primary-hover: #1f55c8;
+  --bm-secondary: #e6eefd;
   --bm-background: #fafaf8;
   --bm-surface: #ffffff;
   --bm-surface-muted: #f2f1ed;
   --bm-border: #e2e0da;
-  --bm-text: #1c1c1e;
+  --bm-text: #182231;
   --bm-text-muted: #6b6b70;
   --bm-warning: #b7791f;
   --bm-danger: #c0392b;
-  --bm-focus: #2f80ed;
+  --bm-focus: #2968ec;
   --bm-rounded-md: 12px;
   --bm-rounded-pill: 999px;
   --bm-font: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
@@ -73,7 +73,8 @@ body.bm-body {
   margin: 0 auto;
 }
 
-/* Header: full width, h 64, px 16, wordmark 22/28 bold primary. */
+/* Header: full width, h 64, px 16, SVG wordmark logo 140x22 (bm-logo.ftl; feature
+   brand-logo-animation, docs/design/brand-logo-animation.md "Header logo"). */
 .bm-header {
   display: flex;
   align-items: center;
@@ -82,11 +83,18 @@ body.bm-body {
 }
 
 .bm-wordmark {
-  margin: 0;
-  color: var(--bm-primary);
-  font-size: 22px;
-  font-weight: 700;
-  line-height: 28px;
+  display: block;
+  flex: none;
+  width: 140px;
+  height: 22px;
+}
+
+.bm-logo__ink {
+  fill: var(--bm-text);
+}
+
+.bm-logo__accent {
+  fill: var(--bm-primary);
 }
 
 /* Content: column, gap 24, pt 32, px 16, pb 24 (32 on Create account). */

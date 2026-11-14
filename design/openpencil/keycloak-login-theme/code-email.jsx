@@ -1,12 +1,12 @@
 <Frame name="Code email (HTML, 600 wide)" y={1100} flex="col" w={600} p={24} bg="#FAFAF8">
   <Frame name="Card" flex="col" w="fill" gap={24} p={32} bg="#FFFFFF" stroke="#E2E0DA" rounded={20}>
-    <Text name="Wordmark" color="#1F4E79" size={22} weight="bold" lineHeight={28}>BricoMission</Text>
+    <Frame name="Logo (wordmark SVG 140x22, see docs/design/brand-logo-animation.md)" w={140} h={22} />
     <Frame name="Body" flex="col" w="fill" gap={12}>
-      <Text name="Greeting" w="fill" color="#1C1C1E" size={16} lineHeight={24}>Hi María,</Text>
-      <Text name="Intro" w="fill" color="#1C1C1E" size={16} lineHeight={24}>Use this code to confirm it's you and continue in BricoMission:</Text>
+      <Text name="Greeting" w="fill" color="#182231" size={16} lineHeight={24}>Hi María,</Text>
+      <Text name="Intro" w="fill" color="#182231" size={16} lineHeight={24}>Use this code to confirm it's you and continue in BricoMission:</Text>
     </Frame>
     <Frame name="Code box" flex="row" h={72} w="fill" justify="center" items="center" bg="#F2F1ED" rounded={12}>
-      <Text name="Code" color="#1F4E79" size={34} weight="bold" lineHeight={40} letterSpacing={10}>482915</Text>
+      <Text name="Code" color="#2968EC" size={34} weight="bold" lineHeight={40} letterSpacing={10}>482915</Text>
     </Frame>
     <Text name="Validity" w="fill" color="#6B6B70" lineHeight={20}>The code is valid for 5 minutes.</Text>
     <Frame name="Divider" w="fill" h={1} bg="#E2E0DA" />

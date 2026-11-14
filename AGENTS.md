@@ -29,6 +29,8 @@ Before writing code:
    - pnpm (version pinned in `package.json` `packageManager`) must be resolvable as `pnpm` or `corepack pnpm`. Without sudo: `corepack enable --install-directory "$HOME/.local/bin" pnpm`, or `npx --yes corepack@0.36.0 enable --install-directory "$HOME/.local/bin" pnpm`, or `npm install --prefix "$HOME/.local" pnpm@<pinned>`. Set `COREPACK_ENABLE_DOWNLOAD_PROMPT=0` in headless shells.
    - Baseline commands: `pnpm -r lint` and `pnpm -r test` (no database, Docker or browser needed). Parallel worktrees set `COMPOSE_PROJECT_NAME` and the port env vars (including `API_PORT`, `KEYCLOAK_PORT` and `WEB_PORT`) before any `docker compose` command.
    - Browser E2E against the running stack: `pnpm test:e2e` (Playwright in the pinned `web-e2e` image; extra args go to `playwright test`). PWA installability: `bash scripts/web/lighthouse-pwa.sh`. `./init.sh` never runs either.
+   - E2E specs import `test` from `e2e/fixtures.ts`, which pre-sets `sessionStorage['bm.splash.seen']` so the welcome splash never plays; create extra contexts with its `newContext`; `e2e/splash.spec.ts` opts out with `skipSplash: false`.
+   - Brand assets (app icons, favicons, Keycloak favicon copies, code email logo) are generated from `design/openpencil/brand-logo-animation/`: `docker compose --profile e2e run --rm --user "$(id -u):$(id -g)" web-e2e node scripts/render-brand-assets.ts` (commit the output).
 5. If baseline verification fails, fix the baseline before adding new feature work.
 
 ## Working Rules

@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures';
 import { LOCALES, messages, NATIVE_NAMES, type Locale } from './support';
 
 // Scenario 2: a supported browser language goes straight to Home in that language.

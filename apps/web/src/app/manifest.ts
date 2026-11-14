@@ -1,6 +1,9 @@
 import type { MetadataRoute } from 'next';
 
-/** Web app manifest (design: "App Icon and Manifest"). Served at /manifest.webmanifest. */
+/**
+ * Web app manifest (design: docs/design/brand-logo-animation.md, "App icon and manifest").
+ * Served at /manifest.webmanifest. Icons are rendered by scripts/render-brand-assets.ts.
+ */
 export default function manifest(): MetadataRoute.Manifest {
   return {
     name: 'BricoMission',
@@ -11,7 +14,7 @@ export default function manifest(): MetadataRoute.Manifest {
     scope: '/',
     display: 'standalone',
     orientation: 'portrait',
-    theme_color: '#1F4E79',
+    theme_color: '#2968EC',
     background_color: '#FAFAF8',
     icons: [
       { src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },

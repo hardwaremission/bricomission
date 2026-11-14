@@ -1,5 +1,5 @@
 import { fileURLToPath } from 'node:url';
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page, newContext } from './fixtures';
 import { baseURL, guardLocalhost, horizontalOverflow, type Locale, messages, pageFetch, setLocaleCookie, smallTargets } from './support';
 
 // Feature kitchen-capture-draft: anonymous Capture screen (photos + measurement keypad).
@@ -135,7 +135,7 @@ test('two photos and es measurements survive a reload; the draft identity is pri
   expect(await page.content()).not.toContain(token);
   expect((await pageFetch(page, CAPTURE)).body).not.toContain(token);
 
-  const other = await browser.newContext({ locale: 'en-US', viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+  const other = await newContext(browser, { locale: 'en-US', viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
   const otherBlocked = await guardLocalhost(other, [ORIGIN]);
   const second = await other.newPage();
   try {
