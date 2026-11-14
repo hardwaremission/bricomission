@@ -1,6 +1,6 @@
 # Registro de conversación con Claude Code · 2026-11-14
 
-_Actualizado: 2026-11-14 22:49_
+_Actualizado: 2026-11-15 00:05_
 
 
 ---
@@ -8643,3 +8643,262 @@ Veredicto `revise`, solo documentación (ningún defecto de código). Devuelvo l
 El implementer está corrigiendo cinco puntos de documentación que el validador marcó como falsos tras esta feature, más una aserción pequeña de `maxTokens`. No hay ningún defecto de código.
 
 Todo lo importante pasó: lint, tests (423/505/3), `init.sh`, E2E 176 pasados, humos sin GPU y migraciones sobre una base PostgreSQL real. Cuando termine el arreglo, el validador no necesita otra ronda completa, así que marcaré `accepted` y haré el commit en la rama.
+
+
+### 🤖 **Claude** · 2026-11-14 22:49:36
+
+Doc corregida y gates verdes. Marco `accepted` con un cambio puntual de texto, sin reformatear el archivo, y comprueba que no se cuela nada fuera de alcance.
+
+
+### 🤖 **Claude** · 2026-11-14 22:49:41
+
+> 🔧 **Bash**: `{"command": "python3 -I - <<'EOF'\nimport json,re\np='feature_list.json'\ns=open(p,encoding='utf-8').read()\ni=s.index('\"id\": \"simulations-ux-overhaul\"')\nj=s.index('\"status\": \"passing\"',i)\nassert j-i<3000\ns=s[:j]+'\"status\": \"accepted\"'+s[j+len('\"status\": \"passing\"'):]\n# append ev`
+
+
+### 🤖 **Claude** · 2026-11-14 22:49:44
+
+Los dos `.sql` que marca la búsqueda son las migraciones legítimas. No hay secretos, el archivo más grande es el `.fig` (824 KB) y la API está en `fake` con la GPU parada. Commit en la rama.
+
+
+### 🤖 **Claude** · 2026-11-14 22:49:51
+
+> 🔧 **Bash**: `{"command": "git branch --show-current && git add -A && git commit -q -F - <<'EOF'\nfeat: complete simulations-ux-overhaul\n\nGenerate now renders one image per kitchen photo, all sharing one\ncalculated style blended from the Style Gallery picks and Moodboard\nreferences. Each \"Generate again\" dr`
+
+
+### 🤖 **Claude** · 2026-11-14 22:49:59
+
+`simulations-ux-overhaul` está aceptada y commiteada en `feature/simulations-ux-overhaul` (`19bb04f`). El árbol está limpio y no he hecho push.
+
+**Resultado**
+- El validador independiente dio `revise` solo por documentación falsa, sin defecto de código. Se corrigió y no hizo falta repetir la ronda.
+- Gates:
+  - lint 0
+  - tests api 423 / web 505 / api-client 3
+  - `init.sh` 0
+  - E2E 176 pasados y 1 omitido
+  - Keycloak, `auth-persist` y Lighthouse en verde
+  - migraciones y rutas de edición contra una PostgreSQL real
+- **GPU real**: los tres modos de mezcla funcionaron, con 10-15 s por render y un pico de VRAM de 16.075 MiB. Elegí `both` como valor por defecto, que es la opción más coherente entre fotos. Un presupuesto real salió con tiers ordenados.
+- El modelo real a veces necesitó 3 intentos para ordenar los tiers, así que el reintento y el relabelado ocurren en la práctica.
+
+**Errores que solo salieron con la GPU real, ya arreglados**
+- Una clave de caché compartida entre el modo simulado y el real contaminaba el estilo.
+- El inventario se truncaba y se perdían 2 de 3 imágenes.
+- Los tokens de acceso caducaban durante la prueba de presupuesto.
+
+**Riesgos que conviene que conozcas**
+- No se probó una simulación de 8 fotos con la GPU real. Solo se hicieron 3, y los tiempos de 8 son extrapolados (el presupuesto tardaría más de 5 minutos, con un tiempo de espera de 240 s). Está en `docs/risks-and-open-questions.md`, con la recomendación de repetir `simulation-smoke.sh` con 8 fotos antes de la demo.
+- Los renders siguen conservando el desorden de la cocina. Esa limitación conocida la aborda `render-declutter`.
+- El PR eliminará rutas antiguas (`POST|GET .../renders`) y el script `render-smoke.sh`. Son cambios no aditivos, sin otros consumidores que la web.
+
+Aparte, el modelo de texto antiguo (unos 19 GB) sigue en el volumen `llm-models`. Bórralo a mano cuando quieras recuperar espacio; yo no lo toco.
+
+¿Autorizas el `git push -u origin feature/simulations-ux-overhaul` y que abra el PR con `Closes #29`? Nunca haré merge; eso queda para ti.
+
+
+### 🧑 **Juan Miguel** · 2026-11-14 22:53:57
+
+hazlo
+
+
+### 🤖 **Claude** · 2026-11-14 22:54:00
+
+> 🔧 **Bash**: `{"command": "GIT_TERMINAL_PROMPT=0 git fetch origin main 2>&1 | tail -1; git rev-parse origin/main; git merge-base --is-ancestor origin/main HEAD && echo \"base up to date\"; GIT_TERMINAL_PROMPT=0 git push -u origin feature/simulations-ux-overhaul 2>&1 | tail -3", "description": "Check base unchange`
+
+
+### 🤖 **Claude** · 2026-11-14 22:54:00
+
+> 🔧 **mcp__github__get_file_contents**: `{"owner": "hardwaremission", "repo": "bricomission", "path": ".github/pull_request_template.md"}`
+
+
+### 🤖 **Claude** · 2026-11-14 22:54:08
+
+Push hecho, la base no se movió y no hay plantilla de PR. Abro el PR.
+
+
+### 🤖 **Claude** · 2026-11-14 22:54:18
+
+> 🔧 **mcp__github__create_pull_request**: `{"owner": "hardwaremission", "repo": "bricomission", "title": "[simulations-ux-overhaul] Homeowner works with style-blended Simulations across every kitchen photo", "head": "feature/simulations-ux-overhaul", "base": "main", "body": "Closes #29\n\n## What\nDeveloper feedback from a hands-on test of t`
+
+
+### 🤖 **Claude** · 2026-11-14 22:54:23
+
+> 🔧 **mcp__github__add_issue_comment**: `{"owner": "hardwaremission", "repo": "bricomission", "issue_number": 29, "body": "Feature accepted by the independent validator (revise on docs only, fixed, then accepted). Commit 19bb04f on `feature/simulations-ux-overhaul`. PR: #30. Waiting for the developer's merge."}`
+
+
+### 🤖 **Claude** · 2026-11-14 22:54:28
+
+PR abierto: https://github.com/hardwaremission/bricomission/pull/30 (rama `feature/simulations-ux-overhaul`, commit `19bb04f`, `Closes #29`). Comenté el estado en el issue #29.
+
+Pendiente para ti:
+- Revisa el PR y haz el merge.
+- Con el PR fusionado, avísame. Vuelvo a `main`, hago `pull --ff-only` y borro las ramas locales y remotas ya fusionadas, y paso al siguiente feature. Candidatos listos: `budget-chat-personas`, `diy-shopping-list-pdf`, `dossier-publication` y `render-declutter` (todos dependían de esta).
+- Si quieres probarla a mano antes de fusionar, el recorrido manual está en las notas de la spec (`docs/specs/simulations-ux-overhaul.md`). Para la GPU real: `ai-fetch` ya descargó los pesos y el comfyui está reconstruido en tu máquina.
+
+El stack está en `fake` con la GPU parada. Si vas a probar con modelos reales, dímelo y lo preparo.
+
+
+### 🧑 **Juan Miguel** · 2026-11-14 22:54:55
+
+merge realizado
+
+
+### 🤖 **Claude** · 2026-11-14 22:54:58
+
+> 🔧 **Bash**: `{"command": "GIT_TERMINAL_PROMPT=0 git fetch origin --prune 2>&1 | tail -3; git merge-base --is-ancestor feature/simulations-ux-overhaul origin/main && echo \"ANCESTOR ok\" || echo \"NOT MERGED\"; git rev-parse origin/main; git status --short | head", "description": "Fetch and verify the feature bra`
+
+
+### 🤖 **Claude** · 2026-11-14 22:55:03
+
+> 🔧 **Bash**: `{"command": "git stash push -q -m \"conversation logs rewritten by hook\" && git checkout -q main && GIT_TERMINAL_PROMPT=0 git pull --ff-only origin main 2>&1 | tail -1 && git branch -d feature/simulations-ux-overhaul 2>&1 | tail -1; echo \"--- remote feature branches merged ---\"; for b in $(git fo`
+
+
+### 🤖 **Claude** · 2026-11-14 22:55:09
+
+Limpieza hecha. Miro cuál es el siguiente feature listo según el orden de `feature_list.json`.
+
+
+### 🤖 **Claude** · 2026-11-14 22:55:11
+
+> 🔧 **Bash**: `{"command": "python3 -I - <<'EOF'\nimport json\nd=json.load(open('feature_list.json')); a=d['features'] if isinstance(d,dict) and 'features' in d else d\nacc={x['id'] for x in a if x['status']=='accepted'}\nready=[x for x in a if x['status'] not in('accepted','passing') and all(dep in acc for dep in`
+
+
+### 🤖 **Claude** · 2026-11-14 22:55:16
+
+Todo limpio: estoy en `main` (`7a7634c`, sincronizado), y no queda ninguna rama local ni remota salvo `main`. Quedan 16 de 38 features aceptadas.
+
+Siguientes features listos, en el orden de la lista:
+1. `budget-chat-personas`: chat para refinar el presupuesto con un Persona intercambiable. Tiene diseño en OpenPencil.
+2. `diy-shopping-list-pdf`: lista de compra en PDF.
+3. `dossier-publication`: publicar el dossier bloqueado en el marketplace.
+4. `professional-registration`: alta del profesional con CIF.
+5. `google-sso-login`.
+6. `language-preference-account`.
+7. `render-declutter`: renders sin el desorden de la cocina. Es la limitación conocida de los renders reales.
+
+Mi propuesta es seguir el orden de la lista con `budget-chat-personas`, que es lo que completa el flujo del presupuesto. Pero si quieres, antes puedes probar a mano el flujo nuevo con los modelos reales, para ver cómo queda tras los cambios de esta noche.
+
+¿Con cuál sigo? Y dime si quieres que deje preparado el stack con los modelos reales o lo dejo en `fake`.
+
+
+### 🧑 **Juan Miguel** · 2026-11-14 23:38:57
+
+¿como puedo poner yo todo en marcha para simular una demo sin pedírtelo a ti?
+
+
+### 🤖 **Claude** · 2026-11-14 23:39:02
+
+Compruebo qué scripts y variables existen para darte pasos exactos y no de memoria.
+
+
+### 🤖 **Claude** · 2026-11-14 23:39:05
+
+> 🔧 **Bash**: `{"command": "ls scripts scripts/ai scripts/catalog 2>/dev/null | head -40; echo \"--- .env ---\"; ls -la .env 2>&1 | head -1; grep -nE \"^(AI_ADAPTERS|BM_SEED|WEB_PORT|MAILPIT_UI_PORT)\" .env.example | cut -c1-90; echo \"--- compose profiles ---\"; grep -nE \"profiles:|^  [a-z-]+:$\" compose.yaml | `
+
+
+### 🤖 **Claude** · 2026-11-14 23:39:23
+
+Todo desde la raíz del repo. No hay script único para esto; son estos pasos, en este orden.
+
+**1. Una sola vez (en tu máquina ya está hecho)**
+```bash
+docker compose --profile ai-fetch run --rm ai-fetch          # pesos de Qwen3-VL e IP-Adapter
+docker compose --profile rag-fetch run --rm embedder-fetch   # modelo de embeddings
+docker compose --profile ai build comfyui                    # imagen de ComfyUI con IP-Adapter
+```
+
+**2. Arrancar la demo**
+```bash
+docker compose up -d --build --wait                          # núcleo: API, web, BD, Keycloak, MinIO, Mailpit
+docker compose --profile rag up -d --wait embedder           # buscador del catálogo (CPU)
+./scripts/catalog/ingest.sh infra/catalog/samples            # catálogo de muestra (hace falta para presupuestos)
+docker compose --profile ai up -d --wait                     # llama-server + comfyui (GPU)
+AI_ADAPTERS=local docker compose up -d --wait api            # la API usa los modelos reales
+```
+El último comando es el que pasa de simulado a real. Si no lo ejecutas, todo funciona pero con imágenes simuladas.
+
+**3. Recorrer la demo**
+- Abre `http://localhost:3100` (con `localhost`, no `127.0.0.1`).
+- Flujo: **Capture** (fotos y medidas en cm) → **Moodboard** (estilos y referencias) → **Generate** (inicia sesión) → **resultados** (simulación) → **Tu proyecto** (elige una simulación en «My simulations») → **Get my budget**.
+- Cuenta de prueba: `bm-homeowner` / `bm-homeowner-dev`. El código de 6 dígitos del email lo lees en `http://localhost:8025` (Mailpit).
+- También puedes registrar una cuenta nueva con «Create account».
+
+**4. Qué esperar**
+- Una imagen: unos 25 s la primera vez (carga del modelo) y 10-15 s las siguientes. Una simulación de 6 fotos: alrededor de 1,5 minutos.
+- El presupuesto tarda más: unos 30 s por imagen más ~1 min de cálculo, así que 2-3 minutos con 3 fotos y más con 6 u 8.
+- Tras un render, el primer uso del LLM recarga el modelo (unos 7 s). Es normal.
+- No uses la GPU para otra cosa mientras tanto.
+
+**5. Parar y volver a simulado**
+```bash
+docker compose --profile ai --profile rag stop               # libera GPU y embedder
+docker compose up -d --wait api                              # API otra vez en 'fake'
+```
+
+**6. Comprobación automática de todo el recorrido** (con tiempos y VRAM): `bash scripts/ai/simulation-smoke.sh`. Recrea la API sola en modo local y toma el candado de la GPU. No la lances a la vez que pruebas a mano.
+
+Solo hay una opción de administrador: el modo de mezcla de estilo (`both` por defecto) se cambia con una API de administrador. No tiene pantalla todavía; llegará con `admin-service-endpoints`. Para la demo, déjalo en `both`.
+
+Si prefieres no teclear todo esto, puedo crear `scripts/demo-up.sh` y `scripts/demo-down.sh` que hagan los pasos 2 y 5 con comprobaciones. ¿Los creo?
+
+
+### 🧑 **Juan Miguel** · 2026-11-14 23:40:42
+
+por qué no me creas un arhivo launch-demo.sh que lo ejecuta todo y si paro ese proceso detiene todo?
+
+
+### 🤖 **Claude** · 2026-11-14 23:41:04
+
+Lo hago: `launch-demo.sh` en la raíz. Al pulsar Ctrl+C (o enviarle `SIGTERM`) para todo lo que arrancó. Lo pruebo de verdad, incluida la parada.
+
+
+### 🤖 **Claude** · 2026-11-14 23:41:21
+
+> 🔧 **Write**: `{"file_path": "/home/juanmi/Proyectos/hardwaremission.bricomission/launch-demo.sh", "content": "#!/usr/bin/env bash\n# launch-demo.sh: brings up the whole BricoMission demo with the REAL models and stops\n# everything again when this process ends (Ctrl+C, SIGTERM, closing the terminal).\n#\n#   ./la`
+
+
+### 🤖 **Claude** · 2026-11-14 23:41:22
+
+> 🔧 **Bash**: `{"command": "chmod +x launch-demo.sh && bash -n launch-demo.sh && echo \"syntax ok\" && (command -v shellcheck >/dev/null && shellcheck launch-demo.sh && echo \"shellcheck ok\" || echo \"shellcheck not installed\") && ./launch-demo.sh --help | head -14; ./launch-demo.sh --bogus; echo \"exit=$?\"", "`
+
+
+### 🤖 **Claude** · 2026-11-14 23:41:27
+
+Probar la parada de verdad: lo lanzo en modo real, espero a «The demo is up», le envío `SIGTERM` y compruebo qué queda en marcha y cuánta VRAM.
+
+
+### 🤖 **Claude** · 2026-11-14 23:41:31
+
+> 🔧 **Bash**: `{"command": "S=/tmp/claude-1000/-home-juanmi-Proyectos-hardwaremission-bricomission/00f4f1d0-f332-4a08-81fe-7c5370051c80/scratchpad; : > $S/launch.log; ./launch-demo.sh > $S/launch.log 2>&1 &\nPID=$!; for i in $(seq 1 100); do grep -q \"The demo is up\" $S/launch.log && break; kill -0 $PID 2>/dev/nu`
+
+
+### 🤖 **Claude** · 2026-11-14 23:42:55
+
+> 🔧 **Bash**: `{"command": "python3 -I - <<'EOF'\np='AGENTS.md'\ns=open(p,encoding='utf-8').read()\nanchor=\"- Catalog RAG embedder (ADR 0004).\"\nassert s.count(anchor)==1\nline=\"- Demo launcher: `./launch-demo.sh` brings up the whole stack with the real models (core, CPU embedder, sample Catalog ingest, llama-s`
+
+
+### 🤖 **Claude** · 2026-11-14 23:43:03
+
+Listo: `launch-demo.sh` en la raíz del repo, ejecutable.
+
+```bash
+./launch-demo.sh              # modelos reales
+./launch-demo.sh --fake       # mismas pantallas, sin GPU
+./launch-demo.sh --fetch      # además, descarga los pesos (solo la primera vez en otra máquina)
+./launch-demo.sh --keep-core  # al parar, deja el núcleo arriba y solo apaga la GPU
+```
+
+**Qué hace**
+- Comprueba Docker, los pesos y la imagen de ComfyUI, y avisa si ya hay más de 6 GB de VRAM ocupados.
+- Arranca el núcleo, el buscador de catálogo, ingiere el catálogo de muestra, arranca `llama-server` y ComfyUI, y pone la API en `AI_ADAPTERS=local`.
+- Verifica la salud de la API y de la web, imprime las URLs y la cuenta de prueba, y se queda en primer plano.
+- **Ctrl+C**, `SIGTERM` o cerrar la terminal paran todo con `docker compose stop`. Los volúmenes (proyectos, fotos, cuentas) se conservan.
+- Si algo falla durante el arranque, también apaga lo que ya había levantado. No usa `sudo`.
+
+**Lo probé de verdad** en modo real: arrancó los nueve servicios, las comprobaciones pasaron, y tras `SIGTERM` quedó sin contenedores y con la VRAM de vuelta a 595 MiB. No pude probar Ctrl+C literal desde aquí porque mis procesos en segundo plano ignoran `SIGINT`, pero el script lo trata igual que `SIGTERM`.
+
+Una cosa que verás: justo tras arrancar, la VRAM está casi libre (803 MiB), porque `llama-server` y ComfyUI cargan sus modelos solo con la primera petición. La primera imagen tarda unos 25 s y el primer presupuesto, un poco más.
+
+Ahora mismo está todo parado, porque el test lo apagó. Cámbialo con `./launch-demo.sh` cuando quieras.
+
+Quedan sin commitear `launch-demo.sh` y la línea nueva de `AGENTS.md`, en `main` junto a los logs de conversación. ¿Los subo directamente a `main`?
