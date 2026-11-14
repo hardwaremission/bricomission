@@ -122,5 +122,51 @@
       "expired": "Your previous draft expired after 7 days without changes. Start again.",
       "dismiss": "Close"
     }
+  },
+  "moodboard": {
+    "backToCapture": "Back to your kitchen",
+    "step": "Step {current} of {total}",
+    "title": "Your style",
+    "helper": "Pick kitchens you like and add your own references. We'll use them to design your new kitchen.",
+    "board": {
+      "title": "Your moodboard",
+      "counter": "{count} of {max}",
+      "rules": "Your photos: JPG, PNG, WebP or HEIC · up to 15 MB",
+      "empty": "Nothing here yet. Pick kitchens from the gallery or add your own photos.",
+      "add": "Add your photos",
+      "yourPhoto": "Your photo",
+      "uploadAlt": "Your reference photo {n}",
+      "removeUpload": "Remove reference {n}",
+      "removeGallery": "Remove {style} kitchen {n}",
+      "limitReached": "You've added {max} items, the maximum. Remove one to add another."
+    },
+    "gallery": {
+      "title": "Style gallery",
+      "helper": "Tap a kitchen to add it to your moodboard. Tap again to remove it.",
+      "filter": "Filter by style",
+      "all": "All",
+      "alt": "{style} kitchen {n}"
+    },
+    "styles": {
+      "modern": "Modern",
+      "scandinavian": "Scandinavian",
+      "industrial": "Industrial",
+      "farmhouse": "Farmhouse",
+      "classic": "Classic",
+      "mediterranean": "Mediterranean",
+      "minimalist": "Minimalist",
+      "japandi": "Japandi"
+    },
+    "continue": "Continue",
+    "continueHints": {
+      "items": "Add at least one kitchen or photo to continue.",
+      "capture": "Your kitchen still needs a photo and all three measurements.",
+      "goToCapture": "Go to your kitchen"
+    },
+    "alerts": {
+      "offline": "You're offline. What you've saved is safe; reconnect to keep going.",
+      "expired": "Your previous draft expired after 7 days without changes. Start again.",
+      "dismiss": "Close"
+    }
   }
 }

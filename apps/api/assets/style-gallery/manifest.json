@@ -1,0 +1,207 @@
+{
+  "version": 1,
+  "styles": [
+    "modern",
+    "scandinavian",
+    "industrial",
+    "farmhouse",
+    "classic",
+    "mediterranean",
+    "minimalist",
+    "japandi"
+  ],
+  "images": [
+    {
+      "id": "modern-01",
+      "styleId": "modern",
+      "width": 1216,
+      "height": 832,
+      "prompt": "modern kitchen, handleless glossy white flat-panel cabinets, large white quartz island with waterfall edge, matte black faucet, integrated appliances, slim black pendant lights, light grey large-format floor tiles, interior design photography, wide angle shot of the whole kitchen, natural daylight, photorealistic, sharp focus, high detail, clean and tidy, no people",
+      "seed": 20261114
+    },
+    {
+      "id": "modern-02",
+      "styleId": "modern",
+      "width": 1216,
+      "height": 832,
+      "prompt": "modern kitchen, matte charcoal grey flat-panel cabinets, white marble countertops and full-height marble backsplash, built-in ovens in a tall unit, warm under-cabinet LED lighting, large window, interior design photography, wide angle shot of the whole kitchen, natural daylight, photorealistic, sharp focus, high detail, clean and tidy, no people",
+      "seed": 20261115
+    },
+    {
+      "id": "modern-03",
+      "styleId": "modern",
+      "width": 1216,
+      "height": 832,
+      "prompt": "modern kitchen, two-tone cabinets in navy blue and walnut wood, white quartz countertops, kitchen island with three minimalist bar stools, polished concrete floor, recessed ceiling lights, interior design photography, wide angle shot of the whole kitchen, natural daylight, photorealistic, sharp focus, high detail, clean and tidy, no people",
+      "seed": 20261116
+    },
+    {
+      "id": "scandinavian-01",
+      "styleId": "scandinavian",
+      "width": 1216,
+      "height": 832,
+      "prompt": "scandinavian kitchen, white cabinets with light oak wooden countertops, open oak shelves with white ceramics, white walls, pale wood plank floor, green potted plants, simple white pendant lamps, interior design photography, wide angle shot of the whole kitchen, natural daylight, photorealistic, sharp focus, high detail, clean and tidy, no people",
+      "seed": 20261117
+    },
+    {
+      "id": "scandinavian-02",
+      "styleId": "scandinavian",
+      "width": 1216,
+      "height": 832,
+      "prompt": "scandinavian kitchen, soft sage green cabinets with brass knobs, light birch wood worktop, white square tile backsplash, wooden dining table with white chairs, bright and airy, interior design photography, wide angle shot of the whole kitchen, natural daylight, photorealistic, sharp focus, high detail, clean and tidy, no people",
+      "seed": 20261118
+    },
+    {
+      "id": "scandinavian-03",
+      "styleId": "scandinavian",
+      "width": 1216,
+      "height": 832,
+      "prompt": "scandinavian kitchen, light grey cabinets, white laminate countertop, oak open shelving, round wooden table with wishbone chairs, linen curtains, large window with soft daylight, whitewashed wood floor, interior design photography, wide angle shot of the whole kitchen, natural daylight, photorealistic, sharp focus, high detail, clean and tidy, no people",
+      "seed": 20261119
+    },
+    {
+      "id": "industrial-01",
+      "styleId": "industrial",
+      "width": 1216,
+      "height": 832,
+      "prompt": "industrial loft kitchen, exposed red brick wall, matte black metal cabinets, concrete countertops, open steel pipe shelving, edison bulb pendant lights, large black steel-framed factory windows, interior design photography, wide angle shot of the whole kitchen, natural daylight, photorealistic, sharp focus, high detail, clean and tidy, no people",
+      "seed": 20261120
+    },
+    {
+      "id": "industrial-02",
+      "styleId": "industrial",
+      "width": 1216,
+      "height": 832,
+      "prompt": "industrial kitchen, dark steel grey cabinets, stainless steel countertops and professional range, open ductwork on a concrete ceiling, reclaimed wood island, black metal bar stools, interior design photography, wide angle shot of the whole kitchen, natural daylight, photorealistic, sharp focus, high detail, clean and tidy, no people",
+      "seed": 20261121
+    },
+    {
+      "id": "industrial-03",
+      "styleId": "industrial",
+      "width": 1216,
+      "height": 832,
+      "prompt": "industrial kitchen, raw concrete walls, black framed glass cabinet doors, butcher block island on black steel legs, cage pendant lights, polished concrete floor, tall loft windows, interior design photography, wide angle shot of the whole kitchen, natural daylight, photorealistic, sharp focus, high detail, clean and tidy, no people",
+      "seed": 20261122
+    },
+    {
+      "id": "farmhouse-01",
+      "styleId": "farmhouse",
+      "width": 1216,
+      "height": 832,
+      "prompt": "farmhouse kitchen, white shaker cabinets, white apron-front farmhouse sink, butcher block countertops, exposed wooden ceiling beams, black iron lantern pendants, wide plank oak floor, interior design photography, wide angle shot of the whole kitchen, natural daylight, photorealistic, sharp focus, high detail, clean and tidy, no people",
+      "seed": 20261123
+    },
+    {
+      "id": "farmhouse-02",
+      "styleId": "farmhouse",
+      "width": 1216,
+      "height": 832,
+      "prompt": "farmhouse kitchen, sage green shaker cabinets, white subway tile backsplash, rustic reclaimed wood island, open wooden shelves with stoneware, cup pull handles, warm natural light, interior design photography, wide angle shot of the whole kitchen, natural daylight, photorealistic, sharp focus, high detail, clean and tidy, no people",
+      "seed": 20261124
+    },
+    {
+      "id": "farmhouse-03",
+      "styleId": "farmhouse",
+      "width": 1216,
+      "height": 832,
+      "prompt": "farmhouse kitchen, cream painted cabinets, black soapstone countertops, large wooden farmhouse table, vintage brass light fixtures, shiplap walls, terracotta brick floor, interior design photography, wide angle shot of the whole kitchen, natural daylight, photorealistic, sharp focus, high detail, clean and tidy, no people",
+      "seed": 20261125
+    },
+    {
+      "id": "classic-01",
+      "styleId": "classic",
+      "width": 1216,
+      "height": 832,
+      "prompt": "classic traditional kitchen, cream raised-panel cabinets with crown molding, white marble countertops, polished brass hardware, large range with an ornate plaster hood, coffered ceiling, interior design photography, wide angle shot of the whole kitchen, natural daylight, photorealistic, sharp focus, high detail, clean and tidy, no people",
+      "seed": 20261126
+    },
+    {
+      "id": "classic-02",
+      "styleId": "classic",
+      "width": 1216,
+      "height": 832,
+      "prompt": "classic kitchen, dark cherry wood raised-panel cabinets, granite countertops, traditional crystal chandelier over the island, herringbone wood floor, elegant details, interior design photography, wide angle shot of the whole kitchen, natural daylight, photorealistic, sharp focus, high detail, clean and tidy, no people",
+      "seed": 20261127
+    },
+    {
+      "id": "classic-03",
+      "styleId": "classic",
+      "width": 1216,
+      "height": 832,
+      "prompt": "classic kitchen, navy blue inset cabinets with gold handles, white marble backsplash, traditional moldings, large kitchen island with turned legs, antique brass pendant lights, interior design photography, wide angle shot of the whole kitchen, natural daylight, photorealistic, sharp focus, high detail, clean and tidy, no people",
+      "seed": 20261128
+    },
+    {
+      "id": "mediterranean-01",
+      "styleId": "mediterranean",
+      "width": 1216,
+      "height": 832,
+      "prompt": "mediterranean kitchen, white lime plaster walls, hand-painted blue and white ceramic tile backsplash, terracotta floor tiles, arched window, rustic olive wood shelves, white cabinets, interior design photography, wide angle shot of the whole kitchen, natural daylight, photorealistic, sharp focus, high detail, clean and tidy, no people",
+      "seed": 20261129
+    },
+    {
+      "id": "mediterranean-02",
+      "styleId": "mediterranean",
+      "width": 1216,
+      "height": 832,
+      "prompt": "mediterranean kitchen, warm ochre and cream walls, terracotta tiled floor, exposed wooden ceiling beams, wrought iron light fixtures, stone countertops, green potted herbs, interior design photography, wide angle shot of the whole kitchen, natural daylight, photorealistic, sharp focus, high detail, clean and tidy, no people",
+      "seed": 20261130
+    },
+    {
+      "id": "mediterranean-03",
+      "styleId": "mediterranean",
+      "width": 1216,
+      "height": 832,
+      "prompt": "mediterranean kitchen, arched doorways, whitewashed walls, blue painted wooden cabinets, patterned encaustic floor tiles, natural stone sink, woven rattan pendant lamps, interior design photography, wide angle shot of the whole kitchen, natural daylight, photorealistic, sharp focus, high detail, clean and tidy, no people",
+      "seed": 20261131
+    },
+    {
+      "id": "minimalist-01",
+      "styleId": "minimalist",
+      "width": 1216,
+      "height": 832,
+      "prompt": "minimalist kitchen, seamless all white handleless cabinets, hidden appliances, thin white countertop, empty surfaces, white walls, light oak floor, soft diffuse daylight, interior design photography, wide angle shot of the whole kitchen, natural daylight, photorealistic, sharp focus, high detail, clean and tidy, no people",
+      "seed": 20261132
+    },
+    {
+      "id": "minimalist-02",
+      "styleId": "minimalist",
+      "width": 1216,
+      "height": 832,
+      "prompt": "minimalist kitchen, light warm grey flat cabinets without handles, single long island in pale stone, nothing on the countertops, recessed linear lighting, very calm composition, interior design photography, wide angle shot of the whole kitchen, natural daylight, photorealistic, sharp focus, high detail, clean and tidy, no people",
+      "seed": 20261133
+    },
+    {
+      "id": "minimalist-03",
+      "styleId": "minimalist",
+      "width": 1216,
+      "height": 832,
+      "prompt": "minimalist kitchen, matte black handleless cabinets, black stone countertop, plain white walls, one simple pendant light, large window, polished concrete floor, sparse and clean, interior design photography, wide angle shot of the whole kitchen, natural daylight, photorealistic, sharp focus, high detail, clean and tidy, no people",
+      "seed": 20261134
+    },
+    {
+      "id": "japandi-01",
+      "styleId": "japandi",
+      "width": 1216,
+      "height": 832,
+      "prompt": "japandi kitchen, light ash wood slatted panels, muted beige flat cabinets, natural stone countertop, paper lantern pendant light, ceramic bowls, low profile wooden stools, calm neutral tones, interior design photography, wide angle shot of the whole kitchen, natural daylight, photorealistic, sharp focus, high detail, clean and tidy, no people",
+      "seed": 20261135
+    },
+    {
+      "id": "japandi-02",
+      "styleId": "japandi",
+      "width": 1216,
+      "height": 832,
+      "prompt": "japandi kitchen, dark smoked oak cabinets, warm beige plaster walls, light travertine countertop, linen textures, bonsai plant, simple wooden open shelf, soft warm light, interior design photography, wide angle shot of the whole kitchen, natural daylight, photorealistic, sharp focus, high detail, clean and tidy, no people",
+      "seed": 20261136
+    },
+    {
+      "id": "japandi-03",
+      "styleId": "japandi",
+      "width": 1216,
+      "height": 832,
+      "prompt": "japandi kitchen, natural oak cabinets with recessed grips, white microcement walls, matte black tap, low wooden dining bench, rice paper sliding screen, pale wood floor, interior design photography, wide angle shot of the whole kitchen, natural daylight, photorealistic, sharp focus, high detail, clean and tidy, no people",
+      "seed": 20261137
+    }
+  ]
+}

@@ -122,5 +122,51 @@
       "expired": "Je vorige concept is verlopen na 7 dagen zonder wijzigingen. Begin opnieuw.",
       "dismiss": "Sluiten"
     }
+  },
+  "moodboard": {
+    "backToCapture": "Terug naar je keuken",
+    "step": "Stap {current} van {total}",
+    "title": "Jouw stijl",
+    "helper": "Kies keukens die je mooi vindt en voeg je eigen referenties toe. We gebruiken ze om je nieuwe keuken te ontwerpen.",
+    "board": {
+      "title": "Jouw moodboard",
+      "counter": "{count} van {max}",
+      "rules": "Je foto's: JPG, PNG, WebP of HEIC · tot 15 MB",
+      "empty": "Nog niets. Kies keukens uit de galerij of voeg je eigen foto's toe.",
+      "add": "Je foto's toevoegen",
+      "yourPhoto": "Jouw foto",
+      "uploadAlt": "Jouw referentiefoto {n}",
+      "removeUpload": "Referentie {n} verwijderen",
+      "removeGallery": "Keuken {style} {n} verwijderen",
+      "limitReached": "Je hebt {max} items toegevoegd, het maximum. Verwijder er een om een ander toe te voegen."
+    },
+    "gallery": {
+      "title": "Stijlgalerij",
+      "helper": "Tik op een keuken om hem aan je moodboard toe te voegen. Tik nogmaals om hem te verwijderen.",
+      "filter": "Filteren op stijl",
+      "all": "Alle",
+      "alt": "Keuken {style} {n}"
+    },
+    "styles": {
+      "modern": "Modern",
+      "scandinavian": "Scandinavisch",
+      "industrial": "Industrieel",
+      "farmhouse": "Landelijk",
+      "classic": "Klassiek",
+      "mediterranean": "Mediterraan",
+      "minimalist": "Minimalistisch",
+      "japandi": "Japandi"
+    },
+    "continue": "Doorgaan",
+    "continueHints": {
+      "items": "Voeg minstens één keuken of foto toe om door te gaan.",
+      "capture": "Je keuken heeft nog een foto en alle drie de maten nodig.",
+      "goToCapture": "Naar je keuken"
+    },
+    "alerts": {
+      "offline": "Je bent offline. Wat je hebt opgeslagen is veilig; maak opnieuw verbinding om verder te gaan.",
+      "expired": "Je vorige concept is verlopen na 7 dagen zonder wijzigingen. Begin opnieuw.",
+      "dismiss": "Sluiten"
+    }
   }
 }

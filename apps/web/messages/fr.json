@@ -122,5 +122,51 @@
       "expired": "Votre brouillon précédent a expiré après 7 jours sans modification. Recommencez.",
       "dismiss": "Fermer"
     }
+  },
+  "moodboard": {
+    "backToCapture": "Retour à votre cuisine",
+    "step": "Étape {current} sur {total}",
+    "title": "Votre style",
+    "helper": "Choisissez des cuisines qui vous plaisent et ajoutez vos propres références. Nous nous en servirons pour concevoir votre nouvelle cuisine.",
+    "board": {
+      "title": "Votre moodboard",
+      "counter": "{count} sur {max}",
+      "rules": "Vos photos : JPG, PNG, WebP ou HEIC · jusqu'à 15 Mo",
+      "empty": "Rien pour l'instant. Choisissez des cuisines dans la galerie ou ajoutez vos propres photos.",
+      "add": "Ajouter vos photos",
+      "yourPhoto": "Votre photo",
+      "uploadAlt": "Votre photo de référence {n}",
+      "removeUpload": "Retirer la référence {n}",
+      "removeGallery": "Retirer la cuisine {style} {n}",
+      "limitReached": "Vous avez ajouté {max} éléments, le maximum. Retirez-en un pour en ajouter un autre."
+    },
+    "gallery": {
+      "title": "Galerie de styles",
+      "helper": "Touchez une cuisine pour l'ajouter à votre moodboard. Touchez-la de nouveau pour la retirer.",
+      "filter": "Filtrer par style",
+      "all": "Tous",
+      "alt": "Cuisine {style} {n}"
+    },
+    "styles": {
+      "modern": "Moderne",
+      "scandinavian": "Scandinave",
+      "industrial": "Industrielle",
+      "farmhouse": "Campagne",
+      "classic": "Classique",
+      "mediterranean": "Méditerranéenne",
+      "minimalist": "Minimaliste",
+      "japandi": "Japandi"
+    },
+    "continue": "Continuer",
+    "continueHints": {
+      "items": "Ajoutez au moins une cuisine ou une photo pour continuer.",
+      "capture": "Il manque encore une photo et les trois mesures de votre cuisine.",
+      "goToCapture": "Aller à votre cuisine"
+    },
+    "alerts": {
+      "offline": "Vous êtes hors ligne. Ce que vous avez enregistré est en sécurité ; reconnectez-vous pour continuer.",
+      "expired": "Votre brouillon précédent a expiré après 7 jours sans modification. Recommencez.",
+      "dismiss": "Fermer"
+    }
   }
 }

@@ -122,5 +122,51 @@
       "expired": "Det forrige utkastet ditt utløp etter 7 dager uten endringer. Begynn på nytt.",
       "dismiss": "Lukk"
     }
+  },
+  "moodboard": {
+    "backToCapture": "Tilbake til kjøkkenet ditt",
+    "step": "Steg {current} av {total}",
+    "title": "Din stil",
+    "helper": "Velg kjøkken du liker, og legg til egne referanser. Vi bruker dem til å designe det nye kjøkkenet ditt.",
+    "board": {
+      "title": "Din moodboard",
+      "counter": "{count} av {max}",
+      "rules": "Bildene dine: JPG, PNG, WebP eller HEIC · opptil 15 MB",
+      "empty": "Ingenting her ennå. Velg kjøkken fra galleriet eller legg til egne bilder.",
+      "add": "Legg til bildene dine",
+      "yourPhoto": "Ditt bilde",
+      "uploadAlt": "Ditt referansebilde {n}",
+      "removeUpload": "Fjern referanse {n}",
+      "removeGallery": "Fjern kjøkken {style} {n}",
+      "limitReached": "Du har lagt til {max} elementer, som er maks. Fjern ett for å legge til et nytt."
+    },
+    "gallery": {
+      "title": "Stilgalleri",
+      "helper": "Trykk på et kjøkken for å legge det til i moodboarden din. Trykk igjen for å fjerne det.",
+      "filter": "Filtrer etter stil",
+      "all": "Alle",
+      "alt": "Kjøkken {style} {n}"
+    },
+    "styles": {
+      "modern": "Moderne",
+      "scandinavian": "Skandinavisk",
+      "industrial": "Industriell",
+      "farmhouse": "Landlig",
+      "classic": "Klassisk",
+      "mediterranean": "Middelhavsstil",
+      "minimalist": "Minimalistisk",
+      "japandi": "Japandi"
+    },
+    "continue": "Fortsett",
+    "continueHints": {
+      "items": "Legg til minst ett kjøkken eller bilde for å fortsette.",
+      "capture": "Kjøkkenet ditt trenger fortsatt et bilde og alle tre mål.",
+      "goToCapture": "Gå til kjøkkenet ditt"
+    },
+    "alerts": {
+      "offline": "Du er frakoblet. Det du har lagret er trygt; koble til igjen for å fortsette.",
+      "expired": "Det forrige utkastet ditt utløp etter 7 dager uten endringer. Begynn på nytt.",
+      "dismiss": "Lukk"
+    }
   }
 }

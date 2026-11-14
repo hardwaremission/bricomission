@@ -8,6 +8,8 @@ Terms as defined in `CONTEXT.md`.
 - **Company**: Tax ID, legal name, corporate email domain, status. Has one or more Professionals.
 - **Kitchen Project**: owned by one Homeowner. Holds Photos, Measurements, Moodboard, Renders, Budget, and its chosen path.
 - **Photo / Render / PDF**: binary objects stored in MinIO; the database stores keys and metadata. A Photo (`kitchen_photo`) is stored only as a normalized, metadata-free JPEG `full` (longest edge <= 2560, orientation applied) plus a `thumb` (<= 512); it keeps its 0-based `position` in the Kitchen Project, the `full` width/height and byte size. The uploaded original (including any GPS data and the file name) is never stored. Accepted inputs: JPEG, PNG, WebP, HEIC/HEIF; at most 8 per Kitchen Project, 15 MB each, shortest edge >= 480 px.
+- **Moodboard / Moodboard Item** (`moodboard_item`, `moodboard-selection`): an ordered set of at most 12 Moodboard Items per Kitchen Project (0-based, compacted `position`). An item is either `gallery` (a Style Gallery image id, no stored objects; one item per image per Kitchen Project) or `upload` (an own reference photo stored exactly like a Photo: metadata-free `full` + `thumb` JPEGs under `kitchen-projects/<projectId>/moodboard/<itemId>/`, same input rules). "Selected" means "in the Moodboard"; nothing unselected is stored. Removing an upload deletes its objects. Items live and expire with the draft Kitchen Project (cascade delete; the sweeper also deletes their objects); every change slides the draft expiry.
+- **Style Gallery**: 24 committed, synthetic kitchen images (8 styles x 3; ids such as `scandinavian-01`, stable and never reused) with a manifest; not a database table. Served by the API from files.
 - **Measurements**: room Length x Width x Height stored as whole centimetres (length/width 100-2000, height 180-600; each null until entered). The UI shows metres with 2 decimals or centimetres, locale-formatted.
 - **Budget**: four Budget Tiers; each tier is a list of Line Items. Totals are derived, never stored as LLM output.
 - **Line Item**: product name, SKU, Catalog, source reference (document + page/chunk), cited unit price, quantity, unit, subtotal (computed).
@@ -51,7 +53,7 @@ Terms as defined in `CONTEXT.md`.
 
 ## Important Scenarios
 
-1. Anonymous visitor uploads photos, enters Measurements, builds a Moodboard; requests a Render; the Login Gate appears; after sign-in the draft is claimed by the new Account.
+1. Anonymous visitor uploads photos, enters Measurements (Capture), builds a Moodboard from Style Gallery picks and own reference photos (Continue needs at least 1 item and a complete Capture); requests a Render; the Login Gate appears; after sign-in the draft is claimed by the new Account.
 2. Homeowner switches Persona mid-chat; the next answer uses the new system prompt; Budget totals are unchanged unless Line Items change.
 3. Homeowner picks "Medium" through a Prompt Macro; the chat receives a structured prompt; the backend recomputes the tier from Line Items.
 4. Professional of a validated Company submits a Bid; a co-worker sees it read-only; the managing Professional lowers the price; the Homeowner receives an SSE alert.

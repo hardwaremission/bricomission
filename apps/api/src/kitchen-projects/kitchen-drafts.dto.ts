@@ -5,6 +5,9 @@ import type {
   KitchenDraftView,
   KitchenMeasurements,
   KitchenPhotoView,
+  MoodboardItemSource,
+  MoodboardItemView,
+  AddGalleryItemRequest,
   StartKitchenDraftResponse,
 } from '@bricomission/shared-types';
 import { MEASUREMENT_LIMITS_CM } from './measurements.js';
@@ -49,6 +52,46 @@ export class KitchenDraftLimitsDto implements KitchenDraftLimits {
 
   @ApiProperty({ type: 'integer', example: 15728640 })
   maxPhotoBytes!: number;
+
+  @ApiProperty({ type: 'integer', example: 12, description: 'Moodboard Items per draft, uploads and gallery picks together' })
+  maxMoodboardItems!: number;
+}
+
+export class MoodboardItemViewDto implements MoodboardItemView {
+  @ApiProperty({ format: 'uuid' })
+  id!: string;
+
+  @ApiProperty({ enum: ['gallery', 'upload'] })
+  source!: MoodboardItemSource;
+
+  @ApiProperty({ type: 'string', nullable: true, example: 'scandinavian-01', description: 'Style Gallery image id; null for uploads' })
+  galleryImageId!: string | null;
+
+  @ApiProperty({ type: 'string', nullable: true, example: 'scandinavian', description: 'Style of the gallery image; null for uploads' })
+  styleId!: string | null;
+
+  @ApiProperty({ type: 'integer', minimum: 0, description: '0-based, compacted on delete' })
+  position!: number;
+
+  @ApiProperty({ type: 'integer', description: 'Width of the full image' })
+  width!: number;
+
+  @ApiProperty({ type: 'integer', description: 'Height of the full image' })
+  height!: number;
+
+  @ApiProperty({
+    example: '/style-gallery/images/scandinavian-01/content?variant=thumb',
+    description: 'API-relative path: the gallery content route for gallery items, the draft item content route for uploads',
+  })
+  thumbUrl!: string;
+
+  @ApiProperty({ example: '/kitchen-projects/drafts/current/moodboard/items/0b6f.../content?variant=full', description: 'API-relative path' })
+  fullUrl!: string;
+}
+
+export class AddGalleryItemRequestDto implements AddGalleryItemRequest {
+  @ApiProperty({ pattern: '^[a-z0-9-]{1,64}$', example: 'scandinavian-01', description: 'A Style Gallery image id (GET /style-gallery)' })
+  galleryImageId!: string;
 }
 
 export class KitchenDraftViewDto implements KitchenDraftView {
@@ -63,6 +106,9 @@ export class KitchenDraftViewDto implements KitchenDraftView {
 
   @ApiProperty({ type: [KitchenPhotoViewDto], description: 'Ordered by position' })
   photos!: KitchenPhotoViewDto[];
+
+  @ApiProperty({ type: [MoodboardItemViewDto], description: 'Moodboard Items ordered by position' })
+  moodboard!: MoodboardItemViewDto[];
 
   @ApiProperty({ type: KitchenDraftLimitsDto })
   limits!: KitchenDraftLimitsDto;
@@ -88,6 +134,8 @@ const ERROR_CODES: KitchenDraftErrorCode[] = [
   'photo_too_small',
   'photo_limit_reached',
   'storage_unavailable',
+  'moodboard_limit_reached',
+  'gallery_image_unknown',
 ];
 
 export class KitchenDraftErrorDto {

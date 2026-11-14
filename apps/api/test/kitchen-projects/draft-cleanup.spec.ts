@@ -34,6 +34,34 @@ describe('DraftCleanupService', () => {
     expect(storage.keys().filter((key) => key.includes(live))).toHaveLength(2);
   });
 
+  it('deletes the Moodboard upload objects of expired drafts too (gallery items have none)', async () => {
+    const repo = new MemoryKitchenDraftRepository();
+    const storage = new MemoryObjectStorage();
+    const expired = await seed(repo, storage, new Date(now.getTime() - 1), 1);
+    const base = `kitchen-projects/${expired}/moodboard/m1`;
+    await storage.put(`${base}/full.jpg`, Buffer.from('f'), 'image/jpeg');
+    await storage.put(`${base}/thumb.jpg`, Buffer.from('t'), 'image/jpeg');
+    const past = new Date(now.getTime() - 1);
+    await repo.addMoodboardItem(
+      expired,
+      { id: 'm1', source: 'upload', galleryImageId: null, fullKey: `${base}/full.jpg`, thumbKey: `${base}/thumb.jpg`, width: 1, height: 1, byteSize: 1 },
+      12,
+      past,
+    );
+    await repo.addMoodboardItem(
+      expired,
+      { id: 'm2', source: 'gallery', galleryImageId: 'modern-01', fullKey: null, thumbKey: null, width: 1, height: 1, byteSize: null },
+      12,
+      past,
+    );
+    expect((await repo.findExpired(now, 50))[0]?.keys).toHaveLength(4);
+    const service = new DraftCleanupService(repo, storage, config, () => now);
+
+    expect(await service.runOnce()).toBe(1);
+    expect(repo.rows.size).toBe(0);
+    expect(storage.keys()).toEqual([]);
+  });
+
   it('keeps the rows when storage is down and finishes on the next run', async () => {
     const repo = new MemoryKitchenDraftRepository();
     const storage = new MemoryObjectStorage();

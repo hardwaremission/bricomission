@@ -14,6 +14,7 @@ import {
   remainingSlots,
 } from '../../lib/kitchen-draft/capture-state';
 import { deletePhoto, loadDraft, saveMeasurements, startDraft } from '../../lib/kitchen-draft/draft-client';
+import { draftMarker } from '../../lib/kitchen-draft/draft-marker';
 import type { MeasurementField, MeasurementUnit } from '../../lib/kitchen-draft/measurements';
 import { MAX_PHOTOS, precheckPhoto, uploadPhoto } from '../../lib/kitchen-draft/upload';
 import { CaptureAlert } from './CaptureAlert';
@@ -22,18 +23,6 @@ import { MeasurementsSection } from './MeasurementsSection';
 import { PhotoGrid } from './PhotoGrid';
 
 export const MOODBOARD_PATH = '/kitchen-projects/new/moodboard';
-/** Non-secret marker: this browser had a draft, so a later 404 means it expired. */
-const DRAFT_MARKER = 'bm_draft_started';
-
-function marker(action: 'get' | 'set' | 'clear'): boolean {
-  try {
-    if (action === 'set') window.localStorage.setItem(DRAFT_MARKER, '1');
-    if (action === 'clear') window.localStorage.removeItem(DRAFT_MARKER);
-    return window.localStorage.getItem(DRAFT_MARKER) === '1';
-  } catch {
-    return false;
-  }
-}
 
 let localSeq = 0;
 const newLocalId = () => `upload-${Date.now()}-${++localSeq}`;
@@ -68,12 +57,12 @@ export function CaptureScreen() {
     const result = await loadDraft(clientRef.current ?? (clientRef.current = createApiClient(`${window.location.origin}/api`)));
     if (result.kind === 'ok') {
       hasDraft.current = true;
-      marker('set');
+      draftMarker('set');
       dispatch({ type: 'connectivity', online: true });
       dispatch({ type: 'draftLoaded', draft: result.value });
     } else if (result.kind === 'missing') {
-      const expired = marker('get');
-      marker('clear');
+      const expired = draftMarker('get');
+      draftMarker('clear');
       hasDraft.current = false;
       dispatch({ type: 'connectivity', online: navigator.onLine });
       dispatch({ type: 'draftMissing', expired });
@@ -93,7 +82,7 @@ export function CaptureScreen() {
         return false;
       }
       hasDraft.current = true;
-      marker('set');
+      draftMarker('set');
       dispatch({ type: 'draftStarted', draft: result.value });
       return true;
     });

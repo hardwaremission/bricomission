@@ -48,7 +48,7 @@ import {
   StartKitchenDraftResponseDto,
 } from './kitchen-drafts.dto.js';
 import type { KitchenDraftRecord } from './kitchen-drafts.repository.js';
-import { draftView, KitchenDraftsService, type PhotoVariant } from './kitchen-drafts.service.js';
+import { KitchenDraftsService, type PhotoVariant } from './kitchen-drafts.service.js';
 import { PhotoUploadInterceptor } from './photo-upload.interceptor.js';
 
 const NOT_FOUND = 'No draft for this token (missing, malformed, unknown or expired token), or the photo is not in it';
@@ -82,7 +82,7 @@ export class KitchenDraftsController {
   @ApiNotFoundResponse({ description: NOT_FOUND })
   @ApiServiceUnavailableResponse({ description: 'Database unreachable' })
   current(@CurrentDraft() draft: KitchenDraftRecord): KitchenDraftViewDto {
-    return draftView(draft);
+    return this.drafts.view(draft);
   }
 
   @Put('current/measurements')

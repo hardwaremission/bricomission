@@ -122,5 +122,51 @@
       "expired": "Edellinen luonnoksesi vanheni 7 päivän jälkeen ilman muutoksia. Aloita alusta.",
       "dismiss": "Sulje"
     }
+  },
+  "moodboard": {
+    "backToCapture": "Takaisin keittiöösi",
+    "step": "Vaihe {current}/{total}",
+    "title": "Tyylisi",
+    "helper": "Valitse keittiöitä, joista pidät, ja lisää omia esimerkkikuvia. Käytämme niitä uuden keittiösi suunnitteluun.",
+    "board": {
+      "title": "Moodboardisi",
+      "counter": "{count}/{max}",
+      "rules": "Omat kuvasi: JPG, PNG, WebP tai HEIC · enintään 15 Mt",
+      "empty": "Täällä ei ole vielä mitään. Valitse keittiöitä galleriasta tai lisää omia kuvia.",
+      "add": "Lisää omia kuvia",
+      "yourPhoto": "Oma kuva",
+      "uploadAlt": "Oma esimerkkikuva {n}",
+      "removeUpload": "Poista esimerkkikuva {n}",
+      "removeGallery": "Poista keittiö {style} {n}",
+      "limitReached": "Olet lisännyt {max} kohdetta, mikä on enimmäismäärä. Poista yksi lisätäksesi toisen."
+    },
+    "gallery": {
+      "title": "Tyyligalleria",
+      "helper": "Napauta keittiötä lisätäksesi sen moodboardiin. Napauta uudelleen poistaaksesi sen.",
+      "filter": "Suodata tyylin mukaan",
+      "all": "Kaikki",
+      "alt": "Keittiö {style} {n}"
+    },
+    "styles": {
+      "modern": "Moderni",
+      "scandinavian": "Skandinaavinen",
+      "industrial": "Teollinen",
+      "farmhouse": "Maalaistyyli",
+      "classic": "Klassinen",
+      "mediterranean": "Välimerellinen",
+      "minimalist": "Minimalistinen",
+      "japandi": "Japandi"
+    },
+    "continue": "Jatka",
+    "continueHints": {
+      "items": "Lisää vähintään yksi keittiö tai kuva jatkaaksesi.",
+      "capture": "Keittiöstäsi puuttuu vielä kuva ja kaikki kolme mittaa.",
+      "goToCapture": "Siirry keittiöösi"
+    },
+    "alerts": {
+      "offline": "Olet offline-tilassa. Tallentamasi tiedot ovat tallessa; muodosta yhteys jatkaaksesi.",
+      "expired": "Edellinen luonnoksesi vanheni 7 päivän jälkeen ilman muutoksia. Aloita alusta.",
+      "dismiss": "Sulje"
+    }
   }
 }

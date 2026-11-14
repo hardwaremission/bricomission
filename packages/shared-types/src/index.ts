@@ -119,6 +119,8 @@ export interface KitchenPhotoView {
 export interface KitchenDraftLimits {
   maxPhotos: number;
   maxPhotoBytes: number;
+  /** Moodboard Items per draft, uploads and gallery picks together (moodboard-selection). */
+  maxMoodboardItems: number;
 }
 
 /** Body of `GET /kitchen-projects/drafts/current` and of the draft mutations. */
@@ -127,6 +129,8 @@ export interface KitchenDraftView {
   status: KitchenProjectStatus;
   measurements: KitchenMeasurements;
   photos: KitchenPhotoView[];
+  /** Moodboard Items ordered by position (moodboard-selection). */
+  moodboard: MoodboardItemView[];
   limits: KitchenDraftLimits;
   /** ISO timestamp; slides 7 days on every change. */
   expiresAt: string;
@@ -147,7 +151,56 @@ export type KitchenDraftErrorCode =
   | 'photo_unsupported_type'
   | 'photo_too_small'
   | 'photo_limit_reached'
-  | 'storage_unavailable';
+  | 'storage_unavailable'
+  | 'moodboard_limit_reached'
+  | 'gallery_image_unknown';
 
 /** Per-field reason in a 400 `invalid_measurements` body. */
 export type KitchenMeasurementFieldError = 'not_integer' | 'out_of_range';
+
+// --- Moodboard and Style Gallery (feature moodboard-selection) ---
+
+/** Where a Moodboard Item comes from: a Style Gallery image or an own reference photo. */
+export type MoodboardItemSource = 'gallery' | 'upload';
+
+/** One Moodboard Item of a draft. URLs are API-relative paths. */
+export interface MoodboardItemView {
+  id: string;
+  source: MoodboardItemSource;
+  /** Style Gallery image id; null for uploads. */
+  galleryImageId: string | null;
+  /** Style of the gallery image; null for uploads. */
+  styleId: string | null;
+  /** 0-based, compacted on delete. */
+  position: number;
+  /** Size of the `full` image. */
+  width: number;
+  height: number;
+  thumbUrl: string;
+  fullUrl: string;
+}
+
+/** Body of `POST /kitchen-projects/drafts/current/moodboard/gallery-items`. */
+export interface AddGalleryItemRequest {
+  galleryImageId: string;
+}
+
+/** One curated Style Gallery image. URLs are API-relative paths. */
+export interface StyleGalleryImageView {
+  id: string;
+  width: number;
+  height: number;
+  thumbUrl: string;
+  fullUrl: string;
+}
+
+/** One style of the Style Gallery with its images, in manifest order. */
+export interface StyleGalleryStyleView {
+  id: string;
+  images: StyleGalleryImageView[];
+}
+
+/** Body of `GET /style-gallery`. */
+export interface StyleGalleryView {
+  styles: StyleGalleryStyleView[];
+}

@@ -122,5 +122,51 @@
       "expired": "Din tidligere kladde udløb efter 7 dage uden ændringer. Start forfra.",
       "dismiss": "Luk"
     }
+  },
+  "moodboard": {
+    "backToCapture": "Tilbage til dit køkken",
+    "step": "Trin {current} af {total}",
+    "title": "Din stil",
+    "helper": "Vælg køkkener, du kan lide, og tilføj dine egne referencer. Vi bruger dem til at designe dit nye køkken.",
+    "board": {
+      "title": "Dit moodboard",
+      "counter": "{count} af {max}",
+      "rules": "Dine fotos: JPG, PNG, WebP eller HEIC · op til 15 MB",
+      "empty": "Intet her endnu. Vælg køkkener fra galleriet, eller tilføj dine egne fotos.",
+      "add": "Tilføj dine fotos",
+      "yourPhoto": "Dit foto",
+      "uploadAlt": "Dit referencefoto {n}",
+      "removeUpload": "Fjern reference {n}",
+      "removeGallery": "Fjern køkken {style} {n}",
+      "limitReached": "Du har tilføjet {max} elementer, som er maksimum. Fjern et for at tilføje et andet."
+    },
+    "gallery": {
+      "title": "Stilgalleri",
+      "helper": "Tryk på et køkken for at tilføje det til dit moodboard. Tryk igen for at fjerne det.",
+      "filter": "Filtrer efter stil",
+      "all": "Alle",
+      "alt": "Køkken {style} {n}"
+    },
+    "styles": {
+      "modern": "Moderne",
+      "scandinavian": "Skandinavisk",
+      "industrial": "Industriel",
+      "farmhouse": "Landlig",
+      "classic": "Klassisk",
+      "mediterranean": "Middelhavsstil",
+      "minimalist": "Minimalistisk",
+      "japandi": "Japandi"
+    },
+    "continue": "Fortsæt",
+    "continueHints": {
+      "items": "Tilføj mindst ét køkken eller foto for at fortsætte.",
+      "capture": "Dit køkken mangler stadig et foto og alle tre mål.",
+      "goToCapture": "Gå til dit køkken"
+    },
+    "alerts": {
+      "offline": "Du er offline. Det, du har gemt, er i sikkerhed; opret forbindelse igen for at fortsætte.",
+      "expired": "Din tidligere kladde udløb efter 7 dage uden ændringer. Start forfra.",
+      "dismiss": "Luk"
+    }
   }
 }

@@ -122,5 +122,51 @@
       "expired": "O seu rascunho anterior expirou após 7 dias sem alterações. Comece de novo.",
       "dismiss": "Fechar"
     }
+  },
+  "moodboard": {
+    "backToCapture": "Voltar à sua cozinha",
+    "step": "Passo {current} de {total}",
+    "title": "O seu estilo",
+    "helper": "Escolha cozinhas de que gosta e adicione as suas próprias referências. Vamos usá-las para desenhar a sua nova cozinha.",
+    "board": {
+      "title": "O seu moodboard",
+      "counter": "{count} de {max}",
+      "rules": "As suas fotos: JPG, PNG, WebP ou HEIC · até 15 MB",
+      "empty": "Ainda não há nada. Escolha cozinhas da galeria ou adicione as suas fotos.",
+      "add": "Adicionar as suas fotos",
+      "yourPhoto": "A sua foto",
+      "uploadAlt": "A sua foto de referência {n}",
+      "removeUpload": "Remover referência {n}",
+      "removeGallery": "Remover cozinha {style} {n}",
+      "limitReached": "Adicionou {max} itens, o máximo. Remova um para adicionar outro."
+    },
+    "gallery": {
+      "title": "Galeria de estilos",
+      "helper": "Toque numa cozinha para a adicionar ao seu moodboard. Toque de novo para a remover.",
+      "filter": "Filtrar por estilo",
+      "all": "Todos",
+      "alt": "Cozinha {style} {n}"
+    },
+    "styles": {
+      "modern": "Moderna",
+      "scandinavian": "Escandinava",
+      "industrial": "Industrial",
+      "farmhouse": "Rústica",
+      "classic": "Clássica",
+      "mediterranean": "Mediterrânica",
+      "minimalist": "Minimalista",
+      "japandi": "Japandi"
+    },
+    "continue": "Continuar",
+    "continueHints": {
+      "items": "Adicione pelo menos uma cozinha ou uma foto para continuar.",
+      "capture": "A sua cozinha ainda precisa de uma foto e das três medidas.",
+      "goToCapture": "Ir para a sua cozinha"
+    },
+    "alerts": {
+      "offline": "Está offline. O que guardou está seguro; volte a ligar-se para continuar.",
+      "expired": "O seu rascunho anterior expirou após 7 dias sem alterações. Comece de novo.",
+      "dismiss": "Fechar"
+    }
   }
 }

@@ -216,6 +216,17 @@ echo "  GET /kitchen-projects/new -> 200"
 web_draft=$(curl -sS --max-time 10 -o /dev/null -w '%{http_code}' "${web_public}/api/kitchen-projects/drafts/current" 2>/dev/null || true)
 [ "$web_draft" = "404" ] || web_fail "GET /api/kitchen-projects/drafts/current (no cookie) gave '${web_draft:-<none>}', expected 404"
 echo "  GET /api/kitchen-projects/drafts/current (no draft cookie) -> 404"
+web_moodboard=$(curl -sS --max-time 10 -o /dev/null -w '%{http_code}' "${web_public}/kitchen-projects/new/moodboard" 2>/dev/null || true)
+[ "$web_moodboard" = "200" ] || web_fail "GET /kitchen-projects/new/moodboard gave '${web_moodboard:-<none>}', expected 200"
+echo "  GET /kitchen-projects/new/moodboard -> 200"
+web_gallery=$(curl -sS --max-time 10 "${web_public}/api/style-gallery" 2>/dev/null || true)
+gallery_images=$(printf '%s' "$web_gallery" | python3 -I -c 'import json,sys
+try:
+    print(sum(len(s["images"]) for s in json.load(sys.stdin)["styles"]))
+except Exception:
+    print("none")' 2>/dev/null || echo none)
+[ "$gallery_images" = "24" ] || web_fail "GET /api/style-gallery listed '${gallery_images}' images, expected 24 (assets missing from the api image?)"
+echo "  GET /api/style-gallery -> 200 with 24 images"
 
 echo
 echo "Stack is up and healthy (detached)."

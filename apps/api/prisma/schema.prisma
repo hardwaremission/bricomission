@@ -71,6 +71,7 @@ model KitchenProject {
   createdAt      DateTime             @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt      DateTime             @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
   photos         KitchenPhoto[]
+  moodboardItems MoodboardItem[]
 
   @@index([expiresAt])
   @@map("kitchen_project")
@@ -92,4 +93,34 @@ model KitchenPhoto {
 
   @@index([kitchenProjectId, position])
   @@map("kitchen_photo")
+}
+
+enum MoodboardItemSource {
+  gallery
+  upload
+
+  @@map("moodboard_item_source")
+}
+
+/// One Moodboard Item of a Kitchen Project (feature moodboard-selection): either a Style Gallery
+/// image (`galleryImageId`, no objects) or an own reference photo (two metadata-free JPEG
+/// objects in MinIO, `full` and `thumb`). `width`/`height` describe `full`. A hand-written CHECK
+/// in the migration ties the columns to `source`. Positions are 0-based and compacted.
+model MoodboardItem {
+  id               String              @id @db.Uuid
+  kitchenProjectId String              @map("kitchen_project_id") @db.Uuid
+  kitchenProject   KitchenProject      @relation(fields: [kitchenProjectId], references: [id], onDelete: Cascade)
+  position         Int
+  source           MoodboardItemSource
+  galleryImageId   String?             @map("gallery_image_id")
+  fullKey          String?             @map("full_key")
+  thumbKey         String?             @map("thumb_key")
+  width            Int
+  height           Int
+  byteSize         Int?                @map("byte_size")
+  createdAt        DateTime            @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@unique([kitchenProjectId, galleryImageId])
+  @@index([kitchenProjectId, position])
+  @@map("moodboard_item")
 }

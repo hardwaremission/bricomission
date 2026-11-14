@@ -3,6 +3,7 @@ import type { Readable } from 'node:stream';
 import { HttpException, HttpStatus, Inject, Injectable, Logger, NotFoundException, ServiceUnavailableException } from '@nestjs/common';
 import type { KitchenDraftView, KitchenPhotoView, StartKitchenDraftResponse } from '@bricomission/shared-types';
 import { OBJECT_STORAGE, ObjectNotFoundError, type ObjectStorage } from '../storage/object-storage.js';
+import { StyleGalleryService } from '../style-gallery/style-gallery.service.js';
 import { generateDraftToken, hashDraftToken } from './draft-token.js';
 import { draftError, PHOTO_ERROR_STATUS } from './kitchen-draft.errors.js';
 import {
@@ -19,6 +20,7 @@ import {
   type KitchenPhotoRecord,
 } from './kitchen-drafts.repository.js';
 import { validateMeasurements } from './measurements.js';
+import { type GalleryLookup, MOODBOARD_LIMITS, moodboardItemView } from './moodboard/moodboard.js';
 import { PHOTO_LIMITS, PhotoRejectedError, processPhoto } from './photo-processor.js';
 
 export type PhotoVariant = 'thumb' | 'full';
@@ -36,13 +38,14 @@ export function photoView(photo: KitchenPhotoRecord): KitchenPhotoView {
   };
 }
 
-export function draftView(draft: KitchenDraftRecord): KitchenDraftView {
+export function draftView(draft: KitchenDraftRecord, gallery: GalleryLookup): KitchenDraftView {
   return {
     id: draft.id,
     status: draft.status,
     measurements: { ...draft.measurements },
     photos: draft.photos.map(photoView),
-    limits: { maxPhotos: PHOTO_LIMITS.maxPhotos, maxPhotoBytes: PHOTO_LIMITS.maxBytes },
+    moodboard: draft.moodboard.map((item) => moodboardItemView(item, gallery)),
+    limits: { maxPhotos: PHOTO_LIMITS.maxPhotos, maxPhotoBytes: PHOTO_LIMITS.maxBytes, maxMoodboardItems: MOODBOARD_LIMITS.maxItems },
     expiresAt: draft.expiresAt.toISOString(),
   };
 }
@@ -67,7 +70,12 @@ export class KitchenDraftsService {
     @Inject(OBJECT_STORAGE) private readonly storage: ObjectStorage,
     @Inject(KITCHEN_DRAFT_CONFIG) private readonly config: KitchenDraftConfig,
     @Inject(KITCHEN_CLOCK) private readonly clock: Clock,
+    private readonly gallery: StyleGalleryService,
   ) {}
+
+  view(draft: KitchenDraftRecord): KitchenDraftView {
+    return draftView(draft, this.gallery);
+  }
 
   async start(): Promise<StartKitchenDraftResponse> {
     const now = this.clock();
@@ -75,14 +83,14 @@ export class KitchenDraftsService {
     if (open >= this.config.maxOpen) throw draftError(HttpStatus.TOO_MANY_REQUESTS, 'draft_capacity');
     const draftToken = generateDraftToken();
     const draft = await this.db(() => this.repo.create({ tokenHash: hashDraftToken(draftToken), expiresAt: this.expiry(now) }));
-    return { draft: draftView(draft), draftToken };
+    return { draft: this.view(draft), draftToken };
   }
 
   async updateMeasurements(draft: KitchenDraftRecord, body: unknown): Promise<KitchenDraftView> {
     const result = validateMeasurements(body);
     if (!result.ok) throw draftError(HttpStatus.BAD_REQUEST, 'invalid_measurements', { fields: result.fields });
     const updated = await this.db(() => this.repo.updateMeasurements(draft.id, result.value, this.expiry(this.clock())));
-    return draftView(updated);
+    return this.view(updated);
   }
 
   async addPhoto(draft: KitchenDraftRecord, file: Buffer): Promise<KitchenPhotoView> {

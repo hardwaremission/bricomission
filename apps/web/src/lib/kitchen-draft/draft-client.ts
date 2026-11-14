@@ -16,7 +16,7 @@ export type CallResult<T> =
   | { kind: 'error'; status: number };
 
 export const START_DRAFT_URL = '/api/kitchen-projects/drafts';
-const TIMEOUT_MS = 10_000;
+export const TIMEOUT_MS = 10_000;
 
 function failure(status: number): CallResult<never> {
   if (status === 404) return { kind: 'missing' };
@@ -24,10 +24,10 @@ function failure(status: number): CallResult<never> {
   return { kind: 'error', status };
 }
 
-async function call<T>(run: () => Promise<{ response: Response; data?: T }>, okStatus = 200): Promise<CallResult<T>> {
+export async function call<T>(run: () => Promise<{ response: Response; data?: T }>, okStatus: number | number[] = 200): Promise<CallResult<T>> {
   try {
     const { response, data } = await run();
-    if (response.status === okStatus) return { kind: 'ok', value: data as T };
+    if ((Array.isArray(okStatus) ? okStatus : [okStatus]).includes(response.status)) return { kind: 'ok', value: data as T };
     return failure(response.status);
   } catch {
     return { kind: 'offline' };

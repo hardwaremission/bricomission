@@ -5,12 +5,15 @@ export const PHOTO_ACCEPT = 'image/jpeg,image/png,image/webp,image/heic,image/he
 export const MAX_PHOTO_BYTES = 15 * 1024 * 1024;
 export const MAX_PHOTOS = 8;
 export const UPLOAD_URL = '/api/kitchen-projects/drafts/current/photos';
+/** Own reference photos of the Moodboard (same photo rules and multipart field). */
+export const MOODBOARD_UPLOAD_URL = '/api/kitchen-projects/drafts/current/moodboard/uploads';
 
 export type UploadErrorCode =
   | 'photo_too_large'
   | 'photo_unsupported_type'
   | 'photo_too_small'
   | 'photo_limit_reached'
+  | 'moodboard_limit_reached'
   | 'storage_unavailable'
   /** 404: the draft is gone (expired or never created); the caller starts one and retries. */
   | 'draft_missing'
@@ -30,7 +33,14 @@ export function precheckPhoto(file: { size: number; type: string; name: string }
 }
 
 export function errorCodeForStatus(status: number, code?: unknown): UploadErrorCode {
-  const known: UploadErrorCode[] = ['photo_too_large', 'photo_unsupported_type', 'photo_too_small', 'photo_limit_reached', 'storage_unavailable'];
+  const known: UploadErrorCode[] = [
+    'photo_too_large',
+    'photo_unsupported_type',
+    'photo_too_small',
+    'photo_limit_reached',
+    'moodboard_limit_reached',
+    'storage_unavailable',
+  ];
   if (typeof code === 'string' && (known as string[]).includes(code)) return code as UploadErrorCode;
   switch (status) {
     case 0:
@@ -58,7 +68,8 @@ export function isRetryable(code: UploadErrorCode): boolean {
   return code === 'failed' || code === 'storage_unavailable' || code === 'network' || code === 'draft_missing';
 }
 
-export type UploadResult = { ok: true; photo: KitchenPhotoView } | { ok: false; code: UploadErrorCode };
+/** `photo` is the 201 body: a KitchenPhotoView for Capture, a MoodboardItemView for the Moodboard. */
+export type UploadResult<T = KitchenPhotoView> = { ok: true; photo: T } | { ok: false; code: UploadErrorCode };
 
 export interface UploadOptions {
   /** 0-100 while the bytes are sent. */
@@ -67,11 +78,15 @@ export interface UploadOptions {
   onUploaded?: () => void;
   signal?: AbortSignal;
   createXhr?: () => XMLHttpRequest;
+  /** Target route: Capture photos by default, MOODBOARD_UPLOAD_URL for references. */
   url?: string;
 }
 
 /** Multipart upload (field `photo`) with XHR, for upload progress. Never rejects. */
-export function uploadPhoto(file: Blob, { onProgress, onUploaded, signal, createXhr = () => new XMLHttpRequest(), url = UPLOAD_URL }: UploadOptions = {}): Promise<UploadResult> {
+export function uploadPhoto<T = KitchenPhotoView>(
+  file: Blob,
+  { onProgress, onUploaded, signal, createXhr = () => new XMLHttpRequest(), url = UPLOAD_URL }: UploadOptions = {},
+): Promise<UploadResult<T>> {
   return new Promise((resolve) => {
     const xhr = createXhr();
     const body = new FormData();
@@ -93,7 +108,7 @@ export function uploadPhoto(file: Blob, { onProgress, onUploaded, signal, create
         parsed = null;
       }
       if (xhr.status === 201 && parsed && typeof parsed === 'object') {
-        resolve({ ok: true, photo: parsed as KitchenPhotoView });
+        resolve({ ok: true, photo: parsed as T });
         return;
       }
       const code = parsed && typeof parsed === 'object' ? (parsed as { code?: unknown }).code : undefined;
