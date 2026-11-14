@@ -1,6 +1,6 @@
 # Registro de conversación con Claude Code · 2026-11-14
 
-_Actualizado: 2026-11-14 12:03_
+_Actualizado: 2026-11-14 13:47_
 
 
 ---
@@ -5733,3 +5733,618 @@ Implementer terminó (`passing`). Lanzo el validator.
 - **Cuentas de prueba:** quedan `e2e-curl-other` y un usuario `e2e-gate-<timestamp>` por cada ejecución de E2E en el realm de desarrollo. Desaparecen con un reset del realm.
 
 Te paso el veredicto del validator cuando llegue.
+
+
+### 🤖 **Claude** · 2026-11-14 12:03:07
+
+Validator: **accept**. Marco `accepted`, commit, push, PR.
+
+
+### 🤖 **Claude** · 2026-11-14 12:03:11
+
+> 🔧 **Bash**: `{"command": "python3 - <<'E'\nimport json\nraw=open('feature_list.json').read()\ni=raw.index('\"id\": \"login-gate-claim\"'); j=raw.index('\"status\": \"passing\"',i)\nassert j-i<3000\nraw=raw[:j]+'\"status\": \"accepted\"'+raw[j+len('\"status\": \"passing\"'):]\nk=raw.index('\"evidence\": [',i); e=`
+
+
+### 🤖 **Claude** · 2026-11-14 12:03:20
+
+> 🔧 **Bash**: `{"command": "sed -i 's/^- Login Gate: `login-gate-claim` is `passing` (awaiting independent validation)\\./- Login Gate: `login-gate-claim` is `accepted` (validator accept 2026-11-15)./' PROGRESS.md && sed -i 's/^- Next best step: developer merges the `moodboard-selection` PR; then `login-gate-claim`
+
+
+### 🤖 **Claude** · 2026-11-14 12:03:33
+
+> 🔧 **mcp__github__create_pull_request**: `{"owner": "hardwaremission", "repo": "bricomission", "title": "[login-gate-claim] Costly AI action requires login and claims the draft", "head": "feature/login-gate-claim", "base": "main", "body": "## Summary\n- Kitchen Project lifecycle `draft → claimed`: two migrations (enum value, then `owner_sub`
+
+
+### 🤖 **Claude** · 2026-11-14 12:03:34
+
+> 🔧 **mcp__github__add_issue_comment**: `{"owner": "hardwaremission", "repo": "bricomission", "issue_number": 23, "body": "Implemented and accepted locally (validator verdict: accept). Commit efe818e on `feature/login-gate-claim`; PR opened. Gates: lint, unit tests (api 261 / web 457 / api-client 3), `./init.sh`, `pnpm test:e2e` 149 passed`
+
+
+### 🤖 **Claude** · 2026-11-14 12:03:44
+
+`login-gate-claim` está aceptada y el PR está creado: https://github.com/hardwaremission/bricomission/pull/24 (cierra el #23).
+
+**Validator: accept.** Repitió lint, los tests unitarios (api 261, web 457, api-client 3), `./init.sh`, los E2E (149 pasan, 1 omitido) y el smoke de Keycloak, todo en verde. Las comprobaciones de seguridad con curl salieron bien:
+- Sin sesión da 401, y profesional o admin dan 403.
+- Otra cuenta recibe 404, y el token del borrador deja de valer tras reclamarlo.
+- Una petición sin Origin válido da 403 y no hay redirección abierta.
+
+**Algo que no pudo comprobar él mismo:** no pudo probar contra la base de datos real que otra cuenta reclame el mismo borrador, ni dos reclamaciones simultáneas de cuentas distintas. No le dejaron crear un segundo propietario en Keycloak. Ese caso queda cubierto por el E2E, que sí crea una cuenta nueva y recibe 404, y por un test con dos reclamaciones simultáneas donde solo una gana.
+
+**Commit y push:** `efe818e` en `feature/login-gate-claim`, ya en el remoto, con comentario en el issue #23. La feature quedó marcada `accepted` en `feature_list.json` y en `PROGRESS.md`.
+
+Falta que hagas merge del PR #24 para empezar la siguiente feature.
+
+
+### 🧑 **Juan Miguel** · 2026-11-14 12:10:17
+
+estoy probando la app y me indica que me ha enviado un mensaje a juanmiguelrr@gmail.com pero no lo recibo
+
+
+### 🤖 **Claude** · 2026-11-14 12:10:22
+
+> 🔧 **Bash**: `{"command": "curl -s 'http://localhost:8025/api/v1/messages?limit=3' | python3 -c \"\nimport json,sys;d=json.load(sys.stdin)\nfor m in d.get('messages',[]): print(m['Created'][:19], [t['Address'] for t in m['To']], m['Subject'])\"", "description": "List latest emails captured by Mailpit"}`
+
+
+### 🤖 **Claude** · 2026-11-14 12:10:27
+
+No te llegará a Gmail, y es lo esperado. En local, Keycloak manda todos los correos a **Mailpit**, un buzón de pruebas que los captura y no los entrega a ningún correo real. Así la demo funciona sin conexión.
+
+Tu código ya está ahí: lo he visto en Mailpit, enviado a `juanmiguelrr@gmail.com` a las 11:09 con el asunto "Your BricoMission code".
+
+Para verlo:
+1. Abre http://localhost:8025
+2. Entra en el mensaje "Your BricoMission code" y copia el código de 6 dígitos.
+3. Pégalo en la pantalla de verificación.
+
+El código caduca a los 5 minutos. Si ya pasó ese tiempo, pide uno nuevo y aparecerá en Mailpit.
+
+
+### 🧑 **Juan Miguel** · 2026-11-14 12:18:19
+
+#24 mergeado
+
+
+### 🤖 **Claude** · 2026-11-14 12:18:23
+
+> 🔧 **Bash**: `{"command": "set -a && . ./.env && set +a && GIT_TERMINAL_PROMPT=0 git fetch -q origin && git stash -q; git checkout -q main && git merge -q --ff-only origin/main && (git stash pop -q || echo POPFAIL); git branch -d feature/login-gate-claim; git log --oneline -1; python3 -c \"\nimport json;d=json.lo`
+
+
+### 🤖 **Claude** · 2026-11-14 12:18:28
+
+Siguiente en orden: `controlnet-render`. Issue, rama, planner.
+
+
+### 🤖 **Claude** · 2026-11-14 12:18:29
+
+> 🔧 **Bash**: `{"command": "git checkout -q -b feature/controlnet-render && python3 -c \"\nimport json;x=[x for x in json.load(open('feature_list.json')) if x['id']=='controlnet-render'][0];print(json.dumps(x,ensure_ascii=False,indent=1))\"", "description": "Create branch; show feature entry"}`
+
+
+### 🤖 **Claude** · 2026-11-14 12:18:30
+
+> 🔧 **mcp__github__search_issues**: `{"query": "controlnet-render photorealistic Render room geometry", "owner": "hardwaremission", "repo": "bricomission", "fields": ["number", "title", "state"]}`
+
+
+### 🤖 **Claude** · 2026-11-14 12:18:37
+
+> 🔧 **mcp__github__issue_write**: `{"method": "create", "owner": "hardwaremission", "repo": "bricomission", "title": "[controlnet-render] Homeowner gets a photorealistic Render that keeps the room geometry", "body": "Feature `controlnet-render` from `feature_list.json`.\n\n**User-visible behavior:** A signed-in Homeowner requests a R`
+
+
+### 🤖 **Claude** · 2026-11-14 12:18:46
+
+> 🔧 **Agent**: `{"subagent_type": "planner", "description": "Plan controlnet-render spec", "prompt": "Create the implementation spec for feature `controlnet-render` in /home/juanmi/Proyectos/hardwaremission.bricomission (branch feature/controlnet-render from main 1ecff60). Use the feature-spec skill. You may write `
+
+
+### 🤖 **Claude** · 2026-11-14 12:18:51
+
+He sincronizado `main` con tu merge (1ecff60) y he borrado la rama `feature/login-gate-claim`.
+
+Siguiente feature: **`controlnet-render`**. El propietario pide un Render: SDXL + ControlNet genera una imagen fotorrealista a partir de su foto y su Moodboard, conservando la geometría de la cocina. Se guarda en MinIO y se muestra con un deslizador antes/después.
+
+- **Issue:** #25.
+- **Rama:** `feature/controlnet-render`.
+- **Planner:** escribiendo la spec. Le he pedido que liste lo que te toca decidir, entre otras cosas:
+  - qué foto se usa;
+  - cómo influye el Moodboard en la imagen;
+  - qué tipo de ControlNet, profundidad o bordes;
+  - cuántos renders por proyecto.
+
+Te paso esas preguntas cuando termine.
+
+
+### 🤖 **Claude** · 2026-11-14 12:23:42
+
+Spec lista: 10 decisiones. Bloque 1:
+
+
+### 🤖 **Claude** · 2026-11-14 12:23:50
+
+> 🔧 **AskUserQuestion**: `{"questions": [{"question": "¿Qué foto de la cocina se usa para generar el Render?", "header": "Foto", "multiSelect": false, "options": [{"label": "La elige el usuario (Recomendado)", "description": "Un Render por petición desde la foto que el propietario elige (por defecto la primera)."}, {"label":`
+
+
+### 🤖 **Claude** · 2026-11-14 12:26:15
+
+> 🔧 **AskUserQuestion**: `{"questions": [{"question": "¿Qué proporción tiene el Render respecto a la foto?", "header": "Proporción", "multiSelect": false, "options": [{"label": "La más cercana (Recomendado)", "description": "Tamaño SDXL más cercano a la foto (1216x832, 832x1216 o 1024x1024), recorte central; el 'antes' es es`
+
+
+### 🤖 **Claude** · 2026-11-14 12:31:10
+
+> 🔧 **AskUserQuestion**: `{"questions": [{"question": "¿Cómo se gestiona la VRAM entre el LLM y ComfyUI durante un Render?", "header": "VRAM", "multiSelect": false, "options": [{"label": "Medir primero (Recomendado)", "description": "No liberar nada por defecto; medir con llama-server en reposo y añadir ComfyUI /free tras ca`
+
+
+### 🤖 **Claude** · 2026-11-14 12:31:26
+
+Todo recomendado. Registro y paso al diseño.
+
+
+### 🤖 **Claude** · 2026-11-14 12:31:27
+
+> 🔧 **Bash**: `{"command": "grep -n '^## \\|^### ' docs/specs/controlnet-render.md; n=$(grep -n -i '^## Visual\\|UI gate' docs/specs/controlnet-render.md | head -1 | cut -d: -f1); grep -n -i -A22 '^## Visual' docs/specs/controlnet-render.md", "description": "Outline spec; read design brief"}`
+
+
+### 🤖 **Claude** · 2026-11-14 12:31:35
+
+> 🔧 **Bash**: `{"command": "python3 - <<'E'\np='docs/specs/controlnet-render.md'; s=open(p).read()\ns=s.replace(\"## Decisions To Confirm (recommended defaults; the implementer follows them unless the developer answers otherwise, see \\\"Open Questions\\\")\",\"## Decisions (the developer accepted every recommende`
+
+
+### 🤖 **Claude** · 2026-11-14 12:31:47
+
+Respuestas registradas. Diseño la página **AI Results** en OpenPencil (ya conectado).
+
+
+### 🤖 **Claude** · 2026-11-14 12:31:47
+
+> 🔧 **mcp__open-pencil__create_page**: `{"name": "AI Results"}`
+
+
+### 🤖 **Claude** · 2026-11-14 12:32:15
+
+> 🔧 **mcp__open-pencil__render**: `{"page_id": "1076396956:3246", "x": 0, "y": 0, "jsx": "<Frame name=\"2 · AI Results – render succeeded (/kitchen-projects/<id>/results)\" flex=\"col\" w={390} bg=\"#FAFAF8\">\n  <Frame name=\"Header\" flex=\"row\" h={64} w=\"fill\" justify=\"between\" items=\"center\" py={0} px={16}>\n    <Frame nam`
+
+
+### 🤖 **Claude** · 2026-11-14 12:32:27
+
+> 🔧 **mcp__open-pencil__render**: `{"page_id": "1076396956:3246", "x": 430, "y": 0, "jsx": "<Frame name=\"1 · AI Results – render running (first render, auto-started)\" flex=\"col\" w={390} h={844} bg=\"#FAFAF8\">\n  <Frame name=\"Header\" flex=\"row\" h={64} w=\"fill\" justify=\"between\" items=\"center\" py={0} px={16}>\n    <Frame`
+
+
+### 🤖 **Claude** · 2026-11-14 12:32:30
+
+> 🔧 **mcp__open-pencil__export_image**: `{"ids": ["1076396956:3303", "1076396956:3247"], "page_id": "1076396956:3246", "maxEdge": 1400}`
+
+
+### 🤖 **Claude** · 2026-11-14 12:32:34
+
+Ahora estados, cambio en la página del proyecto y check 360.
+
+
+### 🤖 **Claude** · 2026-11-14 12:32:46
+
+> 🔧 **mcp__open-pencil__render**: `{"page_id": "1076396956:3246", "x": 860, "y": 0, "jsx": "<Frame name=\"3 · Render states (normative annotations)\" flex=\"col\" w={440} gap={16} p={24} bg=\"#FFFFFF\" stroke=\"#E2E0DA\" rounded={20}>\n  <Text name=\"Title\" w=\"fill\" color=\"#182231\" size={16} weight={600} lineHeight={24}>Render s`
+
+
+### 🤖 **Claude** · 2026-11-14 12:32:53
+
+> 🔧 **mcp__open-pencil__render**: `{"page_id": "1076396956:3246", "x": 1340, "y": 0, "jsx": "<Frame name=\"4 · Owned project page – bottom bar change\" flex=\"col\" w={420} gap={16} p={24} bg=\"#FFFFFF\" stroke=\"#E2E0DA\" rounded={20}>\n  <Text name=\"Title\" w=\"fill\" color=\"#182231\" size={16} weight={600} lineHeight={24}>/kitch`
+
+
+### 🤖 **Claude** · 2026-11-14 12:32:54
+
+> 🔧 **mcp__open-pencil__clone_node**: `{"id": "1076396956:3247"}`
+
+
+### 🤖 **Claude** · 2026-11-14 12:32:59
+
+> 🔧 **mcp__open-pencil__query_nodes**: `{"selector": "//*[@id='1076396956:3385']//FRAME[starts-with(@name,'BeforeAfterSlider') or starts-with(@name,'Before layer') or @name='Divider line' or starts-with(@name,'Handle') or @name='Label After' or starts-with(@name,'LanguageSelector') or starts-with(@name,'AccountEntry') or @name='HeaderActi`
+
+
+### 🤖 **Claude** · 2026-11-14 12:33:03
+
+> 🔧 **mcp__open-pencil__node_replace_with**: `{"id": "1076396956:3391", "jsx": "<Frame name=\"LanguageSelector (closed, compact < 375px)\" flex=\"row\" h={44} gap={4} justify=\"center\" items=\"center\" py={0} px={10} bg=\"#F2F1ED\" rounded={999}><Icon name=\"lucide:globe\" size={16} color=\"#182231\" /><Text name=\"Current language\" color=\"#`
+
+
+### 🤖 **Claude** · 2026-11-14 12:33:04
+
+> 🔧 **mcp__open-pencil__reparent_node**: `{"id": "1076396956:3398", "parent_id": "1076396956:3385"}`
+
+
+### 🤖 **Claude** · 2026-11-14 12:33:04
+
+> 🔧 **mcp__open-pencil__reparent_node**: `{"id": "1076396956:3398", "parent_id": "1076396956:3390"}`
+
+
+### 🤖 **Claude** · 2026-11-14 12:33:05
+
+> 🔧 **mcp__open-pencil__update_node**: `{"id": "1076396956:3404", "width": 328, "height": 224}`
+
+
+### 🤖 **Claude** · 2026-11-14 12:33:06
+
+> 🔧 **mcp__open-pencil__update_node**: `{"id": "1076396956:3405", "width": 164, "height": 224}`
+
+
+### 🤖 **Claude** · 2026-11-14 12:33:06
+
+> 🔧 **mcp__open-pencil__update_node**: `{"id": "1076396956:3406", "x": 163, "height": 224}`
+
+
+### 🤖 **Claude** · 2026-11-14 12:33:07
+
+> 🔧 **mcp__open-pencil__update_node**: `{"id": "1076396956:3407", "x": 144, "y": 92}`
+
+
+### 🤖 **Claude** · 2026-11-14 12:33:07
+
+> 🔧 **mcp__open-pencil__update_node**: `{"id": "1076396956:3412", "x": 270}`
+
+
+### 🤖 **Claude** · 2026-11-14 12:33:08
+
+> 🔧 **mcp__open-pencil__update_node**: `{"id": "1076396956:3385", "x": 1800, "y": 0, "width": 360, "name": "5 · AI Results @360 check (Nederlands; slider 328x224)"}`
+
+
+### 🤖 **Claude** · 2026-11-14 12:33:09
+
+> 🔧 **mcp__open-pencil__export_image**: `{"ids": ["1076396956:3385"], "page_id": "1076396956:3246", "maxEdge": 1200}`
+
+
+### 🤖 **Claude** · 2026-11-14 12:33:18
+
+> 🔧 **mcp__open-pencil__lint**: `{"page_id": "1076396956:3246"}`
+
+
+### 🤖 **Claude** · 2026-11-14 12:33:18
+
+> 🔧 **mcp__open-pencil__save_file**: `{}`
+
+
+### 🤖 **Claude** · 2026-11-14 12:33:19
+
+> 🔧 **Bash**: `{"command": "mkdir -p /home/juanmi/Proyectos/hardwaremission.bricomission/design/openpencil/controlnet-render", "description": "Create export folder"}`
+
+
+### 🤖 **Claude** · 2026-11-14 12:33:20
+
+> 🔧 **mcp__open-pencil__export_image**: `{"page_id": "1076396956:3246", "maxEdge": 2400, "path": "/home/juanmi/Proyectos/hardwaremission.bricomission/design/openpencil/controlnet-render/overview.png"}`
+
+
+### 🤖 **Claude** · 2026-11-14 12:33:25
+
+> 🔧 **SendUserFile**: `{"files": ["/home/juanmi/Proyectos/hardwaremission.bricomission/design/openpencil/controlnet-render/overview.png"], "caption": "Página AI Results: generando, resultado con antes/después, estados, cambio en la página del proyecto y check 360", "status": "normal"}`
+
+
+### 🤖 **Claude** · 2026-11-14 12:33:32
+
+Tus 10 respuestas (todas la opción recomendada) ya están en la spec. Te he enviado el diseño de la página **AI Results**, guardado en el `.fig` con 0 errores y 0 avisos de lint.
+
+1. **Generando:**
+   - Título "Designing your kitchen", con el estilo y el número de foto.
+   - Tu foto atenuada con la tarjeta "Generating…", una barra en movimiento y "about 10 to 30 seconds".
+   - Nota de que puedes salir de la página mientras se genera. "Generate again" queda deshabilitado con "One render at a time."
+2. **Resultado:**
+   - Deslizador antes/después con etiquetas "Before" y "After" y un tirador central que se arrastra o se mueve con las flechas del teclado.
+   - Selector "Photo for the next render" (la foto elegida lleva borde azul y ✓).
+   - Tira "Your renders" con el contador "2 of 10".
+   - Botones "Generate again" y "Back to my kitchen".
+3. **Estados:**
+   - En cola: "Waiting for the GPU", con cuántos trabajos van delante.
+   - Error o interrumpido, con "Try again".
+   - GPU ocupada.
+   - Límite de 10 alcanzado.
+   - Aviso de estilo neutro cuando el Moodboard solo tiene fotos tuyas.
+   - Sin conexión.
+4. **Página del proyecto:** "Generate my kitchen" pasa a estar activo y lleva a `/results`. Cuando ya hay algún render, cambia a "See my designs". "Get my budget" sigue en "Budgets: available soon".
+5. **Comprobación a 360 px** con el selector "Nederlands": cabe todo; el deslizador queda en 328×224.
+
+¿Apruebas el diseño de AI Results?
+
+
+### 🧑 **Juan Miguel** · 2026-11-14 12:35:24
+
+aprobado
+
+
+### 🤖 **Claude** · 2026-11-14 12:35:26
+
+> 🔧 **mcp__open-pencil__get_jsx**: `{"id": "1076396956:3303", "path": "/home/juanmi/Proyectos/hardwaremission.bricomission/design/openpencil/controlnet-render/1-results-running.jsx"}`
+
+
+### 🤖 **Claude** · 2026-11-14 12:35:27
+
+> 🔧 **mcp__open-pencil__get_jsx**: `{"id": "1076396956:3247", "path": "/home/juanmi/Proyectos/hardwaremission.bricomission/design/openpencil/controlnet-render/2-results-succeeded.jsx"}`
+
+
+### 🤖 **Claude** · 2026-11-14 12:35:28
+
+> 🔧 **mcp__open-pencil__get_jsx**: `{"id": "1076396956:3340", "path": "/home/juanmi/Proyectos/hardwaremission.bricomission/design/openpencil/controlnet-render/3-render-states.jsx"}`
+
+
+### 🤖 **Claude** · 2026-11-14 12:35:29
+
+> 🔧 **mcp__open-pencil__get_jsx**: `{"id": "1076396956:3371", "path": "/home/juanmi/Proyectos/hardwaremission.bricomission/design/openpencil/controlnet-render/4-owned-page-bar.jsx"}`
+
+
+### 🤖 **Claude** · 2026-11-14 12:35:29
+
+> 🔧 **mcp__open-pencil__get_jsx**: `{"id": "1076396956:3385", "path": "/home/juanmi/Proyectos/hardwaremission.bricomission/design/openpencil/controlnet-render/5-results-360-check.jsx"}`
+
+
+### 🤖 **Claude** · 2026-11-14 12:35:55
+
+> 🔧 **Write**: `{"file_path": "/home/juanmi/Proyectos/hardwaremission.bricomission/docs/design/controlnet-render.md", "content": "# Design Read-Back: controlnet-render\n\nApproved by developer on 2026-11-15.\n\n- Source of truth: `design/openpencil/bricomission_B2C_app.fig`, page **AI Results**, designed and read b`
+
+
+### 🤖 **Claude** · 2026-11-14 12:36:04
+
+> 🔧 **Agent**: `{"subagent_type": "implementer", "description": "Implement controlnet-render", "prompt": "Implement feature `controlnet-render` in /home/juanmi/Proyectos/hardwaremission.bricomission (branch feature/controlnet-render, already checked out; GitHub issue #25). Use the feature-implementer skill.\n\nInpu`
+
+
+### 🤖 **Claude** · 2026-11-14 12:36:08
+
+He guardado el diseño aprobado de AI Results y el implementer de `controlnet-render` ya está trabajando en segundo plano.
+
+- **Diseño guardado:** las exportaciones están en `design/openpencil/controlnet-render/` y el documento en `docs/design/controlnet-render.md`.
+- **Pruebas sin GPU:** los tests unitarios y E2E usan el adaptador falso.
+- **Prueba en la GPU real:** solo para esa prueba encenderá el perfil `ai`, con `llama-server` en reposo y `comfyui`. Medirá tiempos y VRAM y apagará los dos servicios al terminar.
+- **Te tocará a ti:** guardará una imagen del antes y el después juntos para que compruebes que ventanas, puerta y fontanería siguen en su sitio.
+
+Te aviso cuando termine; después viene el validator.
+
+
+### 🤖 **Claude** · 2026-11-14 13:08:18
+
+> 🔧 **Read**: `{"file_path": "/home/juanmi/Proyectos/hardwaremission.bricomission/docs/spikes/assets/controlnet-render-compare.jpg"}`
+
+
+### 🤖 **Claude** · 2026-11-14 13:08:26
+
+> 🔧 **Agent**: `{"subagent_type": "validator", "description": "Validate controlnet-render", "prompt": "Independently validate feature `controlnet-render` in /home/juanmi/Proyectos/hardwaremission.bricomission (branch feature/controlnet-render, uncommitted working tree on top of main 1ecff60; issue #25). Use the fea`
+
+
+### 🤖 **Claude** · 2026-11-14 13:08:32
+
+> 🔧 **SendUserFile**: `{"files": ["/home/juanmi/Proyectos/hardwaremission.bricomission/docs/spikes/assets/controlnet-render-compare.jpg", "/home/juanmi/Proyectos/hardwaremission.bricomission/docs/spikes/assets/controlnet-render-compare-portrait.jpg"], "caption": "Render real en GPU: izquierda antes, derecha resultado (hor`
+
+
+### 🤖 **Claude** · 2026-11-14 13:08:42
+
+`controlnet-render` ya está implementado y su Render en la GPU real cumple el tiempo pedido. Ahora mismo lo está revisando el validator independiente. Te he enviado las dos comparativas antes/después: la geometría la tienes que dar por buena tú.
+
+**Render en la GPU real:**
+
+| Formato | Primera vez | Siguientes | Límite (spec) |
+|---|---|---|---|
+| Horizontal 1216×832 | 20,8 s | 9,1–10,3 s | 35 s / 20 s |
+| Vertical 832×1216 | 14,3 s | 8,6 s | no fijado en la spec |
+
+- **Memoria de la GPU:** pico de 16,26 de 16,3 GB con el LLM cargado en reposo. No se quedó sin memoria y el LLM siguió respondiendo después. Como los tiempos repetidos no empeoraron, no hace falta liberar memoria tras cada Render.
+- **Al terminar:** los servicios de GPU quedaron parados y la app vuelve a usar el adaptador falso.
+
+**Tests:** todo en verde.
+- `pnpm -r lint` sin errores; `pnpm -r test` con api 298, web 469 y api-client 3.
+- `./init.sh` bien, con los 6 servicios sanos.
+- Los E2E dan 152 pasan y 1 omitido.
+- Si la API se reinicia en mitad de un Render, este queda marcado como fallido.
+
+**Mi lectura de la comparativa horizontal:** se mantienen las dos ventanas de la izquierda, la de la derecha, el fregadero con su grifo, las encimeras, la cocina y las dos neveras. Hay dos cosas que conviene que mires:
+- El armario alto de madera del centro se ha convertido en una puerta acristalada.
+- Al usar detección de bordes (canny), copia también los objetos tal cual: la tetera, los escurreplatos y los fuegos.
+
+**Quedan apuntados como riesgo:** la GPU va casi llena durante un Render, y tus fotos subidas al Moodboard todavía no influyen en el estilo.
+
+¿Te parece aceptable la geometría de las comparativas? Si es así, en cuanto el validator dé su veredicto marco la feature como aceptada, hago commit y abro el PR.
+
+
+### 🧑 **Juan Miguel** · 2026-11-14 13:11:59
+
+<task-notification>
+<task-id>a908b5728f78850d7</task-id>
+<tool-use-id>toolu_01HQc2MnvjffquzRLbgAG8sJ</tool-use-id>
+<output-file>/tmp/claude-1000/-home-juanmi-Proyectos-hardwaremission-bricomission/f43e4370-93ae-4d11-927d-b8255aa114d7/tasks/a908b5728f78850d7.output</output-file>
+<status>completed</status>
+<summary>Agent "Validate controlnet-render" is waiting on its own background work</summary>
+<note>This agent stopped with background work of its own still running. It may resume on its own when that work completes or reports, and the same task-id notifies again if it does; the result below may be interim.</note>
+<result>This agent has not reported yet: it is waiting on its own background work and will deliver its report through SubagentHandback when that finishes.
+</result>
+<usage><subagent_tokens>142451</subagent_tokens><tool_uses>34</tool_uses><duration_ms>208990</duration_ms></usage>
+</task-notification>
+
+
+### 🤖 **Claude** · 2026-11-14 13:12:01
+
+El validator sigue ejecutando sus comprobaciones. Mientras tanto, ¿te parece aceptable la geometría de las comparativas?
+
+
+### 🤖 **Claude** · 2026-11-14 13:14:22
+
+Validator: **accept**. Arreglo ya el riesgo de sobrescribir la evidencia real con `--no-gpu`.
+
+
+### 🤖 **Claude** · 2026-11-14 13:14:23
+
+> 🔧 **Bash**: `{"command": "sed -n 1,40p scripts/ai/render-smoke.sh; grep -n 'out' scripts/ai/render-smoke.sh | sed -n 1,40p; grep -n 'render-smoke' AGENTS.md", "description": "Inspect render-smoke output handling"}`
+
+
+### 🤖 **Claude** · 2026-11-14 13:14:30
+
+> 🔧 **Bash**: `{"command": "python3 - <<'E'\np='scripts/ai/render-smoke.sh'; s=open(p).read()\ns=s.replace(\"# variants. Writes a side-by-side before|after JPEG (ffmpeg) of the cold Render to --out\\n# (default docs/spikes/assets/controlnet-render-compare.jpg). Never prints tokens.\",\n\"# variants. Writes a side-`
+
+
+### 🤖 **Claude** · 2026-11-14 13:14:33
+
+> 🔧 **Bash**: `{"command": "grep -n 'ComfyUI.*input' docs/risks-and-open-questions.md | head -2 | cut -c1-300", "description": "Find risks table row format"}`
+
+
+### 🤖 **Claude** · 2026-11-14 13:14:37
+
+> 🔧 **Bash**: `{"command": "python3 - <<'E'\np='docs/risks-and-open-questions.md'; L=open(p).read().split('\\n')\ni=[n for n,l in enumerate(L) if l.startswith('| Render inputs stay in the ComfyUI container')][0]\nL.insert(i+1,\"| Render recovery skipped when the database is down at API start (`controlnet-render`) `
+
+
+### 🤖 **Claude** · 2026-11-14 13:14:44
+
+El validator ha dado **accept** a `controlnet-render`. Antes de marcarla como aceptada, hacer commit y abrir el PR solo me falta que des por buena la geometría de las dos comparativas que te envié.
+
+**Lo que comprobó el validator por su cuenta (sin GPU):**
+- Lint, tests, `./init.sh`, E2E (152 pasan, 1 omitido), el smoke de Keycloak y la prueba de Render con el adaptador falso: todo en verde.
+- Solo el dueño accede a sus renders: un render de otro proyecto da 404, admin da 403 y un proyecto sin reclamar da 404.
+- Con 6 peticiones a la vez solo arranca 1 Render; el undécimo da 409.
+- Si la API se reinicia en mitad de un Render, este queda como interrumpido.
+- Los JPEG guardados no llevan metadatos ni prompt.
+
+**Arreglos que he hecho mientras tanto:**
+- `scripts/ai/render-smoke.sh --no-gpu` escribía su imagen encima de la comparativa real de la GPU, que aún no está en git y se habría perdido. Ahora, sin `--out`, guarda en un fichero temporal. La comparativa real sigue intacta.
+- He añadido a riesgos que, si la base de datos está caída cuando arranca la API, un Render que se había quedado a medias bloquea nuevos Renders de ese proyecto (409) hasta el siguiente reinicio.
+
+**Lo que tienes que mirar en las comparativas:**
+- Ventanas, fregadero, encimeras, cocina y neveras se mantienen en su sitio.
+- El armario alto de madera del centro se ha convertido en una puerta acristalada.
+- Se copian tal cual objetos como la tetera, los escurreplatos y los fuegos.
+
+¿Das por buena la geometría?
+
+
+### 🧑 **Juan Miguel** · 2026-11-14 13:20:10
+
+¿donde están esos archivos a mirar por mi parte?
+
+
+### 🤖 **Claude** · 2026-11-14 13:20:14
+
+Son estas dos imágenes. En cada una, a la izquierda tu foto (antes) y a la derecha el Render:
+
+- `/home/juanmi/Proyectos/hardwaremission.bricomission/docs/spikes/assets/controlnet-render-compare.jpg` (horizontal)
+- `/home/juanmi/Proyectos/hardwaremission.bricomission/docs/spikes/assets/controlnet-render-compare-portrait.jpg` (vertical)
+
+Te las he vuelto a enviar justo debajo para que las veas aquí mismo.
+
+
+### 🤖 **Claude** · 2026-11-14 13:20:15
+
+> 🔧 **SendUserFile**: `{"files": ["/home/juanmi/Proyectos/hardwaremission.bricomission/docs/spikes/assets/controlnet-render-compare.jpg", "/home/juanmi/Proyectos/hardwaremission.bricomission/docs/spikes/assets/controlnet-render-compare-portrait.jpg"], "caption": "Izquierda: foto original · Derecha: Render generado en la G`
+
+
+### 🤖 **Claude** · 2026-11-14 13:20:20
+
+Las dos comparativas que te reenvié están en `docs/spikes/assets/`:
+
+- `/home/juanmi/Proyectos/hardwaremission.bricomission/docs/spikes/assets/controlnet-render-compare.jpg` (horizontal)
+- `/home/juanmi/Proyectos/hardwaremission.bricomission/docs/spikes/assets/controlnet-render-compare-portrait.jpg` (vertical)
+
+En las dos, a la izquierda está tu foto y a la derecha el Render.
+
+Fíjate en si ventanas, puerta, fregadero, encimeras y neveras siguen en el mismo sitio. Ya sabemos dos cosas: el armario alto de madera del centro se convirtió en una puerta acristalada, y se copian tal cual objetos como la tetera o los escurreplatos.
+
+¿Das por buena la geometría?
+
+
+### 🧑 **Juan Miguel** · 2026-11-14 13:24:05
+
+la geometría es correcta pero ¿podrías modificar el prompt que se le pasa a controlnet para que limpie de accesorios la cocina resultado (tetera, escurreplatos de plástico cutres, etc.)? Es importante que no cambie un armario por una puerta ya que eso no es una simple reforma de muebles sino que requiere albañilería y el presupuesto sería irreal. El prompt para generar la imagen de salida debe asegurar que estas alucinaciones no pasen
+
+
+### 🤖 **Claude** · 2026-11-14 13:24:12
+
+> 🔧 **Bash**: `{"command": "cat apps/api/src/kitchen-projects/renders/render-prompt.ts | head -80; grep -n -i 'negative\\|strength\\|end_percent\\|start_percent\\|low_threshold\\|high_threshold\\|cfg\\|steps\\|denoise' apps/api/src/ai/adapters/comfyui-workflow.ts | head -30", "description": "Inspect current prompt`
+
+
+### 🤖 **Claude** · 2026-11-14 13:24:28
+
+> 🔧 **SendMessage**: `{"to": "a7b5c73f057a8c310", "summary": "Tune render prompt and ControlNet for clutter", "message": "Developer feedback on the real-GPU geometry check (2026-11-15): geometry is correct, but the Render must (1) remove clutter/accessories (kettle, cheap plastic dish racks, dish drainers, bottles, utens`
+
+
+### 🤖 **Claude** · 2026-11-14 13:24:36
+
+He pedido al implementer que ajuste el prompt y ControlNet y lo pruebe de nuevo en la GPU real.
+
+Solo con el prompt no basta. ControlNet canny copia los bordes de tu foto, y los de la tetera y los escurreplatos siguen ahí; por mucho que el prompt diga "sin tetera", el modelo la dibuja. Por eso se cambian tres cosas:
+
+1. **Prompt positivo:** encimeras despejadas, armarios en la misma posición, paredes, puertas y ventanas sin cambios.
+2. **Prompt negativo:**
+   - Accesorios: tetera, escurreplatos, botellas, utensilios y pequeños electrodomésticos.
+   - Cambios de obra: puertas nuevas, puertas acristaladas, arcos, huecos en la pared y ventanas nuevas.
+3. **Ajustes de ControlNet:**
+   - Subir los umbrales de canny, para que desaparezcan los bordes pequeños de los objetos y se mantengan los de paredes, ventanas y armarios.
+   - Dejar que ControlNet actúe solo en la primera parte de la generación, para que al final pueda limpiar superficies sin mover la geometría.
+
+Probará varias combinaciones en las fotos horizontal y vertical y se quedará con la que mantenga el armario alto como armario y quite los accesorios. Las comparativas nuevas sustituirán a las actuales en `docs/spikes/assets/`, y además guardará en `controlnet-render-tuning.jpg` una cuadrícula con todas las pruebas. Te las enseño cuando termine para que las apruebes.
+
+Aun así, el modelo no es determinista y no puedo garantizar al 100 % que nunca cambie algo de la estructura en cualquier foto. Lo que sí se puede es dejarlo mucho menos probable y comprobarlo con estas muestras.
+
+
+### 🤖 **Claude** · 2026-11-14 13:43:25
+
+> 🔧 **Read**: `{"file_path": "/home/juanmi/Proyectos/hardwaremission.bricomission/docs/spikes/assets/controlnet-render-compare.jpg"}`
+
+
+### 🤖 **Claude** · 2026-11-14 13:43:29
+
+> 🔧 **SendUserFile**: `{"files": ["/home/juanmi/Proyectos/hardwaremission.bricomission/docs/spikes/assets/controlnet-render-compare.jpg", "/home/juanmi/Proyectos/hardwaremission.bricomission/docs/spikes/assets/controlnet-render-compare-portrait.jpg", "/home/juanmi/Proyectos/hardwaremission.bricomission/docs/spikes/assets/`
+
+
+### 🤖 **Claude** · 2026-11-14 13:43:48
+
+El armario alto ya no se convierte en puerta, pero los accesorios no desaparecen: se transforman en otros objetos. Te he enviado las comparativas nuevas y la rejilla con todas las pruebas.
+
+**Lo que queda en la imagen horizontal:**
+- **Estructura correcta:** se mantienen las ventanas, el fregadero, las encimeras, la cocina y las neveras. El armario alto sigue siendo un armario blanco. No aparecen puertas, huecos ni ventanas nuevas.
+- **Accesorios:** siguen ahí, transformados. La tetera sale negra, los escurreplatos se convierten en dos cuencos negros y hay una botella junto al grifo y una planta sobre una nevera.
+
+**Por qué no se van:** el implementer probó unas 25 combinaciones en la GPU, con varias semillas. Todas las que quitaban los accesorios rompían la estructura en alguna semilla: el armario volvía a ser puerta o una ventana se convertía en armario. Como tu prioridad es la estructura, eligió la combinación que la conserva.
+
+ControlNet dibuja dentro de los contornos de la foto, y la tetera tiene contorno; el prompt no puede borrarla sin aflojar también los contornos de paredes y armarios. Quitarla de verdad exige marcar dónde están los objetos (una máscara) y rellenar esa zona (inpainting) antes o después del Render.
+
+**Coste:**
+- El Render tarda 10,2–10,8 s cuando el modelo ya está cargado y 17,5–19,6 s la primera vez, dentro del límite.
+- La GPU sigue casi llena pero sin errores.
+- Lint y tests en verde (la api pasa de 298 a 303 tests).
+- No hacen falta modelos nuevos.
+
+La estructura solo se ha comprobado en dos semillas y dos fotos de muestra; no es garantía para cualquier foto.
+
+¿Cómo seguimos con los accesorios?
+
+1. **Aceptar así y abrir una feature aparte de limpieza (recomendado):** cerramos `controlnet-render` con la estructura correcta. La limpieza automática quedaría como feature propia: detectar los objetos, crear la máscara y rellenarla antes del Render. Necesita descargar modelos de detección una sola vez (con red) y más tiempo de GPU por imagen.
+2. **Que el usuario marque qué quitar:** un pincel sobre la foto marca los objetos y se rellenan antes del Render. Es más fiable que la detección automática, pero añade una pantalla nueva y también necesita un modelo de inpainting.
+3. **Seguir afinando ControlNet y el prompt en esta feature:** veo poco margen, porque el ajuste ya está en el límite entre limpiar y respetar la estructura.
+
+
+### 🧑 **Juan Miguel** · 2026-11-14 13:45:49
+
+1
+
+
+### 🤖 **Claude** · 2026-11-14 13:45:54
+
+Opción 1. Añado la feature `render-declutter` y pido al validator que revise el ajuste antes de aceptar.
+
+
+### 🤖 **Claude** · 2026-11-14 13:45:59
+
+> 🔧 **SendMessage**: `{"to": "a908b5728f78850d7", "summary": "Delta validation after render tuning", "message": "Delta validation for controlnet-render after your accept: per developer feedback, the implementer tuned the prompt and ControlNet (developer accepted the structure result; clutter removal moves to a separate f`
+
+
+### 🤖 **Claude** · 2026-11-14 13:46:01
+
+> 🔧 **Bash**: `{"command": "n=$(grep -n '\"id\": \"controlnet-render\"' feature_list.json | cut -d: -f1); awk -v s=$n 'NR>=s-1 && NR<=s+40' feature_list.json | grep -n '^  },\\|^  {' | head -3; grep -n '\"id\": ' feature_list.json | awk -F: -v s=$n '$1>s' | head -2", "description": "Locate insertion point after co`
+
+
+### 🤖 **Claude** · 2026-11-14 13:46:13
+
+> 🔧 **Bash**: `{"command": "tail -5 feature_list.json && python3 - <<'E'\nimport json\nraw=open('feature_list.json').read()\nentry='''  {\n    \"id\": \"render-declutter\",\n    \"area\": \"ai-visuals\",\n    \"title\": \"Renders show a decluttered kitchen without structural changes\",\n    \"user_visible_behavior`
+
+
+### 🤖 **Claude** · 2026-11-14 13:46:16
+
+> 🔧 **Bash**: `{"command": "tail -22 feature_list.json | head -4; git diff --stat feature_list.json | tail -1", "description": "Check JSON tail formatting"}`
+
+
+### 🤖 **Claude** · 2026-11-14 13:46:24
+
+Vamos con la opción 1. La estructura queda como la diste por buena, y la limpieza de accesorios pasa a ser una feature aparte. Antes de aceptar, el validator está revisando los cambios del ajuste.
+
+- **Nueva feature `render-declutter`:** está añadida a `feature_list.json`, en estado `not_started` y dependiente de `controlnet-render`.
+  - El objetivo es detectar los objetos sueltos (tetera, escurreplatos, botellas, pequeños electrodomésticos), crear una máscara y rellenarla antes del Render. Paredes, puertas, ventanas, huecos y posición de armarios se quedan como en la foto.
+  - Se decidirá en la planificación si la máscara es automática o la marca el usuario.
+  - La he puesto al final de la lista, así que va después de los presupuestos y del resto del MVP. Si la quieres antes, dímelo.
+- **Revisión del ajuste:** el validator vuelve a pasar lint, tests, `./init.sh` (cambió `compose.yaml`) y la prueba de Render con el adaptador falso. Revisa además los ajustes nuevos de ControlNet y su configuración.
+
+Si da su visto bueno, marco `controlnet-render` como aceptada, hago commit y abro el PR.

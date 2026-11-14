@@ -13,18 +13,38 @@ import { OBJECT_STORAGE } from '../../src/storage/object-storage.js';
 import { makeImage } from './images.js';
 import { MemoryKitchenDraftRepository } from './memory-kitchen-draft-repository.js';
 import { MemoryObjectStorage } from './memory-object-storage.js';
+import { MemoryRenderRepository } from './memory-render-repository.js';
+import { IMAGE_ADAPTER } from '../../src/ai/ai.tokens.js';
+import { FakeImageAdapter } from '../../src/ai/adapters/fake-image.adapter.js';
+import type { FakeAdapterOptions } from '../../src/ai/adapters/fake-adapter.support.js';
+import { DEFAULT_RENDER_CONTROL, RENDER_CONFIG, type RenderConfig } from '../../src/kitchen-projects/renders/render.config.js';
+import { RENDER_REPOSITORY } from '../../src/kitchen-projects/renders/render.repository.js';
+import { GPU_BROKER_OPTIONS } from '../../src/ai/ai.tokens.js';
+import { DEFAULT_GPU_BROKER_OPTIONS, type GpuBrokerOptions } from '../../src/ai/jobs/gpu-broker.options.js';
 import { createTestKeys, signToken, type TestKeys } from './tokens.js';
 
 export const DRAFTS = '/kitchen-projects/drafts';
 export const HOMEOWNER_SUB = 'b0e2a1c4-0000-4000-8000-000000000001';
 export const OTHER_SUB = 'b0e2a1c4-0000-4000-8000-0000000000aa';
 
+export interface KitchenAppOptions {
+  /** Options of the fake image adapter (gates, delay). */
+  image?: FakeAdapterOptions;
+  renderConfig?: Partial<RenderConfig>;
+  /** A pre-filled Render repository (recovery tests). */
+  renders?: MemoryRenderRepository;
+  broker?: Partial<GpuBrokerOptions>;
+}
+
 /**
- * DB-free, MinIO-free, Keycloak-free AppModule for the login-gate-claim HTTP tests: in-memory
+ * DB-free, MinIO-free, Keycloak-free, GPU-free AppModule for the kitchen project HTTP tests: in-memory
  * repository and storage, a controllable clock and a local JWKS (test/support/tokens.ts).
  */
-export async function createKitchenApp() {
+export async function createKitchenApp(options: KitchenAppOptions = {}) {
   const repo = new MemoryKitchenDraftRepository();
+  const renders = options.renders ?? new MemoryRenderRepository();
+  const image = new FakeImageAdapter(options.image ?? {});
+  const renderConfig: RenderConfig = { mode: 'canny', maxPerProject: 10, control: DEFAULT_RENDER_CONTROL, ...options.renderConfig };
   const storage = new MemoryObjectStorage();
   const config: KitchenDraftConfig = { ttlDays: 7, cleanupIntervalMs: 0, maxOpen: 2000 };
   const clock = { now: new Date('2026-11-15T10:00:00.000Z') };
@@ -42,6 +62,14 @@ export async function createKitchenApp() {
     .useValue(config)
     .overrideProvider(KITCHEN_CLOCK)
     .useValue(() => clock.now)
+    .overrideProvider(RENDER_REPOSITORY)
+    .useValue(renders)
+    .overrideProvider(IMAGE_ADAPTER)
+    .useValue(image)
+    .overrideProvider(RENDER_CONFIG)
+    .useValue(renderConfig)
+    .overrideProvider(GPU_BROKER_OPTIONS)
+    .useValue({ ...DEFAULT_GPU_BROKER_OPTIONS, ...options.broker })
     .compile();
   const app: INestApplication = configureApp(moduleRef.createNestApplication({ logger: false }));
   await app.init();
@@ -84,7 +112,7 @@ export async function createKitchenApp() {
     return req;
   }
 
-  return { app, repo, storage, config, clock, keys, http, token, seedDraft, claim, jpeg };
+  return { app, moduleRef, repo, renders, image, renderConfig, storage, config, clock, keys, http, token, seedDraft, claim, jpeg };
 }
 
 export type KitchenApp = Awaited<ReturnType<typeof createKitchenApp>>;

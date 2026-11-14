@@ -219,11 +219,12 @@
   },
   "project": {
     "title": "Keittiöprojektisi",
-    "helper": "Suunnitelmat ja tarjoukset tulevat pian. Projektisi pysyy täällä valmiina niitä varten.",
+    "helper": "Luo suunnitelma uudesta keittiöstäsi. Tarjoukset tulevat pian.",
     "claimed": "Keittiösi on tallennettu tilillesi.",
     "dismiss": "Sulje",
     "newProject": "Aloita uusi keittiöprojekti",
-    "availableSoon": "Tulossa pian",
+    "budgetsSoon": "Tarjoukset: tulossa pian",
+    "seeDesigns": "Näytä suunnitelmani",
     "signedOut": {
       "title": "Kirjaudu sisään nähdäksesi tämän keittiöprojektin",
       "signIn": "Kirjaudu sisään"
@@ -233,5 +234,53 @@
       "home": "Siirry etusivulle"
     },
     "offline": "Olet offline-tilassa. Keittiöprojektisi on tallessa; yhdistä uudelleen nähdäksesi sen."
+  },
+  "results": {
+    "back": "Takaisin keittiööni",
+    "titleDone": "Uusi keittiösi",
+    "titleActive": "Keittiötäsi suunnitellaan",
+    "helperDone": "Tyyli {style}, kuvasta {n}. Vertaa vetämällä liukusäädintä.",
+    "helperActive": "Tyyli {style}, kuvasta {n}. Tämä kestää noin 10–30 sekuntia.",
+    "helperIdle": "Tyyli {style}, kuvasta {n}.",
+    "slider": {
+      "label": "Vertaa ennen ja jälkeen",
+      "before": "Ennen",
+      "after": "Jälkeen",
+      "beforeAlt": "Keittiösi ennen",
+      "afterAlt": "Uuden keittiösi suunnitelma"
+    },
+    "status": {
+      "running": "Luodaan…",
+      "queued": "Odotetaan grafiikkasuoritinta",
+      "ahead": "{count, plural, one {# työ ennen omaasi} other {# työtä ennen omaasi}}"
+    },
+    "note": "Voit poistua sivulta; renderöinti jatkuu ja näkyy täällä, kun se on valmis.",
+    "photos": {
+      "title": "Kuva seuraavaa renderöintiä varten",
+      "helper": "Renderöinti säilyttää tämän kuvan seinät, ikkunat ja putket.",
+      "option": "Kuva {n}"
+    },
+    "history": {
+      "title": "Renderöintisi",
+      "counter": "{count}/{max}",
+      "item": "Renderöinti {n}"
+    },
+    "cta": {
+      "again": "Luo uudelleen",
+      "retry": "Yritä uudelleen",
+      "generate": "Luo keittiöni",
+      "back": "Takaisin keittiööni"
+    },
+    "hints": {
+      "oneAtATime": "Yksi renderöinti kerrallaan.",
+      "limit": "Olet luonut {max} renderöintiä, mikä on tämän projektin enimmäismäärä."
+    },
+    "alerts": {
+      "failed": "Emme voineet luoda tätä renderöintiä. Yritä hetken kuluttua uudelleen.",
+      "interrupted": "Tämä renderöinti keskeytyi. Yritä uudelleen.",
+      "queueFull": "Suunnittelija on juuri nyt varattu. Yritä minuutin kuluttua uudelleen.",
+      "uploadsOnly": "Omat kuvasi eivät vielä voi ohjata tyyliä, joten käytimme neutraalia modernia tyyliä.",
+      "offline": "Olet offline-tilassa. Renderöintisi ovat tallessa; yhdistä uudelleen nähdäksesi uudet."
+    }
   }
 }

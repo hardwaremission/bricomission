@@ -219,11 +219,12 @@
   },
   "project": {
     "title": "Votre projet de cuisine",
-    "helper": "Les designs et les devis arrivent bientôt. Votre projet reste ici, prêt pour eux.",
+    "helper": "Générez un design de votre nouvelle cuisine. Les devis arrivent bientôt.",
     "claimed": "Votre cuisine est enregistrée dans votre compte.",
     "dismiss": "Fermer",
     "newProject": "Commencer un nouveau projet de cuisine",
-    "availableSoon": "Bientôt disponible",
+    "budgetsSoon": "Devis : bientôt disponibles",
+    "seeDesigns": "Voir mes designs",
     "signedOut": {
       "title": "Connectez-vous pour voir ce projet de cuisine",
       "signIn": "Se connecter"
@@ -233,5 +234,53 @@
       "home": "Aller à l'accueil"
     },
     "offline": "Vous êtes hors ligne. Votre projet de cuisine est en sécurité ; reconnectez-vous pour le voir."
+  },
+  "results": {
+    "back": "Retour à ma cuisine",
+    "titleDone": "Votre nouvelle cuisine",
+    "titleActive": "Conception de votre cuisine",
+    "helperDone": "Style {style}, à partir de la photo {n}. Faites glisser la poignée pour comparer.",
+    "helperActive": "Style {style}, à partir de la photo {n}. Cela prend environ 10 à 30 secondes.",
+    "helperIdle": "Style {style}, à partir de la photo {n}.",
+    "slider": {
+      "label": "Comparer avant et après",
+      "before": "Avant",
+      "after": "Après",
+      "beforeAlt": "Votre cuisine avant",
+      "afterAlt": "Le design de votre nouvelle cuisine"
+    },
+    "status": {
+      "running": "Génération…",
+      "queued": "En attente du GPU",
+      "ahead": "{count, plural, one {# tâche avant la vôtre} other {# tâches avant la vôtre}}"
+    },
+    "note": "Vous pouvez quitter cette page ; le rendu continue et apparaîtra ici une fois prêt.",
+    "photos": {
+      "title": "Photo pour le prochain rendu",
+      "helper": "Le rendu conserve les murs, les fenêtres et la plomberie de cette photo.",
+      "option": "Photo {n}"
+    },
+    "history": {
+      "title": "Vos rendus",
+      "counter": "{count} sur {max}",
+      "item": "Rendu {n}"
+    },
+    "cta": {
+      "again": "Générer à nouveau",
+      "retry": "Réessayer",
+      "generate": "Générer ma cuisine",
+      "back": "Retour à ma cuisine"
+    },
+    "hints": {
+      "oneAtATime": "Un rendu à la fois.",
+      "limit": "Vous avez créé {max} rendus, le maximum pour ce projet."
+    },
+    "alerts": {
+      "failed": "Nous n'avons pas pu créer ce rendu. Réessayez dans un instant.",
+      "interrupted": "Ce rendu a été interrompu. Réessayez.",
+      "queueFull": "Le designer est occupé pour le moment. Réessayez dans une minute.",
+      "uploadsOnly": "Vos propres photos ne peuvent pas encore guider le style, nous avons donc utilisé un style moderne neutre.",
+      "offline": "Vous êtes hors ligne. Vos rendus sont en sécurité ; reconnectez-vous pour voir les nouveaux."
+    }
   }
 }

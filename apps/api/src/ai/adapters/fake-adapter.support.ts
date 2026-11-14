@@ -24,13 +24,13 @@ export class ActivityTracker {
   active = 0;
   maxActive = 0;
 
-  async track<T>(options: FakeAdapterOptions, signal: AbortSignal, produce: () => T): Promise<T> {
+  async track<T>(options: FakeAdapterOptions, signal: AbortSignal, produce: () => T | Promise<T>): Promise<T> {
     if (signal.aborted) throw abortError();
     this.active += 1;
     this.maxActive = Math.max(this.maxActive, this.active);
     try {
       await waitOrAbort(options, signal);
-      return produce();
+      return await produce();
     } finally {
       this.active -= 1;
     }

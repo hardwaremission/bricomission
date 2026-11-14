@@ -219,11 +219,12 @@
   },
   "project": {
     "title": "Ditt köksprojekt",
-    "helper": "Designer och offerter kommer snart. Ditt projekt stannar här, redo för dem.",
+    "helper": "Skapa en design av ditt nya kök. Offerter kommer snart.",
     "claimed": "Ditt kök är sparat i ditt konto.",
     "dismiss": "Stäng",
     "newProject": "Starta ett nytt köksprojekt",
-    "availableSoon": "Kommer snart",
+    "budgetsSoon": "Offerter: kommer snart",
+    "seeDesigns": "Se mina designer",
     "signedOut": {
       "title": "Logga in för att se det här köksprojektet",
       "signIn": "Logga in"
@@ -233,5 +234,53 @@
       "home": "Gå till startsidan"
     },
     "offline": "Du är offline. Ditt köksprojekt är säkert; anslut igen för att se det."
+  },
+  "results": {
+    "back": "Tillbaka till mitt kök",
+    "titleDone": "Ditt nya kök",
+    "titleActive": "Ditt kök designas",
+    "helperDone": "Stil {style}, från foto {n}. Dra i reglaget för att jämföra.",
+    "helperActive": "Stil {style}, från foto {n}. Det tar ungefär 10 till 30 sekunder.",
+    "helperIdle": "Stil {style}, från foto {n}.",
+    "slider": {
+      "label": "Jämför före och efter",
+      "before": "Före",
+      "after": "Efter",
+      "beforeAlt": "Ditt kök före",
+      "afterAlt": "Designen av ditt nya kök"
+    },
+    "status": {
+      "running": "Skapar…",
+      "queued": "Väntar på GPU:n",
+      "ahead": "{count, plural, one {# jobb före ditt} other {# jobb före ditt}}"
+    },
+    "note": "Du kan lämna sidan; renderingen fortsätter och visas här när den är klar.",
+    "photos": {
+      "title": "Foto för nästa rendering",
+      "helper": "Renderingen behåller väggar, fönster och rör från det här fotot.",
+      "option": "Foto {n}"
+    },
+    "history": {
+      "title": "Dina renderingar",
+      "counter": "{count} av {max}",
+      "item": "Rendering {n}"
+    },
+    "cta": {
+      "again": "Skapa igen",
+      "retry": "Försök igen",
+      "generate": "Generera mitt kök",
+      "back": "Tillbaka till mitt kök"
+    },
+    "hints": {
+      "oneAtATime": "En rendering i taget.",
+      "limit": "Du har skapat {max} renderingar, maxantalet för det här projektet."
+    },
+    "alerts": {
+      "failed": "Vi kunde inte skapa den här renderingen. Försök igen om en stund.",
+      "interrupted": "Renderingen avbröts. Försök igen.",
+      "queueFull": "Designern är upptagen just nu. Försök igen om en minut.",
+      "uploadsOnly": "Dina egna foton kan inte styra stilen ännu, så vi använde en neutral modern stil.",
+      "offline": "Du är offline. Dina renderingar är säkra; anslut igen för att se nya."
+    }
   }
 }

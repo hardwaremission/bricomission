@@ -9,15 +9,23 @@ import {
   Logger,
   Post,
 } from '@nestjs/common';
+import sharp from 'sharp';
 import { ApiAcceptedResponse, ApiBadRequestResponse, ApiOperation, ApiTags, ApiTooManyRequestsResponse } from '@nestjs/swagger';
 import { IMAGE_ADAPTER, LLM_ADAPTER } from '../ai.tokens.js';
-import type { ImageAdapter } from '../adapters/image-adapter.js';
+import { DEFAULT_RENDER_CONTROL, type ImageAdapter } from '../adapters/image-adapter.js';
 import type { LlmAdapter } from '../adapters/llm-adapter.js';
 import { GpuQueueFullError } from './gpu-job-broker.errors.js';
 import { GpuJobBrokerService } from './gpu-job-broker.service.js';
 import { CreateGpuJobDto, GpuJobViewDto } from './gpu-jobs.dto.js';
 
 const MAX_PROMPT_LENGTH = 2000;
+const DEBUG_SIZE = 1024;
+/** A flat grey 1024x1024 JPEG as the debug render input (no stored photo involved), encoded once at load. */
+const debugImage: Promise<Buffer> = sharp({ create: { width: DEBUG_SIZE, height: DEBUG_SIZE, channels: 3, background: '#9a9a9a' } }).jpeg().toBuffer();
+debugImage.catch(() => undefined);
+function debugSource(): Promise<Buffer> {
+  return debugImage;
+}
 
 /**
  * Debug/test endpoint that runs one adapter call through the broker.
@@ -53,9 +61,18 @@ export class GpuJobsDebugController {
           ? this.broker.submit('llm', ({ signal }) =>
               this.llm.complete({ messages: [{ role: 'user', content: prompt ?? 'Say OK' }], maxTokens: 64 }, signal),
             )
-          : this.broker.submit('image', ({ signal }) =>
+          : this.broker.submit('image', async ({ signal }) =>
               this.image.render(
-                { mode: 'depth', sourceImageKey: 'debug/source.jpg', prompt: prompt ?? 'debug render', seed: 1 },
+                {
+                  mode: 'depth',
+                  image: await debugSource(),
+                  width: DEBUG_SIZE,
+                  height: DEBUG_SIZE,
+                  prompt: prompt ?? 'debug render',
+                  negativePrompt: '',
+                  seed: 1,
+                  control: DEFAULT_RENDER_CONTROL,
+                },
                 signal,
               ),
             );

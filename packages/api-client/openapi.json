@@ -1183,7 +1183,7 @@
     },
     "/kitchen-projects/{projectId}/renders": {
       "post": {
-        "description": "Placeholder until controlnet-render: it never calls the GPU job broker or an AI adapter. That feature keeps the path, the guards and the 409 rule.",
+        "description": "Takes one Photo (body `photoId`, default the Photo at position 0) and the dominant Moodboard style, stores the centre-cropped \"before\" image and queues an exclusive image job (SDXL + ControlNet). Answers 202 with the `queued` Render; poll `GET .../renders/{renderId}`. One active Render per project; failed Renders do not count towards the limit.",
         "operationId": "KitchenProjectsController_requestRender",
         "parameters": [
           {
@@ -1197,7 +1197,112 @@
             "description": "Id of a Kitchen Project the caller owns"
           }
         ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateRenderRequestDto"
+              }
+            }
+          }
+        },
         "responses": {
+          "202": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateRenderResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed project id\n\nMalformed project id, or `render_photo_unknown` (malformed or foreign photoId)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KitchenProjectErrorDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid or expired bearer token"
+          },
+          "403": {
+            "description": "Caller lacks the user (Homeowner) realm role"
+          },
+          "404": {
+            "description": "Unknown project, still a draft, or owned by another Account (same generic body)"
+          },
+          "409": {
+            "description": "`project_incomplete` (needs a photo, all three measurements and a Moodboard Item), `render_in_progress` or `render_limit_reached`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KitchenProjectErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "`gpu_queue_full`: no Render was created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KitchenProjectErrorDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Database unreachable\n\n`storage_unavailable`, or database unreachable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KitchenProjectErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Generate a Render of the kitchen (costly; queued on the GPU)",
+        "tags": [
+          "kitchen-projects"
+        ]
+      },
+      "get": {
+        "operationId": "KitchenProjectsController_listRenders",
+        "parameters": [
+          {
+            "name": "projectId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Id of a Kitchen Project the caller owns"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RenderListResponseDto"
+                }
+              }
+            }
+          },
           "400": {
             "description": "Malformed project id"
           },
@@ -1210,25 +1315,67 @@
           "404": {
             "description": "Unknown project, still a draft, or owned by another Account (same generic body)"
           },
-          "409": {
-            "description": "`project_incomplete`: needs a photo, all three measurements and a Moodboard Item",
+          "503": {
+            "description": "Database unreachable"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "The Renders of an owned project, newest first",
+        "tags": [
+          "kitchen-projects"
+        ]
+      }
+    },
+    "/kitchen-projects/{projectId}/renders/{renderId}": {
+      "get": {
+        "operationId": "KitchenProjectsController_getRender",
+        "parameters": [
+          {
+            "name": "renderId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "projectId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Id of a Kitchen Project the caller owns"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/KitchenProjectErrorDto"
+                  "$ref": "#/components/schemas/RenderViewDto"
                 }
               }
             }
           },
-          "501": {
-            "description": "`not_available_yet`",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/KitchenProjectErrorDto"
-                }
-              }
-            }
+          "400": {
+            "description": "Malformed project id"
+          },
+          "401": {
+            "description": "Missing, invalid or expired bearer token"
+          },
+          "403": {
+            "description": "Caller lacks the user (Homeowner) realm role"
+          },
+          "404": {
+            "description": "Unknown project, still a draft, or owned by another Account (same generic body)"
           },
           "503": {
             "description": "Database unreachable"
@@ -1239,7 +1386,83 @@
             "bearer": []
           }
         ],
-        "summary": "Generate a Render of the kitchen (costly; placeholder)",
+        "summary": "One Render of an owned project (status, queue position, content URLs)",
+        "tags": [
+          "kitchen-projects"
+        ]
+      }
+    },
+    "/kitchen-projects/{projectId}/renders/{renderId}/content": {
+      "get": {
+        "operationId": "KitchenProjectsController_renderContent",
+        "parameters": [
+          {
+            "name": "renderId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "variant",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "before",
+                "full",
+                "thumb"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "projectId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Id of a Kitchen Project the caller owns"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "JPEG bytes",
+            "content": {
+              "image/jpeg": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed project id"
+          },
+          "401": {
+            "description": "Missing, invalid or expired bearer token"
+          },
+          "403": {
+            "description": "Caller lacks the user (Homeowner) realm role"
+          },
+          "404": {
+            "description": "Unknown project, still a draft, or owned by another Account (same generic body)"
+          },
+          "503": {
+            "description": "`storage_unavailable`, or database unreachable\n\nDatabase unreachable"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "A Render image (metadata-free JPEG): `before` always, `full`/`thumb` once succeeded (404 before)",
         "tags": [
           "kitchen-projects"
         ]
@@ -2065,6 +2288,142 @@
           "project"
         ]
       },
+      "CreateRenderRequestDto": {
+        "type": "object",
+        "properties": {
+          "photoId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Photo of this project to render; default: the Photo at position 0"
+          }
+        }
+      },
+      "RenderViewDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "queued",
+              "running",
+              "succeeded",
+              "failed"
+            ]
+          },
+          "photoId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true,
+            "description": "Source Photo; null if it was deleted later"
+          },
+          "styleId": {
+            "type": "string",
+            "nullable": true,
+            "example": "scandinavian",
+            "description": "Dominant Moodboard style; null for an uploads-only Moodboard"
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "canny",
+              "depth"
+            ]
+          },
+          "width": {
+            "type": "integer",
+            "example": 1216
+          },
+          "height": {
+            "type": "integer",
+            "example": 832
+          },
+          "position": {
+            "type": "integer",
+            "nullable": true,
+            "description": "1-based GPU queue position while queued (when known)"
+          },
+          "waitingFor": {
+            "type": "string",
+            "enum": [
+              "image",
+              "llm"
+            ],
+            "nullable": true,
+            "description": "Kind of GPU work it waits behind while queued"
+          },
+          "errorCode": {
+            "type": "string",
+            "enum": [
+              "adapter_error",
+              "timeout",
+              "interrupted",
+              "storage_unavailable"
+            ],
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "startedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "finishedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "beforeUrl": {
+            "type": "string",
+            "description": "Centre crop of the source Photo (the model input); same size as the Render"
+          },
+          "fullUrl": {
+            "type": "string",
+            "nullable": true,
+            "description": "Set only when succeeded"
+          },
+          "thumbUrl": {
+            "type": "string",
+            "nullable": true,
+            "description": "Set only when succeeded"
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "photoId",
+          "styleId",
+          "mode",
+          "width",
+          "height",
+          "position",
+          "waitingFor",
+          "errorCode",
+          "createdAt",
+          "startedAt",
+          "finishedAt",
+          "beforeUrl",
+          "fullUrl",
+          "thumbUrl"
+        ]
+      },
+      "CreateRenderResponseDto": {
+        "type": "object",
+        "properties": {
+          "render": {
+            "$ref": "#/components/schemas/RenderViewDto"
+          }
+        },
+        "required": [
+          "render"
+        ]
+      },
       "KitchenProjectErrorDto": {
         "type": "object",
         "properties": {
@@ -2079,7 +2438,11 @@
             "enum": [
               "project_incomplete",
               "not_available_yet",
-              "storage_unavailable"
+              "storage_unavailable",
+              "render_photo_unknown",
+              "render_in_progress",
+              "render_limit_reached",
+              "gpu_queue_full"
             ]
           }
         },
@@ -2087,6 +2450,27 @@
           "statusCode",
           "message",
           "code"
+        ]
+      },
+      "RenderListResponseDto": {
+        "type": "object",
+        "properties": {
+          "renders": {
+            "description": "Newest first",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RenderViewDto"
+            }
+          },
+          "maxRenders": {
+            "type": "integer",
+            "example": 10,
+            "description": "Non-failed Renders allowed per project"
+          }
+        },
+        "required": [
+          "renders",
+          "maxRenders"
         ]
       }
     }

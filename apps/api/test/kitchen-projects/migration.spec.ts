@@ -92,3 +92,31 @@ describe('login gate claim migrations', () => {
     }
   });
 });
+
+describe('controlnet render migration', () => {
+  const names = readdirSync(migrationsDir).filter((name) => /^\d+_/.test(name)).sort();
+  const dir = names.find((name) => name.endsWith('_controlnet_render'));
+  const sql = readFileSync(join(migrationsDir, dir ?? 'missing', 'migration.sql'), 'utf8');
+
+  it('creates kitchen_render with its enums, the project index, cascade and SET NULL foreign keys', () => {
+    expect(sql).toContain(`CREATE TYPE "kitchen_render_status" AS ENUM ('queued', 'running', 'succeeded', 'failed')`);
+    expect(sql).toContain(`CREATE TYPE "kitchen_render_mode" AS ENUM ('canny', 'depth')`);
+    expect(sql).toContain('CREATE TABLE "kitchen_render"');
+    expect(sql).toMatch(/CREATE INDEX "kitchen_render_kitchen_project_id_created_at_idx" ON "kitchen_render"\("kitchen_project_id", "created_at"\)/);
+    expect(sql).toMatch(/FOREIGN KEY \("kitchen_project_id"\) REFERENCES "kitchen_project"\("id"\) ON DELETE CASCADE/);
+    expect(sql).toMatch(/FOREIGN KEY \("photo_id"\) REFERENCES "kitchen_photo"\("id"\) ON DELETE SET NULL/);
+  });
+
+  it('ties keys, codes and times to the status with hand-written CHECKs', () => {
+    expect(sql).toContain('CONSTRAINT "kitchen_render_status_columns" CHECK');
+    expect(sql).toMatch(/"status" = 'succeeded' AND "full_key" IS NOT NULL AND "thumb_key" IS NOT NULL AND "finished_at" IS NOT NULL/);
+    expect(sql).toMatch(/"status" = 'failed' AND "error_code" IS NOT NULL/);
+    expect(sql).toContain(`"error_code" IN ('adapter_error', 'timeout', 'interrupted', 'storage_unavailable')`);
+  });
+
+  it('never drops anything (the catalog HNSW index stays) and runs after the login gate migrations', () => {
+    expect(sql).not.toMatch(/DROP\s+(INDEX|TABLE|EXTENSION|CONSTRAINT)/i);
+    expect(sql).not.toMatch(/catalog_chunk/);
+    expect(names.indexOf(dir ?? '')).toBeGreaterThan(names.findIndex((name) => name.endsWith('_login_gate_claim')));
+  });
+});

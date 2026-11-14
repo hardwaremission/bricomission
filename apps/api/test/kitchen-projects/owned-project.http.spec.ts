@@ -3,7 +3,8 @@ import { createKitchenApp, HOMEOWNER_SUB, type KitchenApp, OTHER_SUB } from '../
 
 const UNKNOWN = '00000000-0000-4000-8000-000000000000';
 
-// Feature login-gate-claim, Scenario 5: owner routes and the costly placeholders.
+// Feature login-gate-claim, Scenario 5: owner routes and the costly placeholders (Renders are real
+// since controlnet-render: 202 instead of 501; test/renders/ covers them in depth).
 describe('HTTP /kitchen-projects/:projectId (owner routes and costly placeholders)', () => {
   let k: KitchenApp;
   let owned: { id: string; photoId: string; uploadId: string; galleryId: string };
@@ -87,7 +88,7 @@ describe('HTTP /kitchen-projects/:projectId (owner routes and costly placeholder
   });
 
   for (const action of ['renders', 'budget'] as const) {
-    it(`POST ${action}: 401 anonymous, 403 other roles, 404 non-owner and drafts, 409 not ready, 501 owner + ready`, async () => {
+    it(`POST ${action}: 401 anonymous, 403 other roles, 404 non-owner and drafts, 409 not ready, then ${action === 'renders' ? '202 (controlnet-render)' : '501'} owner + ready`, async () => {
       expect((await post(`/kitchen-projects/${owned.id}/${action}`)).status).toBe(401);
       expect((await post(`/kitchen-projects/${UNKNOWN}/${action}`)).status).toBe(401);
       expect((await post(`/kitchen-projects/${owned.id}/${action}`, await k.token(HOMEOWNER_SUB, ['professional']))).status).toBe(403);
@@ -98,12 +99,17 @@ describe('HTTP /kitchen-projects/:projectId (owner routes and costly placeholder
       expect(incomplete.status).toBe(409);
       expect(incomplete.body).toEqual({ statusCode: 409, message: 'Conflict', code: 'project_incomplete' });
       const ready = await post(`/kitchen-projects/${owned.id}/${action}`, await k.token());
-      expect(ready.status).toBe(501);
-      expect(ready.body).toEqual({ statusCode: 501, message: 'Not Implemented', code: 'not_available_yet' });
+      if (action === 'renders') {
+        expect(ready.status).toBe(202);
+        expect(ready.body.render).toMatchObject({ status: 'queued', photoId: owned.photoId });
+      } else {
+        expect(ready.status).toBe(501);
+        expect(ready.body).toEqual({ statusCode: 501, message: 'Not Implemented', code: 'not_available_yet' });
+      }
     });
   }
 
-  it('OpenAPI: owner and costly routes are bearer-only and document 401/403/404 (+409/501)', async () => {
+  it('OpenAPI: owner and costly routes are bearer-only and document 401/403/404 (+409/202 renders, 409/501 budget)', async () => {
     const doc = (await k.http().get('/docs-json')).body;
     const routes: Array<[string, 'get' | 'post']> = [
       ['/kitchen-projects/{projectId}', 'get'],
@@ -117,6 +123,8 @@ describe('HTTP /kitchen-projects/:projectId (owner routes and costly placeholder
       expect(op.security).toEqual([{ bearer: [] }]);
       expect(Object.keys(op.responses)).toEqual(expect.arrayContaining(['401', '403', '404']));
     }
-    expect(Object.keys(doc.paths['/kitchen-projects/{projectId}/renders'].post.responses)).toEqual(expect.arrayContaining(['409', '501']));
+    expect(Object.keys(doc.paths['/kitchen-projects/{projectId}/renders'].post.responses)).toEqual(expect.arrayContaining(['202', '409', '429']));
+    expect(Object.keys(doc.paths['/kitchen-projects/{projectId}/renders'].post.responses)).not.toContain('501');
+    expect(Object.keys(doc.paths['/kitchen-projects/{projectId}/budget'].post.responses)).toEqual(expect.arrayContaining(['409', '501']));
   });
 });

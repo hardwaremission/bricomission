@@ -14,6 +14,7 @@ Terms as defined in `CONTEXT.md`.
 - **Budget**: four Budget Tiers; each tier is a list of Line Items. Totals are derived, never stored as LLM output.
 - **Line Item**: product name, SKU, Catalog, source reference (document + page/chunk), cited unit price, quantity, unit, subtotal (computed).
 - **Chat Session**: messages between Homeowner and the budget assistant, with the active Persona per message.
+- **Render** (`kitchen_render`, `controlnet-render`): one SDXL + ControlNet image of a claimed Kitchen Project from one of its Photos and the dominant Moodboard style. Three metadata-free JPEG objects in MinIO under `kitchen-projects/<projectId>/renders/<renderId>/`: `before.jpg` (the Photo centre-cropped to the nearest SDXL bucket: 1216x832, 832x1216 or 1024x1024; also the model input), `full.jpg` (same size as `before`) and `thumb.jpg` (longest edge 512). The row keeps the source Photo (set to null if that Photo is ever deleted), style, ControlNet mode, size, and internal provenance (prompt, seed, GPU job id) that no route returns.
 - **Dossier**: immutable snapshot of a Kitchen Project at publication (Renders, Measurements, selected tier, Line Items).
 - **Bid**: Company, Dossier, managing Professional, price, guaranteed installation date, delay penalty per day, version history.
 - **Contract**: accepted Bid, generated PDF, PDF SHA-256, two Electronic Acceptance records, commission amount.
@@ -24,6 +25,7 @@ Terms as defined in `CONTEXT.md`.
 ## Relationships
 
 - Homeowner 1—N Kitchen Project.
+- Kitchen Project 1—0..N Render; Render N—0..1 Photo (the source).
 - Kitchen Project 1—0..1 Dossier (republishing an expired Dossier creates a new Dossier).
 - Company 1—N Professional; Professional N—1 Company (exactly one).
 - Dossier 1—N Bid; Company 1—0..1 Bid per Dossier.
@@ -44,7 +46,10 @@ Terms as defined in `CONTEXT.md`.
 
 Claim rules (`login-gate-claim`): only a Homeowner (realm role `user`) claims, with the browser's draft token. The claim keeps the row (same id and content), sets the owner (Keycloak `sub`, there is no local Account table yet), `claimed_at`, and clears the expiry, so a claimed project is never swept. The token hash stays: the same Account repeating the claim gets the same project; another Account, or an unknown or expired token, gets 404. The draft routes no longer accept the token. A claimed project is read-only until later features add editing. A Homeowner owns 1-N Kitchen Projects (no limit).
 
-**Ready for generation**: at least one photo, all three Measurements and at least one Moodboard Item (the Moodboard Continue rule). The costly actions (Render, Budget) answer 409 `project_incomplete` otherwise; until `controlnet-render` and `budget-tier-computation` they answer 501 `not_available_yet`.
+**Ready for generation**: at least one photo, all three Measurements and at least one Moodboard Item (the Moodboard Continue rule). The costly actions (Render, Budget) answer 409 `project_incomplete` otherwise; until `budget-tier-computation` the Budget answers 501 `not_available_yet`.
+
+**Render** (`controlnet-render`)
+`queued` → `running` → `succeeded` | `failed` (`adapter_error`, `timeout`, `interrupted`, `storage_unavailable`). Rules: only the owner creates and reads Renders; at most one `queued`/`running` Render per Kitchen Project (409 `render_in_progress`); at most `RENDER_MAX_PER_PROJECT` (10) non-failed Renders per project (409 `render_limit_reached`; failed ones do not count); every request uses a new random seed and the history is kept, newest first. GPU jobs live in memory, so on API start every `queued`/`running` Render becomes `failed`/`interrupted`. A failed Render keeps only its `before` object. Renders are never deleted or edited yet.
 
 **Dossier**
 `open` → `accepted` (Homeowner accepts a Bid) | `expired` (Bidding Window ends with no acceptance) | `withdrawn` (Homeowner). Content is immutable in every state.

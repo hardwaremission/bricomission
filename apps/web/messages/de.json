@@ -219,11 +219,12 @@
   },
   "project": {
     "title": "Dein Küchenprojekt",
-    "helper": "Designs und Angebote kommen bald. Dein Projekt bleibt hier und ist bereit dafür.",
+    "helper": "Erstelle ein Design deiner neuen Küche. Angebote folgen bald.",
     "claimed": "Deine Küche ist in deinem Konto gespeichert.",
     "dismiss": "Schließen",
     "newProject": "Neues Küchenprojekt starten",
-    "availableSoon": "Bald verfügbar",
+    "budgetsSoon": "Angebote: bald verfügbar",
+    "seeDesigns": "Meine Designs ansehen",
     "signedOut": {
       "title": "Melde dich an, um dieses Küchenprojekt zu sehen",
       "signIn": "Anmelden"
@@ -233,5 +234,53 @@
       "home": "Zur Startseite"
     },
     "offline": "Du bist offline. Dein Küchenprojekt ist sicher; verbinde dich wieder, um es zu sehen."
+  },
+  "results": {
+    "back": "Zurück zu meiner Küche",
+    "titleDone": "Deine neue Küche",
+    "titleActive": "Deine Küche wird gestaltet",
+    "helperDone": "Stil {style}, aus Foto {n}. Ziehe den Regler zum Vergleichen.",
+    "helperActive": "Stil {style}, aus Foto {n}. Das dauert etwa 10 bis 30 Sekunden.",
+    "helperIdle": "Stil {style}, aus Foto {n}.",
+    "slider": {
+      "label": "Vorher und nachher vergleichen",
+      "before": "Vorher",
+      "after": "Nachher",
+      "beforeAlt": "Deine Küche vorher",
+      "afterAlt": "Das Design deiner neuen Küche"
+    },
+    "status": {
+      "running": "Wird erstellt…",
+      "queued": "Warten auf die GPU",
+      "ahead": "{count, plural, one {# Auftrag vor deinem} other {# Aufträge vor deinem}}"
+    },
+    "note": "Du kannst diese Seite verlassen; das Rendering läuft weiter und erscheint hier, sobald es fertig ist.",
+    "photos": {
+      "title": "Foto für das nächste Rendering",
+      "helper": "Das Rendering behält Wände, Fenster und Leitungen dieses Fotos bei.",
+      "option": "Foto {n}"
+    },
+    "history": {
+      "title": "Deine Renderings",
+      "counter": "{count} von {max}",
+      "item": "Rendering {n}"
+    },
+    "cta": {
+      "again": "Neu erstellen",
+      "retry": "Erneut versuchen",
+      "generate": "Meine Küche generieren",
+      "back": "Zurück zu meiner Küche"
+    },
+    "hints": {
+      "oneAtATime": "Ein Rendering nach dem anderen.",
+      "limit": "Du hast {max} Renderings erstellt, das Maximum für dieses Projekt."
+    },
+    "alerts": {
+      "failed": "Wir konnten dieses Rendering nicht erstellen. Versuche es gleich noch einmal.",
+      "interrupted": "Dieses Rendering wurde unterbrochen. Versuche es erneut.",
+      "queueFull": "Der Designer ist gerade ausgelastet. Versuche es in einer Minute erneut.",
+      "uploadsOnly": "Deine eigenen Fotos können den Stil noch nicht vorgeben, daher haben wir einen neutralen modernen Stil verwendet.",
+      "offline": "Du bist offline. Deine Renderings sind sicher; verbinde dich erneut, um neue zu sehen."
+    }
   }
 }

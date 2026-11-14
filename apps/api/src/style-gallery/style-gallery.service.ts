@@ -31,6 +31,8 @@ export interface StyleGalleryImage {
 
 interface LoadedImage extends StyleGalleryImage {
   files: Record<GalleryVariant, string>;
+  /** Generation prompt from the manifest; internal (controlnet-render), never returned by a route. */
+  prompt: string | null;
 }
 
 export class InvalidStyleGalleryManifestError extends Error {
@@ -71,14 +73,14 @@ export function loadStyleGallery(dir: string): { styles: string[]; images: Loade
   const images: LoadedImage[] = [];
   const seen = new Set<string>();
   for (const entry of manifest.images as Array<Record<string, unknown>>) {
-    const { id, styleId, width, height } = entry ?? {};
+    const { id, styleId, width, height, prompt } = entry ?? {};
     if (typeof id !== 'string' || !GALLERY_ID_PATTERN.test(id) || seen.has(id)) throw new InvalidStyleGalleryManifestError('bad image id');
     if (typeof styleId !== 'string' || !styles.includes(styleId)) throw new InvalidStyleGalleryManifestError('unknown style');
     if (!isPositiveInt(width) || !isPositiveInt(height)) throw new InvalidStyleGalleryManifestError('bad dimensions');
     const files = { thumb: join(dir, id, 'thumb.jpg'), full: join(dir, id, 'full.jpg') };
     if (!existsSync(files.thumb) || !existsSync(files.full)) throw new InvalidStyleGalleryManifestError('missing image file');
     seen.add(id);
-    images.push({ id, styleId, width, height, files });
+    images.push({ id, styleId, width, height, files, prompt: typeof prompt === 'string' && prompt.trim() !== '' ? prompt : null });
   }
   return { styles, images };
 }
@@ -121,6 +123,11 @@ export class StyleGalleryService {
   find(id: string): StyleGalleryImage | null {
     const image = this.images.get(id);
     return image ? { id: image.id, styleId: image.styleId, width: image.width, height: image.height } : null;
+  }
+
+  /** Internal manifest prompt of an image (Render prompt building); null when unknown or absent. */
+  promptFor(id: string): string | null {
+    return this.images.get(id)?.prompt ?? null;
   }
 
   /** JPEG bytes of a manifest image; null for unknown ids. */

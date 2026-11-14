@@ -17,6 +17,14 @@ export function loginUrl(intent: Intent, register = false): string {
   return `/auth/login?returnTo=${encodeURIComponent(returnTo)}${register ? '&mode=register' : ''}`;
 }
 
+/**
+ * Where a successful claim lands: the render intent opens AI Results and starts the first Render
+ * (controlnet-render OQ-8); the budget intent stays on the owned project page.
+ */
+export function claimLanding(projectId: string, intent: Intent): string {
+  return intent === 'render' ? `/kitchen-projects/${projectId}/results?claimed=1&start=1` : `/kitchen-projects/${projectId}?claimed=1`;
+}
+
 /** Outcome of `POST /api/kitchen-projects/drafts/current/claim`. */
 export type ClaimOutcome =
   | { kind: 'ok'; projectId: string }

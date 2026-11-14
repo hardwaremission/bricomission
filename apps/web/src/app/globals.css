@@ -84,3 +84,23 @@
     overflow: hidden;
   }
 }
+
+/* AI Results (controlnet-render): indeterminate progress segment of the Render status card. */
+@keyframes bm-indeterminate {
+  from {
+    transform: translateX(-80px);
+  }
+  to {
+    transform: translateX(208px);
+  }
+}
+@layer components {
+  .bm-indeterminate {
+    animation: bm-indeterminate 1.4s ease-in-out infinite;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .bm-indeterminate {
+      animation: none;
+    }
+  }
+}

@@ -1,5 +1,7 @@
 import type { GpuJobEvent } from '@bricomission/shared-types';
 import { firstValueFrom, toArray } from 'rxjs';
+import sharp from 'sharp';
+import { DEFAULT_RENDER_CONTROL, type ImageRequest } from '../src/ai/adapters/image-adapter.js';
 import { DEFAULT_GPU_BROKER_OPTIONS, type GpuBrokerOptions } from '../src/ai/jobs/gpu-broker.options.js';
 import type { GpuJobBrokerService } from '../src/ai/jobs/gpu-job-broker.service.js';
 
@@ -56,4 +58,15 @@ export function collectEvents(broker: GpuJobBrokerService, jobId: string, afterS
   const events = broker.events(jobId, afterSeq);
   if (!events) throw new Error(`unknown job ${jobId}`);
   return firstValueFrom(events.pipe(toArray()));
+}
+
+/** A small structured JPEG used as the image adapter input in broker and fake tests. */
+export const TINY_JPEG: Buffer = await sharp({ create: { width: 160, height: 120, channels: 3, background: '#808080' } })
+  .composite([{ input: { create: { width: 80, height: 120, channels: 3, background: '#203040' } }, left: 0, top: 0 }])
+  .jpeg()
+  .toBuffer();
+
+/** An image request on {@link TINY_JPEG}. */
+export function imageRequest(overrides: Partial<ImageRequest> = {}): ImageRequest {
+  return { mode: 'depth', image: TINY_JPEG, width: 160, height: 120, prompt: 'p', negativePrompt: 'n', seed: 1, control: DEFAULT_RENDER_CONTROL, ...overrides };
 }
