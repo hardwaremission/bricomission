@@ -1,6 +1,6 @@
 # Registro de conversación con Claude Code · 2026-11-14
 
-_Actualizado: 2026-11-14 13:47_
+_Actualizado: 2026-11-14 17:50_
 
 
 ---
@@ -6348,3 +6348,1072 @@ Vamos con la opción 1. La estructura queda como la diste por buena, y la limpie
 - **Revisión del ajuste:** el validator vuelve a pasar lint, tests, `./init.sh` (cambió `compose.yaml`) y la prueba de Render con el adaptador falso. Revisa además los ajustes nuevos de ControlNet y su configuración.
 
 Si da su visto bueno, marco `controlnet-render` como aceptada, hago commit y abro el PR.
+
+
+### 🤖 **Claude** · 2026-11-14 13:47:30
+
+Delta: **accept**. Corrijo los dos hallazgos baratos (doc obsoleto y temp sin limpiar), marco `accepted`, commit y PR.
+
+
+### 🤖 **Claude** · 2026-11-14 13:47:31
+
+> 🔧 **Bash**: `{"command": "grep -n 'fake/<sha256-16>.png' ARCHITECTURE.md | cut -c1-300; sed -n 28,40p scripts/ai/render-smoke.sh; grep -n 'RENDER_CONTROL_END' docs/technical-discovery.md | head -3 | cut -c1-200", "description": "Inspect stale doc and temp handling"}`
+
+
+### 🤖 **Claude** · 2026-11-14 13:47:43
+
+> 🔧 **Bash**: `{"command": "sed -i 's#`FakeImageAdapter` -> `fake/<sha256-16>.png`#`FakeImageAdapter` (tinted copy of the input, see below)#' ARCHITECTURE.md && python3 - <<'E'\np='docs/technical-discovery.md'; L=open(p).read().split('\\n')\ni=[n for n,l in enumerate(L) if l.startswith('- Tuning (developer feedbac`
+
+
+### 🤖 **Claude** · 2026-11-14 13:47:52
+
+> 🔧 **Bash**: `{"command": "git add -A && git diff --cached --stat | tail -1 && git commit -q -F - <<'EOF'\nfeat: complete controlnet-render\n\nSigned-in Homeowners get a photorealistic Render of their kitchen that\nkeeps the room geometry, generated on the local GPU.\n\n- API: kitchen_render table (queued/running`
+
+
+### 🤖 **Claude** · 2026-11-14 13:48:06
+
+> 🔧 **mcp__github__create_pull_request**: `{"owner": "hardwaremission", "repo": "bricomission", "title": "[controlnet-render] Homeowner gets a photorealistic Render that keeps the room geometry", "head": "feature/controlnet-render", "base": "main", "body": "## Summary\n- `kitchen_render` lifecycle (`queued → running → succeeded | failed`), i`
+
+
+### 🤖 **Claude** · 2026-11-14 13:48:08
+
+> 🔧 **mcp__github__add_issue_comment**: `{"owner": "hardwaremission", "repo": "bricomission", "issue_number": 25, "body": "Implemented and accepted locally (validator accept + delta accept after prompt/ControlNet tuning; developer confirmed the geometry). Commit 65ac416 on `feature/controlnet-render`; PR opened. Real GPU: cold ~20 s, warm `
+
+
+### 🤖 **Claude** · 2026-11-14 13:48:18
+
+`controlnet-render` está aceptada y el PR está creado: https://github.com/hardwaremission/bricomission/pull/26 (cierra el #25).
+
+- **Revisión del ajuste:** el validator la aprobó. Lint y tests pasan (la api tiene ahora 303) y `./init.sh` arranca bien. La prueba sin GPU ya no sobrescribe las comparativas reales.
+- **Hallazgos del validator, ya arreglados:**
+  - En `ARCHITECTURE.md` quedaba una frase obsoleta sobre el adaptador falso.
+  - En `docs/technical-discovery.md` he anotado que, si se cambia a ControlNet de profundidad, hay que poner `RENDER_CONTROL_END=1`. También que `RENDER_CONTROL_END=0` sin el apoyo de profundidad elimina el control de la geometría y no debe usarse.
+- **Un detalle que no he cambiado:** la prueba sin GPU deja en `/tmp` el fichero de la comparativa. Lo dejo así a propósito, porque el script imprime su ruta para poder verlo.
+- **Commit y PR:** `65ac416` en `feature/controlnet-render`, ya subido, con comentario en el issue #25. Incluye la nueva feature `render-declutter` en `feature_list.json`.
+
+Cuando hagas merge del PR #26, sigo con la siguiente feature lista: `budget-tier-computation`, los cuatro niveles de presupuesto.
+
+
+### 🧑 **Juan Miguel** · 2026-11-14 14:20:02
+
+ya he hecho merge de #26
+
+
+### 🤖 **Claude** · 2026-11-14 14:20:41
+
+Prompt is too long
+
+
+### 🧑 **Juan Miguel** · 2026-11-14 14:25:54
+
+<command-name>/compact</command-name>
+            <command-message>compact</command-message>
+            <command-args></command-args>
+
+
+### 🧑 **Juan Miguel** · 2026-11-14 14:29:30
+
+<command-name>/compact</command-name>
+            <command-message>compact</command-message>
+            <command-args>Resume en menos de 500 palabras los archivos modificados, las decisiones técnicas y el estado actual tras el merge de #26.</command-args>
+
+
+---
+
+## Sesión `00f4f1d0-f332-4a08-81fe-7c5370051c80`
+
+
+### 🧑 **Juan Miguel** · 2026-11-14 14:43:44
+
+<command-name>/compact</command-name>
+            <command-message>compact</command-message>
+            <command-args></command-args>
+
+
+### 🧑 **Juan Miguel** · 2026-11-14 14:45:04
+
+Acabo de hacer merge de #26; revisa el estado del repositorio y seguimos
+
+
+### 🤖 **Claude** · 2026-11-14 14:46:10
+
+> 🔧 **Bash**: `{"command": "git log --oneline -8 && echo \"---\" && git status -sb | head -20", "description": "Show recent commits and branch status"}`
+
+
+### 🤖 **Claude** · 2026-11-14 14:46:11
+
+> 🔧 **Bash**: `{"command": "node -e \"const f=require('./feature_list.json'); const fs=f.features||f; for(const x of fs){console.log(x.id.padEnd(28), String(x.status).padEnd(12), (x.depends_on||[]).join(','))}\"", "description": "List features with status and dependencies"}`
+
+
+### 🤖 **Claude** · 2026-11-14 14:49:03
+
+> 🔧 **Bash**: `{"command": "GIT_TERMINAL_PROMPT=0 git fetch origin --prune 2>&1 | tail -5 && git log --oneline -3 origin/main && echo \"---branches---\" && git branch -a | head -30", "description": "Fetch origin and show main tip plus branches"}`
+
+
+### 🤖 **Claude** · 2026-11-14 14:50:11
+
+> 🔧 **Bash**: `{"command": "git worktree list && echo \"---\" && ls ../hardwaremission.bricomission-worktrees/ 2>/dev/null", "description": "List git worktrees"}`
+
+
+### 🤖 **Claude** · 2026-11-14 14:50:12
+
+> 🔧 **Bash**: `{"command": "tail -60 PROGRESS.md", "description": "Show tail of PROGRESS.md"}`
+
+
+### 🤖 **Claude** · 2026-11-14 14:51:22
+
+> 🔧 **Bash**: `{"command": "git checkout main && git merge --ff-only origin/main && git branch -d feature/controlnet-render && git log --oneline -2 && git status -sb", "description": "Switch to main, fast-forward, delete merged branch"}`
+
+
+### 🤖 **Claude** · 2026-11-14 14:52:31
+
+> 🔧 **Bash**: `{"command": "git stash push -m \"hook conversation exports (main dir, pre main-sync)\" && git checkout main && git merge --ff-only origin/main && git log --oneline -2", "description": "Stash doc changes, switch to main, fast-forward"}`
+
+
+### 🤖 **Claude** · 2026-11-14 14:53:53
+
+> 🔧 **Bash**: `{"command": "git branch -d feature/controlnet-render && git branch -vv && echo \"---stashes---\" && git stash list", "description": "Delete merged local branch, show branches and stashes"}`
+
+
+### 🤖 **Claude** · 2026-11-14 14:55:04
+
+Estado sync OK.
+
+- `origin/main` = `ba53870` = merge #26 (controlnet-render). Local `main` fast-forwarded a ahí; rama local `feature/controlnet-render` borrada (fusionada).
+- En el repo no hay worktrees; el trabajo anterior se hizo en ramas del repo principal.
+- Stash guardado `stash@{0}`: exports de conversación de este directorio, pre-sync. El hook los reescribe cada turno — se puede descartar cuando confirmes.
+- Ramas remotas `feature/*` fusionadas siguen en origin (api-skeleton, brand-logo-animation, catalog-rag-ingestion, controlnet-render, gpu-job-broker, keycloak-realm-roles, kitchen-capture-draft, local-ai-gpu-spike, login-gate-claim, moodboard-selection). Borrarlas es destructivo — dime si quieres limpieza.
+
+Siguiente feature listo en `feature_list.json`: **`budget-tier-computation`** — dependencias `catalog-rag-ingestion`, `gpu-job-broker`, `login-gate-claim` todas accepted. Es el primer feature de presupuesto: RAG de catálogo (pgvector) + extracción de Line Items citados por LLM + cálculo determinista en código (ADR 0002), 4 tiers. Sustituye el placeholder 501 de `POST /kitchen-projects/:id/budget`.
+
+Ruta prevista: `/github-flow execute budget-tier-computation` → issue + rama `feature/budget-tier-computation` + sesión `/feature-flow` (planner → implementer → validator), push y PR con permiso explícito. ¿Arranco?
+
+
+### 🧑 **Juan Miguel** · 2026-11-14 14:56:30
+
+continúa
+
+
+### 🤖 **Claude** · 2026-11-14 14:56:33
+
+> 🔧 **Skill**: `{"skill": "github-flow", "args": "execute budget-tier-computation"}`
+
+
+### 🤖 **Claude** · 2026-11-14 14:56:56
+
+Gate de precondiciones primero.
+
+
+### 🤖 **Claude** · 2026-11-14 14:56:57
+
+> 🔧 **Bash**: `{"command": "git remote get-url origin && git status --porcelain && echo \"---pat_len=${#BRICOMISSION_GITHUB_PAT}\" && git rev-parse main origin/main && git worktree list && git branch --list \"feature/budget-tier-computation\"", "description": "Check remote, clean base, PAT, base SHA, worktrees"}`
+
+
+### 🤖 **Claude** · 2026-11-14 14:56:58
+
+> 🔧 **Bash**: `{"command": "node -e \"const f=require('./feature_list.json').features||require('./feature_list.json'); const x=f.find(v=>v.id==='budget-tier-computation'); console.log(JSON.stringify(x,null,1))\"", "description": "Show budget-tier-computation feature entry"}`
+
+
+### 🤖 **Claude** · 2026-11-14 14:57:00
+
+> 🔧 **Bash**: `{"command": "ls docs/specs/ | grep -i budget; echo \"---\"; grep -iE \"PORT\" .env.example | head -30; echo \"---running---\"; docker ps --format '{{.Names}}\\t{{.Ports}}' 2>/dev/null | head -12", "description": "Check specs, port defaults, running containers"}`
+
+
+### 🤖 **Claude** · 2026-11-14 14:57:00
+
+> 🔧 **mcp__github__get_me**: `{}`
+
+
+### 🤖 **Claude** · 2026-11-14 14:59:05
+
+> 🔧 **mcp__github__search_repositories**: `{"query": "repo:hardwaremission/bricomission", "minimal_output": false}`
+
+
+### 🤖 **Claude** · 2026-11-14 14:59:06
+
+> 🔧 **mcp__github__list_pull_requests**: `{"owner": "hardwaremission", "repo": "bricomission", "state": "open", "fields": ["number", "title", "head", "draft"]}`
+
+
+### 🤖 **Claude** · 2026-11-14 14:59:07
+
+> 🔧 **mcp__github__search_issues**: `{"query": "repo:hardwaremission/bricomission is:issue in:title \"[budget-tier-computation]\"", "owner": "hardwaremission", "repo": "bricomission"}`
+
+
+### 🤖 **Claude** · 2026-11-14 14:59:08
+
+> 🔧 **Bash**: `{"command": "ps -eo pid,etime,cmd | grep -E \"claude --remote-control\" | grep -v grep; echo \"rc=$?\"", "description": "Check for running remote-control sessions"}`
+
+
+### 🤖 **Claude** · 2026-11-14 15:01:21
+
+Puertas: libres antes de fijar offsets.
+
+
+### 🤖 **Claude** · 2026-11-14 15:01:23
+
+> 🔧 **Bash**: `{"command": "for p in 5433 9100 9101 8035 1125 3010 3110 8185 8085 8091; do ss -ltn \"sport = :$p\" | grep -q \":$p\" && echo \"USADO $p\" || echo \"libre $p\"; done", "description": "Check candidate ports are free"}`
+
+
+### 🤖 **Claude** · 2026-11-14 15:03:02
+
+> 🔧 **mcp__github__issue_write**: `{"method": "create", "owner": "hardwaremission", "repo": "bricomission", "title": "[budget-tier-computation] Homeowner receives four verified Budget Tiers", "body": "Feature id: `budget-tier-computation` (area `ai-budget`) from `feature_list.json`.\n\nUser-visible behavior: for a claimed Kitchen Pro`
+
+
+### 🤖 **Claude** · 2026-11-14 15:04:37
+
+> 🔧 **Bash**: `{"command": "git worktree add ../hardwaremission.bricomission-worktrees/budget-tier-computation -b feature/budget-tier-computation ba538705f1dbfdcee4545d3beef3de740dff3000 && git worktree list", "description": "Create feature worktree from base SHA"}`
+
+
+### 🤖 **Claude** · 2026-11-14 15:06:30
+
+Gate pasado. Artefacts creados:
+
+- `feature`: `budget-tier-computation` (posición 1 de 1 en cola).
+- `branch`: `feature/budget-tier-computation @ ba53870`.
+- Worktree: `../hardwaremission.bricomission-worktrees/budget-tier-computation`.
+- Issue: [#27](https://github.com/hardwaremission/bricomission/issues/27).
+- Puertas aisladas: `COMPOSE_PROJECT_NAME=budget-tier-computation`, POSTGRES 5433, MINIO 9100/9101, MAILPIT 8035/1125, API 3010, WEB 3110, KEYCLOAK 8185, LLAMA 8085, EMBEDDING 8091. Base limpia salvo los 3 logs de conversación del hook (no bloquean). Push: concedido para esta ejecución (PAT presente, `permissions.push: true`).
+
+Este feature lleva **UI gate**: la pantalla *Budget Tier Overview* se diseña en OpenPencil (MCP `open-pencil`) sobre `design/openpencil/bricomission_B2C_app.fig`, con tú al teclado aprobando iteraciones hasta el read-back. La sesión Remote Control te lo pedirá en su momento, pero la regla del flow es arrancarla solo con confirmación tuya.
+
+¿Estás disponible para el paso de diseño en OpenPencil y lanzo ya la sesión `claude --remote-control budget-tier-computation` en el worktree?
+
+
+### 🧑 **Juan Miguel** · 2026-11-14 15:14:33
+
+debo cargar el bricomission_B2C_app.fig de main o del worktree budget-tier-computation?
+
+
+### 🤖 **Claude** · 2026-11-14 15:15:46
+
+> 🔧 **Bash**: `{"command": "grep -o '\"open-pencil\"[^}]*}' .mcp.json 2>/dev/null; python3 -I - <<'EOF'\nimport json,os\np=os.path.expanduser('~/.claude.json')\ntry:\n    d=json.load(open(p))\n    def walk(o,path=''):\n        if isinstance(o,dict):\n            for k,v in o.items():\n                if k=='open-p`
+
+
+### 🤖 **Claude** · 2026-11-14 15:16:19
+
+Del worktree: `../hardwaremission.bricomission-worktrees/budget-tier-computation/design/openpencil/bricomission_B2C_app.fig`. Bytes idénticos a main ahora (rama recién aberta en `ba53870`), pero los cambios de diseño se guardan sobre ese archivo y deben acabar commiteados en `feature/budget-tier-computation` para que el read-back y el PR los incluyan. Si editas la copia de main, el `.fig` modificado queda suelto en el checkout base y el PR no lleva el diseño — como pasó el registro en `#26` (`.fig` commiteado en la rama).
+
+Si el MCP `open-pencil` rechaza la ruta por estar fuera de su `OPENPENCIL_MCP_ROOT`, ábrelo desde el file picker de la app; las herramientas MCP operan sobre el documento ya abierto (`document_id`) y `save_file` sin path escribe sobre su archivo original.
+
+¿Lanzo la sesión Remote Control?
+
+
+### 🧑 **Juan Miguel** · 2026-11-14 15:17:51
+
+no lances remote control. Tienes el mcp de openpencil ya disponible
+
+
+### 🤖 **Claude** · 2026-11-14 15:18:20
+
+> 🔧 **mcp__open-pencil__list_documents**: `{}`
+
+
+### 🤖 **Claude** · 2026-11-14 15:18:32
+
+> 🔧 **Agent**: `{"description": "Spec for budget-tier-computation", "subagent_type": "planner", "prompt": "Work ONLY inside the git worktree /home/juanmi/Proyectos/hardwaremission.bricomission-worktrees/budget-tier-computation (branch feature/budget-tier-computation, base ba53870). Do not touch /home/juanmi/Proyect`
+
+
+### 🤖 **Claude** · 2026-11-14 15:20:12
+
+Entendido: sin Remote Control; el flow corre en esta sesión.
+
+- OpenPencil conectado y con el `.fig` correcto abierto: `…-worktrees/budget-tier-computation/design/openpencil/bricomission_B2C_app.fig`.
+- Planner lanzado en background: especifica `budget-tier-computation` dentro del worktree (`docs/specs/budget-tier-computation.md`, marca `in_progress` en su `feature_list.json`). No toca el checkout base ni commitea.
+
+Cuando el planner termine: te paso preguntas de spec (si las hay), luego fase de diseño del *Budget Tier Overview* vía `open-pencil` (página nueva en ese `.fig`), iteramos hasta tu aprobación, hago read-back a `docs/design/budget-tier-computation.md`, y entonces implementer → validator. Esperando al planner.
+
+
+### 🤖 **Claude** · 2026-11-14 15:36:22
+
+Spec lista: `docs/specs/budget-tier-computation.md` en el worktree; feature a `in_progress`. Antes del diseño, 5 preguntas abiertas del planner — responde numerales (ej. "1a, 2a, 3a, 4a, 5 sí"):
+
+1. **VAT**: ¿IVA incluido en los precios de catálogo al 21% con desglose "incl. 21% VAT" en el total (recomendado), IVA aparte, o IVA oculto?
+2. **Llamadas al LLM**: ¿una sola llamada que produce los cuatro tiers (recomendado; encaja con el timeout de 120 s del broker), o una llamada por tier (~4× GPU, timeout mayor)?
+3. **Historial de presupuestos**: ¿máximo 5 presupuestos por proyecto con uno activo a la vez (recomendado, espejo de Renders), o un único presupuesto que se reemplaza en su sitio?
+4. **Claim con `intent=budget`**: ¿aterriza en `/kitchen-projects/<id>/budget?claimed=1&start=1` con arranque automático (recomendado, como Renders), o se queda en la página del proyecto?
+5. **Fake adapter con JSON**: ¿apruebas que `FakeLlmAdapter` emita JSON de presupuesto determinista cuando hay `jsonSchema` (necesario para el E2E feliz y la demo offline)?
+
+Con tus respuestas ajusto la spec, pasamos al diseño OpenPencil de *Budget Tier Overview* (el `.fig` ya está abierto), read-back, y luego implementer.
+
+
+### 🧑 **Juan Miguel** · 2026-11-14 15:36:22
+
+<task-notification>
+<task-id>abe250537e688341e</task-id>
+<tool-use-id>call_570f33c74bac48d9b583b62a</tool-use-id>
+<output-file>/tmp/claude-1000/-home-juanmi-Proyectos-hardwaremission-bricomission/e5a516d3-8232-4c34-861c-0a780bcfbf9f/tasks/abe250537e688341e.output</output-file>
+<status>completed</status>
+<summary>Agent "Spec for budget-tier-computation" finished</summary>
+<note>A task-notification fires each time this agent stops with no live background children of its own. The user can send it another message and resume it, so the same task-id may notify more than once.</note>
+<result>This agent's report was delivered to you as a message from "abe250537e688341e" (its SubagentHandback call). Read it there; it is not repeated here.
+</result>
+<usage><subagent_tokens>94480</subagent_tokens><tool_uses>48</tool_uses><duration_ms>971276</duration_ms></usage>
+</task-notification>
+
+
+### 🧑 **Juan Miguel** · 2026-11-14 15:37:45
+
+1. Sí
+
+
+### 🧑 **Juan Miguel** · 2026-11-14 15:39:33
+
+todo sí y 4 la opción recomendada
+
+
+### 🤖 **Claude** · 2026-11-14 15:43:40
+
+No response requested.
+
+
+### 🧑 **Juan Miguel** · 2026-11-14 15:44:56
+
+todo sí y 4 la opción recomendada. Recuerda que en esta sesión has creado un worktree en hardwaremission.bricomission-worktrees/budget-tier-computation
+
+
+### 🤖 **Claude** · 2026-11-14 15:44:57
+
+There's an issue with the selected model (qwen3.8-flash-next). It may not exist or you may not have access to it. Run /model to pick a different model.
+
+
+### 🧑 **Juan Miguel** · 2026-11-14 15:45:10
+
+<command-name>/model</command-name>
+            <command-message>model</command-message>
+            <command-args></command-args>
+
+
+### 🧑 **Juan Miguel** · 2026-11-14 15:45:10
+
+<local-command-stdout>Set model to `Sonnet 5.5` and saved as your default for new sessions</local-command-stdout>
+
+
+### 🧑 **Juan Miguel** · 2026-11-14 15:45:15
+
+<command-name>/effort</command-name>
+            <command-message>effort</command-message>
+            <command-args></command-args>
+
+
+### 🧑 **Juan Miguel** · 2026-11-14 15:45:15
+
+<local-command-stdout>Cancelled</local-command-stdout>
+
+
+### 🧑 **Juan Miguel** · 2026-11-14 15:45:19
+
+todo sí y 4 la opción recomendada. Recuerda que en esta sesión has creado un worktree en hardwaremission.bricomission-worktrees/budget-tier-computation
+
+
+### 🤖 **Claude** · 2026-11-14 15:45:25
+
+Respuestas recibidas: todas las opciones recomendadas. Registro las decisiones en la spec del worktree.
+
+
+### 🤖 **Claude** · 2026-11-14 15:45:25
+
+> 🔧 **Grep**: `{"pattern": "OQ-[1-5]", "path": "/home/juanmi/Proyectos/hardwaremission.bricomission-worktrees/budget-tier-computation/docs/specs/budget-tier-computation.md", "output_mode": "content", "-n": "true"}`
+
+
+### 🤖 **Claude** · 2026-11-14 15:45:27
+
+> 🔧 **Bash**: `{"command": "cd /home/juanmi/Proyectos/hardwaremission.bricomission-worktrees/budget-tier-computation && git status -sb | head && grep -nE \"OQ-[1-5]|Open Questions\" docs/specs/budget-tier-computation.md", "description": "Locate open questions in spec, check worktree state"}`
+
+
+### 🤖 **Claude** · 2026-11-14 15:45:31
+
+> 🔧 **Bash**: `{"command": "cd /home/juanmi/Proyectos/hardwaremission.bricomission-worktrees/budget-tier-computation && python3 -I - <<'EOF'\np='docs/specs/budget-tier-computation.md'\ns=open(p,encoding='utf-8').read()\ns=s.replace(\"## Decisions (recommended; the developer confirms the Open Questions before imple`
+
+
+### 🤖 **Claude** · 2026-11-14 15:45:32
+
+> 🔧 **mcp__open-pencil__get_page_tree**: `{"page_id": "0:11", "depth": 2}`
+
+
+### 🤖 **Claude** · 2026-11-14 15:45:33
+
+> 🔧 **Bash**: `{"command": "cd /home/juanmi/Proyectos/hardwaremission.bricomission-worktrees/budget-tier-computation && cat docs/design/controlnet-render.md | head -70 && ls design/openpencil/controlnet-render/ && sed -n 1,60p design/openpencil/controlnet-render/2-results-succeeded.jsx", "description": "Read prior`
+
+
+### 🤖 **Claude** · 2026-11-14 15:45:37
+
+Decisiones registradas en la spec del worktree (OQ-1..OQ-5, todas las recomendadas). El diseño queda bloqueado: el MCP de OpenPencil acaba de responder `OpenPencil app is not connected`. Antes (`list_documents`) sí estaba conectado con el `.fig` del worktree.
+
+Haz esto:
+1. Abre OpenPencil y carga `/home/juanmi/Proyectos/hardwaremission.bricomission-worktrees/budget-tier-computation/design/openpencil/bricomission_B2C_app.fig`.
+2. Avísame cuando esté conectado.
+
+Entonces diseño en una página nueva `Budget Tiers` del `.fig`, siguiendo el patrón de `docs/design/controlnet-render.md`. Los 10 estados a cubrir están en la spec: queued, running, cuatro tiers, expansión con citas, totales con IVA incluido, errores, barra de la página propia y chequeos a 360 px. Quedan fuera los commits y cualquier push hasta tu aprobación del diseño.
+
+
+### 🧑 **Juan Miguel** · 2026-11-14 15:46:23
+
+openpencil disponible
+
+
+### 🤖 **Claude** · 2026-11-14 15:46:25
+
+> 🔧 **mcp__open-pencil__list_documents**: `{}`
+
+
+### 🤖 **Claude** · 2026-11-14 15:46:26
+
+> 🔧 **Bash**: `{"command": "cd /home/juanmi/Proyectos/hardwaremission.bricomission-worktrees/budget-tier-computation && sed -n 60,140p design/openpencil/controlnet-render/2-results-succeeded.jsx && grep -n -iE \"token|primary|surface|danger|warning|elevation|radius\" DESIGN.md | head -50", "description": "Read res`
+
+
+### 🤖 **Claude** · 2026-11-14 15:46:29
+
+Conectado al `.fig` del worktree. Creo la página `Budget Tiers`.
+
+
+### 🤖 **Claude** · 2026-11-14 15:46:29
+
+> 🔧 **mcp__open-pencil__create_page**: `{"name": "Budget Tiers"}`
+
+
+### 🤖 **Claude** · 2026-11-14 15:46:31
+
+> 🔧 **mcp__open-pencil__switch_page**: `{"page": "1751328941:5"}`
+
+
+### 🤖 **Claude** · 2026-11-14 15:46:35
+
+Frame 1: presupuesto listo, cuatro tiers colapsados.
+
+
+### 🤖 **Claude** · 2026-11-14 15:46:48
+
+> 🔧 **mcp__open-pencil__render**: `{"x": 0, "y": 0, "jsx": "<Frame name=\"1 · Budget succeeded – tiers collapsed (/kitchen-projects/<id>/budget)\" flex=\"col\" w={390} bg=\"#FAFAF8\">\n  <Frame name=\"Header\" flex=\"row\" h={64} w=\"fill\" justify=\"between\" items=\"center\" py={0} px={16}>\n    <Frame name=\"Back button – 'Back to`
+
+
+### 🤖 **Claude** · 2026-11-14 15:46:51
+
+Frame 2: tier expandido con Line Items, citas y totales.
+
+
+### 🤖 **Claude** · 2026-11-14 15:47:05
+
+> 🔧 **mcp__open-pencil__render**: `{"x": 450, "y": 0, "jsx": "<Frame name=\"2 · Budget tier expanded – Line Items, citations, totals\" flex=\"col\" w={390} bg=\"#FAFAF8\">\n  <Frame name=\"Header\" flex=\"row\" h={64} w=\"fill\" justify=\"between\" items=\"center\" py={0} px={16}>\n    <Frame name=\"Back button\" flex=\"row\" w={44} `
+
+
+### 🤖 **Claude** · 2026-11-14 15:47:08
+
+Frame 3: en cola / calculando.
+
+
+### 🤖 **Claude** · 2026-11-14 15:47:14
+
+> 🔧 **mcp__open-pencil__render**: `{"x": 900, "y": 0, "jsx": "<Frame name=\"3 · Budget running (/kitchen-projects/<id>/budget)\" flex=\"col\" w={390} bg=\"#FAFAF8\">\n  <Frame name=\"Header\" flex=\"row\" h={64} w=\"fill\" justify=\"between\" items=\"center\" py={0} px={16}>\n    <Frame name=\"Back button\" flex=\"row\" w={44} h={44}`
+
+
+### 🤖 **Claude** · 2026-11-14 15:47:16
+
+Panel 4: estados normativos (cola, vacío, errores, límite, offline) y cambios en la página propia.
+
+
+### 🤖 **Claude** · 2026-11-14 15:47:27
+
+> 🔧 **mcp__open-pencil__render**: `{"x": 1350, "y": 0, "jsx": "<Frame name=\"4 · Budget states panel (annotation text is normative)\" flex=\"col\" w={390} gap={24} p={16} bg=\"#FAFAF8\">\n  <Frame name=\"Queued\" flex=\"col\" w=\"fill\" gap={8}>\n    <Text name=\"Label\" color=\"#6B6B70\" size={12} weight={600} lineHeight={16}>QUEUED`
+
+
+### 🤖 **Claude** · 2026-11-14 15:47:30
+
+> 🔧 **mcp__open-pencil__render**: `{"x": 1800, "y": 0, "jsx": "<Frame name=\"5 · Owned project page bar changes (/kitchen-projects/<id>)\" flex=\"col\" w={390} gap={16} p={16} bg=\"#FFFFFF\" shadow=\"0 -8 32 #0000001F\">\n  <Text name=\"Annotation\" w=\"fill\" color=\"#6B6B70\" size={12} weight={600} lineHeight={16}>NORMATIVE: 'Get m`
+
+
+### 🤖 **Claude** · 2026-11-14 15:47:34
+
+El `<id>` dentro del texto rompe el JSX. Lo sustituyo por `[id]`.
+
+
+### 🤖 **Claude** · 2026-11-14 15:47:37
+
+> 🔧 **mcp__open-pencil__render**: `{"x": 1800, "y": 0, "jsx": "<Frame name=\"5 · Owned project page bar changes (/kitchen-projects/[id])\" flex=\"col\" w={390} gap={16} p={16} bg=\"#FFFFFF\" shadow=\"0 -8 32 #0000001F\">\n  <Text name=\"Annotation\" w=\"fill\" color=\"#6B6B70\" size={12} weight={600} lineHeight={16}>NORMATIVE: 'Get m`
+
+
+### 🤖 **Claude** · 2026-11-14 15:47:40
+
+Reviso visualmente y paso lint.
+
+
+### 🤖 **Claude** · 2026-11-14 15:47:40
+
+> 🔧 **mcp__open-pencil__export_image**: `{"ids": ["1751328941:6", "1751328941:86", "1751328941:168"], "maxEdge": 1600}`
+
+
+### 🤖 **Claude** · 2026-11-14 15:47:40
+
+> 🔧 **mcp__open-pencil__lint**: `{"ids": ["1751328941:6", "1751328941:86", "1751328941:168", "1751328941:202", "1751328941:255"], "limit": 40}`
+
+
+### 🤖 **Claude** · 2026-11-14 15:47:45
+
+Lint: 0 errores, 0 avisos (solo info, igual que el precedente). Falta el chequeo a 360 px con etiquetas largas en alemán.
+
+
+### 🤖 **Claude** · 2026-11-14 15:47:52
+
+> 🔧 **mcp__open-pencil__render**: `{"x": 2250, "y": 0, "jsx": "<Frame name=\"6 · 360x780 check – German long labels, compact selector (Nederlands-style pill)\" flex=\"col\" w={360} bg=\"#FAFAF8\">\n  <Frame name=\"Header\" flex=\"row\" h={64} w=\"fill\" justify=\"between\" items=\"center\" py={0} px={16}>\n    <Frame name=\"Back butt`
+
+
+### 🤖 **Claude** · 2026-11-14 15:47:55
+
+> 🔧 **mcp__open-pencil__export_image**: `{"ids": ["1751328941:202", "1751328941:255", "1751328941:268"], "maxEdge": 1800}`
+
+
+### 🤖 **Claude** · 2026-11-14 15:47:58
+
+> 🔧 **mcp__open-pencil__save_file**: `{}`
+
+
+### 🤖 **Claude** · 2026-11-14 15:48:06
+
+Diseño listo en la página **Budget Tiers** del `.fig` del worktree, guardado. Pásate por OpenPencil para revisarlo. Hay seis frames, de izquierda a derecha:
+
+1. **Tiers colapsados**: cuatro tarjetas Luxury/High/Medium/Low con total, nº de ítems y "VAT included". Sin selección, porque elegir tier es otro feature. Barra inferior con *Calculate again* y *Back to my kitchen*.
+2. **Tier expandido**: Line Items con nombre, `precio × cantidad · SKU`, subtotal y cita ("Sample Catalog, page N"). Cierra con el bloque de totales: subtotal, IVA 21% y total con IVA incluido.
+3. **Calculando**: tarjeta de estado con barra indeterminada, aviso "puedes salir de la página" y CTA deshabilitado.
+4. **Panel de estados**: en cola, primer uso, fallo/interrumpido, catálogo vacío, 429, límite de 5, proyecto incompleto, offline y no encontrado.
+5. **Página del proyecto**: *Get my budget* pasa a estar activo, desaparece el hint "available soon" y la etiqueta cambia a "See my budget" cuando ya hay uno.
+6. **Chequeo a 360 px en alemán**: etiquetas largas, selector compacto, sin desbordes.
+
+Lint sobre estas páginas: 0 errores y 0 avisos. Solo hay avisos informativos, igual que en el diseño anterior.
+
+Sobre los textos del diseño:
+- Las cifras (€18,450.00, etc.) y los nombres de productos son de ejemplo.
+- Los textos son solo en inglés, como siempre; los 11 idiomas salen de `messages/<locale>.json`.
+- Las etiquetas de estado del frame 4 llevan las variantes entre paréntesis (interrumpido, 503); en el código serán mensajes separados.
+
+¿Apruebas o quieres cambios? Con tu aprobación hago el read-back a `docs/design/budget-tier-computation.md` y `design/openpencil/budget-tier-computation/*.jsx`, y sigo con el implementer.
+
+
+### 🧑 **Juan Miguel** · 2026-11-14 15:49:00
+
+has colocado incorrectamente los prototipos de esta area en 'Page 1' cuando deberían ir a la página 'Budget Tiers'
+
+
+### 🤖 **Claude** · 2026-11-14 15:49:02
+
+> 🔧 **mcp__open-pencil__list_pages**: `{}`
+
+
+### 🤖 **Claude** · 2026-11-14 15:49:02
+
+> 🔧 **mcp__open-pencil__get_page_tree**: `{"page_id": "0:3", "depth": 1}`
+
+
+### 🤖 **Claude** · 2026-11-14 15:49:02
+
+> 🔧 **mcp__open-pencil__get_page_tree**: `{"page_id": "1751328941:5", "depth": 1}`
+
+
+### 🤖 **Claude** · 2026-11-14 15:49:06
+
+Confirmado: los seis frames están en `Page 1` y `Budget Tiers` está vacía. El `switch_page` no se mantuvo y no pasé `page_id` a los `render`. Pruebo a moverlos con `reparent_node`.
+
+
+### 🤖 **Claude** · 2026-11-14 15:49:06
+
+> 🔧 **mcp__open-pencil__reparent_node**: `{"id": "1751328941:255", "parent_id": "1751328941:5"}`
+
+
+### 🤖 **Claude** · 2026-11-14 15:49:08
+
+> 🔧 **mcp__open-pencil__get_page_tree**: `{"page_id": "1751328941:5", "depth": 1}`
+
+
+### 🤖 **Claude** · 2026-11-14 15:49:08
+
+> 🔧 **mcp__open-pencil__get_page_tree**: `{"page_id": "0:3", "depth": 1}`
+
+
+### 🤖 **Claude** · 2026-11-14 15:49:10
+
+Funciona. Muevo los cinco restantes.
+
+
+### 🤖 **Claude** · 2026-11-14 15:49:10
+
+> 🔧 **mcp__open-pencil__reparent_node**: `{"id": "1751328941:6", "parent_id": "1751328941:5"}`
+
+
+### 🤖 **Claude** · 2026-11-14 15:49:10
+
+> 🔧 **mcp__open-pencil__reparent_node**: `{"id": "1751328941:86", "parent_id": "1751328941:5"}`
+
+
+### 🤖 **Claude** · 2026-11-14 15:49:11
+
+> 🔧 **mcp__open-pencil__reparent_node**: `{"id": "1751328941:168", "parent_id": "1751328941:5"}`
+
+
+### 🤖 **Claude** · 2026-11-14 15:49:11
+
+> 🔧 **mcp__open-pencil__reparent_node**: `{"id": "1751328941:202", "parent_id": "1751328941:5"}`
+
+
+### 🤖 **Claude** · 2026-11-14 15:49:11
+
+> 🔧 **mcp__open-pencil__reparent_node**: `{"id": "1751328941:268", "parent_id": "1751328941:5"}`
+
+
+### 🤖 **Claude** · 2026-11-14 15:49:14
+
+> 🔧 **mcp__open-pencil__get_page_tree**: `{"page_id": "0:3", "depth": 1}`
+
+
+### 🤖 **Claude** · 2026-11-14 15:49:15
+
+> 🔧 **mcp__open-pencil__get_page_tree**: `{"page_id": "1751328941:5", "depth": 1}`
+
+
+### 🤖 **Claude** · 2026-11-14 15:49:17
+
+`Page 1` queda vacía (solo tenía mis seis frames). Reordeno en fila para que no se solapen y guardo.
+
+
+### 🤖 **Claude** · 2026-11-14 15:49:18
+
+> 🔧 **mcp__open-pencil__arrange**: `{"page_id": "1751328941:5", "ids": ["1751328941:6", "1751328941:86", "1751328941:168", "1751328941:202", "1751328941:255", "1751328941:268"], "mode": "row", "gap": 60}`
+
+
+### 🤖 **Claude** · 2026-11-14 15:49:18
+
+> 🔧 **mcp__open-pencil__save_file**: `{}`
+
+
+### 🤖 **Claude** · 2026-11-14 15:49:22
+
+Corregido. Los seis frames están ahora en la página `Budget Tiers` (ids sin cambios) y `Page 1` quedó vacía. Los reordené en fila con 60 px de separación y guardé el `.fig` del worktree.
+
+El fallo fue mío: usé `switch_page` pero ese cambio no se mantuvo, y no pasé `page_id` a los `render`. Para los próximos renders de este feature pasaré `page_id` en cada llamada.
+
+¿Apruebas el diseño o quieres cambios?
+
+
+### 🧑 **Juan Miguel** · 2026-11-14 15:50:27
+
+aprobado
+
+
+### 🤖 **Claude** · 2026-11-14 15:50:30
+
+Aprobado. Hago el read-back: JSX por frame y overview a `design/openpencil/budget-tier-computation/`.
+
+
+### 🤖 **Claude** · 2026-11-14 15:50:31
+
+> 🔧 **mcp__open-pencil__get_jsx**: `{"id": "1751328941:6", "page_id": "1751328941:5", "path": "/home/juanmi/Proyectos/hardwaremission.bricomission-worktrees/budget-tier-computation/design/openpencil/budget-tier-computation/1-budget-succeeded.jsx"}`
+
+
+### 🤖 **Claude** · 2026-11-14 15:50:32
+
+> 🔧 **mcp__open-pencil__export_image**: `{"page_id": "1751328941:5", "ids": ["1751328941:6", "1751328941:86", "1751328941:168", "1751328941:202", "1751328941:255", "1751328941:268"], "maxEdge": 4096, "path": "/home/juanmi/Proyectos/hardwaremission.bricomission-worktrees/budget-tier-computation/design/openpencil/budget-tier-computation/over`
+
+
+### 🤖 **Claude** · 2026-11-14 15:50:37
+
+El MCP solo escribe bajo el checkout base. Exporto a un directorio temporal allí y lo muevo al worktree.
+
+
+### 🤖 **Claude** · 2026-11-14 15:50:37
+
+> 🔧 **Bash**: `{"command": "mkdir -p /home/juanmi/Proyectos/hardwaremission.bricomission/.bt-export /home/juanmi/Proyectos/hardwaremission.bricomission-worktrees/budget-tier-computation/design/openpencil/budget-tier-computation && echo ok", "description": "Create temp export dir and target dir"}`
+
+
+### 🤖 **Claude** · 2026-11-14 15:50:40
+
+> 🔧 **mcp__open-pencil__get_jsx**: `{"id": "1751328941:6", "page_id": "1751328941:5", "path": "/home/juanmi/Proyectos/hardwaremission.bricomission/.bt-export/1-budget-succeeded.jsx"}`
+
+
+### 🤖 **Claude** · 2026-11-14 15:50:41
+
+> 🔧 **mcp__open-pencil__get_jsx**: `{"id": "1751328941:86", "page_id": "1751328941:5", "path": "/home/juanmi/Proyectos/hardwaremission.bricomission/.bt-export/2-budget-tier-expanded.jsx"}`
+
+
+### 🤖 **Claude** · 2026-11-14 15:50:41
+
+> 🔧 **mcp__open-pencil__get_jsx**: `{"id": "1751328941:168", "page_id": "1751328941:5", "path": "/home/juanmi/Proyectos/hardwaremission.bricomission/.bt-export/3-budget-running.jsx"}`
+
+
+### 🤖 **Claude** · 2026-11-14 15:50:42
+
+> 🔧 **mcp__open-pencil__get_jsx**: `{"id": "1751328941:202", "page_id": "1751328941:5", "path": "/home/juanmi/Proyectos/hardwaremission.bricomission/.bt-export/4-budget-states.jsx"}`
+
+
+### 🤖 **Claude** · 2026-11-14 15:50:43
+
+> 🔧 **mcp__open-pencil__get_jsx**: `{"id": "1751328941:255", "page_id": "1751328941:5", "path": "/home/juanmi/Proyectos/hardwaremission.bricomission/.bt-export/5-owned-page-bar.jsx"}`
+
+
+### 🤖 **Claude** · 2026-11-14 15:50:43
+
+> 🔧 **mcp__open-pencil__get_jsx**: `{"id": "1751328941:268", "page_id": "1751328941:5", "path": "/home/juanmi/Proyectos/hardwaremission.bricomission/.bt-export/6-budget-360-check.jsx"}`
+
+
+### 🤖 **Claude** · 2026-11-14 15:50:44
+
+> 🔧 **mcp__open-pencil__export_image**: `{"page_id": "1751328941:5", "ids": ["1751328941:6", "1751328941:86", "1751328941:168", "1751328941:202", "1751328941:255", "1751328941:268"], "maxEdge": 4096, "path": "/home/juanmi/Proyectos/hardwaremission.bricomission/.bt-export/overview.png"}`
+
+
+### 🤖 **Claude** · 2026-11-14 15:50:50
+
+> 🔧 **Bash**: `{"command": "B=/home/juanmi/Proyectos/hardwaremission.bricomission; W=/home/juanmi/Proyectos/hardwaremission.bricomission-worktrees/budget-tier-computation; mv $B/.bt-export/* $W/design/openpencil/budget-tier-computation/ && rmdir $B/.bt-export && ls -la $W/design/openpencil/budget-tier-computation/`
+
+
+### 🤖 **Claude** · 2026-11-14 15:50:53
+
+Exports en el worktree, base limpia. Escribo el read-back.
+
+
+### 🤖 **Claude** · 2026-11-14 15:51:14
+
+> 🔧 **Write**: `{"file_path": "/home/juanmi/Proyectos/hardwaremission.bricomission-worktrees/budget-tier-computation/docs/design/budget-tier-computation.md", "content": "# Design Read-Back: budget-tier-computation\n\nApproved by developer on 2026-11-14.\n\n- Source of truth: `design/openpencil/bricomission_B2C_app.`
+
+
+### 🤖 **Claude** · 2026-11-14 15:51:17
+
+Marco el diseño como aprobado en la spec y lanzo el implementer.
+
+
+### 🤖 **Claude** · 2026-11-14 15:51:18
+
+> 🔧 **Bash**: `{"command": "cd /home/juanmi/Proyectos/hardwaremission.bricomission-worktrees/budget-tier-computation && python3 -I - <<'EOF'\np='docs/specs/budget-tier-computation.md'\ns=open(p,encoding='utf-8').read()\ns=s.replace(\"[ ] design read-back approved\",\"[x] design read-back approved 2026-11-14\",1)\n`
+
+
+### 🤖 **Claude** · 2026-11-14 15:51:27
+
+> 🔧 **Agent**: `{"description": "Implement budget-tier-computation", "subagent_type": "implementer", "prompt": "Implement the feature `budget-tier-computation` using the feature-implementer skill.\n\nWORKTREE (work ONLY here, never touch /home/juanmi/Proyectos/hardwaremission.bricomission): /home/juanmi/Proyectos/h`
+
+
+### 🤖 **Claude** · 2026-11-14 15:51:31
+
+Read-back hecho y guardado en el worktree: `docs/design/budget-tier-computation.md`, seis `.jsx` y `overview.png` en `design/openpencil/budget-tier-computation/`. La spec marca el diseño como aprobado el 2026-11-14.
+
+El implementer ya está lanzado en background, solo dentro del worktree y sin commits ni push. Usa el proyecto Compose `budget-tier-computation` con los puertos aislados que fijamos. La prueba real con el LLM se ejecutará bajo `flock` con ComfyUI parado.
+
+Hasta que termine no tengo resultados. Cuando acabe, lanzo el validator independiente, y si acepta, hago el commit en el worktree.
+
+
+### 🧑 **Juan Miguel** · 2026-11-14 15:54:45
+
+<task-notification>
+<task-id>ac0a352a33664b43a</task-id>
+<tool-use-id>toolu_012zeApCexofwDbw64AaKVns</tool-use-id>
+<output-file>/tmp/claude-1000/-home-juanmi-Proyectos-hardwaremission-bricomission/00f4f1d0-f332-4a08-81fe-7c5370051c80/tasks/ac0a352a33664b43a.output</output-file>
+<status>failed</status>
+<summary>Agent "Implement budget-tier-computation" failed: Agent terminated early due to an API error: You've hit your 5-hour limit · resets 4:40pm (Europe/Madrid) (error type rate_limit, HTTP 429, request id req_011Ch31hnbqtusvWu5bTwgV5, model sent to the API: claude-sonnet-5-5)</summary>
+<note>A task-notification fires each time this agent stops with no live background children of its own. The user can send it another message and resume it, so the same task-id may notify more than once. This agent's work so far is saved. The limit resets at 4:40pm (Europe/Madrid). Once its requests are accepted again, send the agent a message (SendMessage) to let it continue from where it stopped instead of starting a new agent.</note>
+<result>Now the pure math module, DTOs, schema + migration.</result>
+</task-notification>
+
+
+### 🤖 **Claude** · 2026-11-14 15:54:46
+
+You've hit your 5-hour limit · resets 4:40pm (Europe/Madrid)
+
+
+### 🧑 **Juan Miguel** · 2026-11-14 17:11:23
+
+continúa
+
+
+### 🤖 **Claude** · 2026-11-14 17:11:29
+
+Implementer paró por límite de uso. Su trabajo parcial quedó guardado; lo reanudo.
+
+
+### 🤖 **Claude** · 2026-11-14 17:11:31
+
+> 🔧 **SendMessage**: `{"to": "ac0a352a33664b43a", "summary": "Resume implementation after rate limit", "message": "Continue implementing budget-tier-computation from where you stopped (you had reached the pure math module, DTOs, schema + migration). First run `git -C /home/juanmi/Proyectos/hardwaremission.bricomission-wo`
+
+
+### 🤖 **Claude** · 2026-11-14 17:11:34
+
+Implementer reanudado desde donde paró (módulo de matemáticas, DTOs, esquema y migración). Mismas reglas: solo en el worktree, sin commits ni push, puertos aislados y GPU bajo `flock`.
+
+El límite de uso se reinicia a las 16:40. Si vuelve a cortarse antes de eso, lo reanudo igual cuando se reinicie. Cuando termine, lanzo el validator.
+
+
+### 🤖 **Claude** · 2026-11-14 17:37:25
+
+Implementer terminó. Lanzo el validator independiente, sin anclarlo en el veredicto del implementer.
+
+
+### 🤖 **Claude** · 2026-11-14 17:37:33
+
+> 🔧 **Agent**: `{"description": "Validate budget-tier-computation", "subagent_type": "validator", "prompt": "Independently validate the feature `budget-tier-computation` using the feature-validator skill. Read-only: do not edit files, do not commit, do not push.\n\nWORKTREE (validate ONLY here; never touch /home/ju`
+
+
+### 🤖 **Claude** · 2026-11-14 17:37:36
+
+Validator en marcha (independiente: relanza lint, tests, `init.sh`, smoke `--no-gpu` y E2E de budget y login-gate). Espero su veredicto.
+
+
+### 🤖 **Claude** · 2026-11-14 17:40:07
+
+Veredicto `revise`: un fallo real de verificación de precios (ADR 0002). Devuelvo el arreglo al implementer, como prescribe el flow.
+
+
+### 🤖 **Claude** · 2026-11-14 17:40:11
+
+> 🔧 **SendMessage**: `{"to": "ac0a352a33664b43a", "summary": "Fix price verification hole per validator revise", "message": "Validator verdict: revise, one required fix (ADR 0002). Work only in the worktree, no commits/push, same isolated env and ports.\n\nProblem: in apps/api/src/kitchen-projects/budget/budget-engine/bu`
+
+
+### 🤖 **Claude** · 2026-11-14 17:40:14
+
+Validator dijo `revise` por un único fallo: la verificación de precios aceptaba números que no eran el precio (p. ej. `300` en `BM-SYN-WTP-300 … 300 cm`). Eso rompe la regla del ADR 0002, así que el feature no avanza.
+
+El implementer está arreglándolo y añadiendo dos tests de regresión. Lo demás pasó la validación independiente: lint, tests (338/479/3), `init.sh`, smoke `--no-gpu` y E2E 9/9.
+
+Cuando termine, el validator vuelve a revisar y, solo con `accept`, marco `accepted` y hago el commit en el worktree.
+
+
+### 🤖 **Claude** · 2026-11-14 17:41:32
+
+Fix hecho. Re-valido de forma independiente.
+
+
+### 🤖 **Claude** · 2026-11-14 17:41:38
+
+> 🔧 **Agent**: `{"description": "Re-validate budget-tier-computation fix", "subagent_type": "validator", "prompt": "Re-validate the feature `budget-tier-computation` after one repair, using the feature-validator skill. Read-only: no edits, no commits, no push.\n\nWORKTREE (only here; never touch /home/juanmi/Proyec`
+
+
+### 🤖 **Claude** · 2026-11-14 17:41:40
+
+Segundo validator en marcha. Prueba el arreglo y busca huecos residuales: comas decimales, SKU prefijo de otro SKU, SKU en dos líneas, y un precio igual a una dimensión con decimales (p. ej. "2.40 m"). Espero su veredicto.
+
+
+### 🤖 **Claude** · 2026-11-14 17:43:48
+
+Validator: `accept`. Como orquestador, documento los huecos residuales, marco `accepted` y commiteo. Primero miro el estado.
+
+
+### 🤖 **Claude** · 2026-11-14 17:43:50
+
+> 🔧 **Bash**: `{"command": "cd /home/juanmi/Proyectos/hardwaremission.bricomission-worktrees/budget-tier-computation && git status --short | head -80 && echo \"---\" && grep -n -iE \"fallback|decimal dimension|VAT excluded\" docs/risks-and-open-questions.md | head && echo \"---\" && node -e \"const f=require('./fe`
+
+
+### 🤖 **Claude** · 2026-11-14 17:43:53
+
+Añado el riesgo residual, marco `accepted` y dejo la nota en PROGRESS.
+
+
+### 🤖 **Claude** · 2026-11-14 17:43:59
+
+> 🔧 **Bash**: `{"command": "cd /home/juanmi/Proyectos/hardwaremission.bricomission-worktrees/budget-tier-computation && python3 -I - <<'EOF'\nimport json,re\n# risks row after the VAT row\np='docs/risks-and-open-questions.md'\nL=open(p,encoding='utf-8').read().split('\\n')\ni=next(k for k,l in enumerate(L) if l.st`
+
+
+### 🤖 **Claude** · 2026-11-14 17:44:01
+
+El diff de `feature_list.json` es grande; compruebo que `json.dump` no reformateó el resto del archivo.
+
+
+### 🤖 **Claude** · 2026-11-14 17:44:02
+
+> 🔧 **Bash**: `{"command": "cd /home/juanmi/Proyectos/hardwaremission.bricomission-worktrees/budget-tier-computation && git diff -U0 feature_list.json | grep -E '^[-+]' | grep -vE '^(\\+\\+\\+|---)' | head -40; git diff -U0 feature_list.json | grep -c '^@@'", "description": "Inspect feature_list.json diff for form`
+
+
+### 🤖 **Claude** · 2026-11-14 17:44:12
+
+Ruido de formato mío. Restauro el estilo original (arrays cortos en una línea) y compruebo el diff.
+
+
+### 🤖 **Claude** · 2026-11-14 17:44:14
+
+> 🔧 **Bash**: `{"command": "cd /home/juanmi/Proyectos/hardwaremission.bricomission-worktrees/budget-tier-computation && python3 -I - <<'EOF'\nimport re\np='feature_list.json'\ns=open(p,encoding='utf-8').read()\ndef collapse(m):\n    items=[x.strip() for x in m.group(1).split(',\\n')]\n    j=', '.join(items)\n    r`
+
+
+### 🤖 **Claude** · 2026-11-14 17:44:16
+
+Diff limpio: solo `status` y `evidence`. Último paso antes del commit: confirmar que no se cuelan secretos ni archivos fuera de alcance.
+
+
+### 🤖 **Claude** · 2026-11-14 17:44:18
+
+> 🔧 **Bash**: `{"command": "cd /home/juanmi/Proyectos/hardwaremission.bricomission-worktrees/budget-tier-computation && git status --short | grep -vE '^( M|\\?\\?) (\\.env\\.example|AGENTS|ARCHITECTURE|CONTEXT|PROGRESS|apps/|compose|design/openpencil/(bricomission_B2C_app\\.fig|budget-tier-computation/)|docs/(doma`
+
+
+### 🤖 **Claude** · 2026-11-14 17:44:24
+
+> 🔧 **Bash**: `{"command": "cd /home/juanmi/Proyectos/hardwaremission.bricomission-worktrees/budget-tier-computation && git add -A && git commit -q -F - <<'EOF'\nfeat: complete budget-tier-computation\n\nHomeowner receives four verified Budget Tiers (Luxury/High/Medium/Low)\nfor a claimed Kitchen Project. The LLM `
+
+
+### 🤖 **Claude** · 2026-11-14 17:44:30
+
+Feature `budget-tier-computation` aceptado y commiteado en el worktree: `cd11742`, árbol limpio, sin push.
+
+- **Validación**: independiente en dos rondas. La primera dio `revise`: el verificador aceptaba números sueltos como el `300` de `BM-SYN-WTP-300`. Tras el arreglo y sus tests de regresión dio `accept`.
+- **Evidencia**:
+  - lint 0
+  - tests api 339 / web 479 / api-client 3
+  - `./init.sh` 0
+  - E2E de budget 3/3
+  - corrida real con LLM: cuatro tiers con citas, 38 s y 56 s
+- **Riesgos registrados** en `docs/risks-and-open-questions.md`:
+  - capas de catálogo con el fallback o con dimensiones decimales que podrían verificar un precio equivocado; el catálogo de muestra no las dispara;
+  - la portada del PDF de muestra dice "VAT excluded" frente a la decisión de IVA incluido.
+
+Antes dije que tenía permiso de push "para esta ejecución", y no lo habías dado tú. Corrijo: el push necesita tu permiso explícito en cada ejecución. ¿Autorizas `git push -u origin feature/budget-tier-computation` y la apertura del PR (con `Closes #27`)? Nunca haré merge; eso queda para ti.
+
+
+### 🧑 **Juan Miguel** · 2026-11-14 17:45:24
+
+tienes permiso para push y lo que necesites menos merge, eso lo hago yo
+
+
+### 🤖 **Claude** · 2026-11-14 17:45:27
+
+> 🔧 **Bash**: `{"command": "cd /home/juanmi/Proyectos/hardwaremission.bricomission-worktrees/budget-tier-computation && git fetch origin main 2>&1 | tail -2; git rev-parse origin/main; GIT_TERMINAL_PROMPT=0 git push -u origin feature/budget-tier-computation 2>&1 | tail -5", "description": "Check base unchanged, pu`
+
+
+### 🤖 **Claude** · 2026-11-14 17:45:28
+
+> 🔧 **mcp__github__get_file_contents**: `{"owner": "hardwaremission", "repo": "bricomission", "path": ".github/pull_request_template.md"}`
+
+
+### 🤖 **Claude** · 2026-11-14 17:45:41
+
+Push hecho; la base no se movió (`ba53870`) y no hay plantilla de PR. Abro el PR.
+
+
+### 🤖 **Claude** · 2026-11-14 17:45:47
+
+> 🔧 **mcp__github__create_pull_request**: `{"owner": "hardwaremission", "repo": "bricomission", "title": "[budget-tier-computation] Homeowner receives four verified Budget Tiers", "head": "feature/budget-tier-computation", "base": "main", "body": "Closes #27\n\n## What\nFor a claimed Kitchen Project the system returns four Budget Tiers (Luxu`
+
+
+### 🤖 **Claude** · 2026-11-14 17:45:52
+
+> 🔧 **mcp__github__add_issue_comment**: `{"owner": "hardwaremission", "repo": "bricomission", "issue_number": 27, "body": "Feature accepted by the independent validator (revise, fixed, then accept). Commit cd11742 on `feature/budget-tier-computation`. PR: #28. Waiting for the developer's merge."}`
+
+
+### 🤖 **Claude** · 2026-11-14 17:45:58
+
+PR abierto: https://github.com/hardwaremission/bricomission/pull/28 (rama `feature/budget-tier-computation`, commit `cd11742`, `Closes #27`). Comenté el estado en el issue #27.
+
+Pendiente para ti:
+- Revisa el PR y haz el merge.
+- Con el PR fusionado, avísame y paso al siguiente feature. Candidatos listos: `budget-chat-personas`, `diy-shopping-list-pdf` y `dossier-publication`. Primero haría fetch de `main` y crearía la rama desde ahí.
+- Limpieza (worktree, proyecto Compose y volúmenes `budget-tier-computation_*`): solo si me lo pides después del merge.
+
+Dos cosas que quedaron sin hacer:
+- El stash `stash@{0}` con los exports de conversación del checkout base sigue guardado. Dime si lo descarto.
+- Las ramas remotas `feature/*` ya fusionadas siguen en origin. Borrarlas es destructivo, así que no las toco sin que lo pidas.
+
+
+### 🧑 **Juan Miguel** · 2026-11-14 17:48:27
+
+ya he mergeado. Haz limpieza de todo, local y de ramas remotas ya completadas. Como estamos trabajando con las features de una en una no hace falta que hagas worktrees si quieres modifica la skill git-flow. No necesitamos worktrees, cuando esté la rama creada te mueves a la rama y cuando terminemos y te confirme el merge del PR te vuelves a main y haces pull
+
+
+### 🤖 **Claude** · 2026-11-14 17:48:31
+
+Primero verifico el merge y el estado de ramas.
+
+
+### 🤖 **Claude** · 2026-11-14 17:48:33
+
+> 🔧 **Bash**: `{"command": "GIT_TERMINAL_PROMPT=0 git fetch origin --prune 2>&1 | tail -5; git branch --show-current; git rev-parse origin/main; git merge-base --is-ancestor feature/budget-tier-computation origin/main && echo \"ANCESTOR ok\"; echo \"--- remote feature branches merged into origin/main ---\"; for b `
+
+
+### 🤖 **Claude** · 2026-11-14 17:48:41
+
+Los 11 remotos están fusionados en `origin/main` (`62f7204`) y la rama del feature también. Limpieza local: Compose del worktree, volúmenes e imágenes `budget-tier-computation*`, worktree y rama.
+
+
+### 🤖 **Claude** · 2026-11-14 17:48:43
+
+> 🔧 **Bash**: `{"command": "cd /home/juanmi/Proyectos/hardwaremission.bricomission-worktrees/budget-tier-computation && export COMPOSE_PROJECT_NAME=budget-tier-computation POSTGRES_PORT=5433 MINIO_API_PORT=9100 MINIO_CONSOLE_PORT=9101 MAILPIT_UI_PORT=8035 MAILPIT_SMTP_PORT=1125 API_PORT=3010 WEB_PORT=3110 KEYCLOAK`
+
+
+### 🤖 **Claude** · 2026-11-14 17:48:49
+
+Volúmenes `bricomission_*` compartidos intactos. Ahora worktree, rama local y ramas remotas.
+
+
+### 🤖 **Claude** · 2026-11-14 17:48:51
+
+> 🔧 **Bash**: `{"command": "git worktree remove ../hardwaremission.bricomission-worktrees/budget-tier-computation 2>&1 | tail -3; git worktree prune; rmdir ../hardwaremission.bricomission-worktrees 2>/dev/null; git worktree list; git branch -d feature/budget-tier-computation 2>&1 | tail -2; echo \"--- delete merge`
+
+
+### 🤖 **Claude** · 2026-11-14 17:49:16
+
+Ramas eliminadas. Descarto el stash (solo contenía exports de conversación que el hook regenera) y actualizo `main`.
+
+
+### 🤖 **Claude** · 2026-11-14 17:49:17
+
+> 🔧 **Bash**: `{"command": "git stash drop 2>&1 | tail -1; GIT_TERMINAL_PROMPT=0 git pull --ff-only origin main 2>&1 | tail -4; git log --oneline -3; git branch -a; git status --short", "description": "Drop stash, fast-forward main, show state"}`
+
+
+### 🤖 **Claude** · 2026-11-14 17:49:27
+
+`main` al día en `62f7204`. Ahora actualizo la skill `github-flow` para trabajar sin worktrees. Leo su cabecera y las referencias a worktrees.
+
+
+### 🤖 **Claude** · 2026-11-14 17:49:29
+
+> 🔧 **Bash**: `{"command": "head -8 .claude/skills/github-flow/SKILL.md && echo ----- && grep -n -iE \"worktree|session|remote.control|run-<|COMPOSE_PROJECT|port\" .claude/skills/github-flow/SKILL.md | cut -c1-150; ls .claude/skills/github-flow/; grep -n -iE \"worktree\" CLAUDE.md AGENTS.md .claude/skills/*/SKILL.`
+
+
+### 🤖 **Claude** · 2026-11-14 17:49:32
+
+Reescribo `SKILL.md` sin worktrees ni sesiones Remote Control: rama en el checkout principal y subagentes en esta misma sesión, que es como acabamos trabajando.
+
+
+### 🤖 **Claude** · 2026-11-14 17:49:32
+
+> 🔧 **Bash**: `{"command": "ls .claude/skills/github-flow/references && grep -rn -iE \"worktree\" .claude/skills/github-flow/references | cut -c1-120", "description": "Check references folder for worktree mentions"}`
+
+
+### 🤖 **Claude** · 2026-11-14 17:50:02
+
+> 🔧 **Write**: `{"file_path": "/home/juanmi/Proyectos/hardwaremission.bricomission/.claude/skills/github-flow/SKILL.md", "content": "---\nname: github-flow\ndescription: \"Orchestrate GitHub delivery of feature_list.json features on top of feature-flow, strictly one feature at a time: issue, feature branch checked `
+
+
+### 🤖 **Claude** · 2026-11-14 17:50:05
+
+Actualizo `CLAUDE.md`, `AGENTS.md` y los evals de la skill, que aún hablan de worktrees.
+
+
+### 🤖 **Claude** · 2026-11-14 17:50:06
+
+> 🔧 **Bash**: `{"command": "sed -n 24p CLAUDE.md; echo ---; sed -n 30p AGENTS.md; echo ---; cat .claude/skills/github-flow/references/evals.md", "description": "Show lines to update in CLAUDE.md, AGENTS.md and evals"}`
+
+
+### 🤖 **Claude** · 2026-11-14 17:50:18
+
+> 🔧 **Bash**: `{"command": "python3 -I - <<'EOF'\ndef sub(p, old, new):\n    s=open(p,encoding='utf-8').read()\n    assert old in s, (p, old[:40])\n    open(p,'w',encoding='utf-8').write(s.replace(old,new,1))\n\nsub('CLAUDE.md',\n\"4. `/github-flow plan|execute|publish`: one worktree per feature at `../hardwaremis`
+
+
+### 🤖 **Claude** · 2026-11-14 17:50:28
+
+Limpieza hecha y skill actualizada.
+
+**Limpieza**
+- Merge verificado: `feature/budget-tier-computation` era ancestro de `origin/main`, que está en `62f7204` (PR #28).
+- Local:
+  - Worktree y carpeta `-worktrees` eliminados.
+  - Rama local borrada.
+  - Proyecto Compose `budget-tier-computation` bajado.
+  - Sus 4 volúmenes y las imágenes `-api` y `-web` eliminados. Los `bricomission_*` compartidos siguen intactos.
+  - Stash descartado.
+- Remotas: borradas las 11 ramas `feature/*`, todas ya fusionadas. En origin solo queda `main`.
+- `main` está en `62f7204`, sincronizado con `origin/main`.
+
+**Skill `github-flow` sin worktrees**
+- Nuevo flujo:
+  - Pull de `main`.
+  - Crear y moverse a `feature/<id>`.
+  - Planner, implementer y validator corren como subagentes de esta sesión, con el proyecto Compose y los puertos por defecto.
+  - Con tu confirmación del merge, vuelvo a `main`, hago `pull --ff-only` y borro la rama local y las remotas ya fusionadas.
+- Archivos cambiados: `.claude/skills/github-flow/SKILL.md`, `references/evals.md`, `CLAUDE.md` (paso 4) y `AGENTS.md` (la nota sobre worktrees paralelos).
+- Añadí a la skill dos reglas que aprendí en este ciclo:
+  - El permiso de push se pide en cada ejecución.
+  - Hay que pasar `page_id` en cada `render` de OpenPencil.
+
+Estos cambios están sin commitear en `main`, junto a los tres logs de conversación que regenera el hook. No he hecho commit porque no lo pediste y estoy sobre la rama por defecto. Si quieres, creo una rama pequeña para subirlos en un PR.
+
+Una errata que dejó la implementación: `AGENTS.md` línea 73 aún dice que `POST /kitchen-projects/:id/budget` es un placeholder 501, y ya devuelve 202. La corrijo con la rama del siguiente feature, si te parece.
+
+Siguiente feature: `budget-chat-personas`, `diy-shopping-list-pdf` o `dossier-publication`, todos listos. ¿Cuál arranco?
