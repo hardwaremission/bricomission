@@ -33,3 +33,12 @@ Measured on 2026-11-12 by `local-ai-gpu-spike` (`docs/spikes/local-ai-gpu-spike.
 - Speed, on a 2,003-token prompt with 436 generated tokens: 771 tok/s prompt, 25.5 tok/s generation, 2.6 s time to first token. With Vulkan (`server-vulkan-b12316`), prompt processing reaches 358 tok/s and generation 24.1 tok/s, so ROCm is the chosen backend.
 - Structured output: `response_format` `json_schema` (strict) returned schema-valid Line Items in 12 of 12 runs.
 - Co-residency with SDXL + ControlNet: the two can run at the same time without OOM, but ComfyUI fills the card during a render and both slow down by about 25 %. GPU jobs must therefore be serialized by the API broker, as this ADR already assumed. Stopping the LLM takes 0.6 s and reloading it about 5.5 s.
+
+## Amendment 2026-11-14 (feature `simulations-ux-overhaul`, see ADR 0005)
+
+The decision above stands (local MoE LLM on llama.cpp, experts in system RAM). What changed:
+
+- **Model**: `Qwen3-VL-30B-A3B-Instruct` GGUF Q4_K_M (18,556,688,096 bytes) plus its `mmproj` F16 (1,083,500,224 bytes), pinned at `unsloth/Qwen3-VL-30B-A3B-Instruct-GGUF@0af19e747985`, replaces the text-only `Qwen3-30B-A3B-Instruct-2507`. Same family and size class; it also reads images (style descriptions of references, element inventory of Renders). The same `server-rocm-b12316` image loads it with `--mmproj`; 434 image tokens at 768 px, about 1 s per image, 25-27 tok/s generation, VRAM about 3.8-4.6 GB while resident (text-only: 2.9 GB).
+- **Router mode**: `llama-server --models-preset infra/ai/llama-models.ini --models-max 1`. Chat requests must carry `"model": "qwen3-vl"`; `POST /models/unload` frees the card in 0.01 s and the next request reloads it (about 7 s).
+- **Unload rule**: the LLM is no longer left resident during renders. Co-residency with an IP-Adapter SDXL render was measured at +46 % to +100 % render time at the card limit, so the API unloads the LLM before every image job (ADR 0005). The earlier statement that both can be resident without OOM still holds, but not at acceptable speed. GPU jobs remain serialized by the broker.
+- The old text model file is no longer used; deleting it from the `bricomission_llm-models` volume is a manual step after acceptance.

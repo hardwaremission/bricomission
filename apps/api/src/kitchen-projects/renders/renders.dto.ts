@@ -1,10 +1,7 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiProperty } from '@nestjs/swagger';
 import type {
-  CreateRenderRequest,
-  CreateRenderResponse,
   GpuJobKind,
   RenderErrorCode,
-  RenderListResponse,
   RenderMode,
   RenderStatus,
   RenderView,
@@ -15,10 +12,13 @@ const MODES: RenderMode[] = ['canny', 'depth'];
 const KINDS: GpuJobKind[] = ['image', 'llm'];
 const ERROR_CODES: RenderErrorCode[] = ['adapter_error', 'timeout', 'interrupted', 'storage_unavailable'];
 
-/** A Render of an owned Kitchen Project (feature controlnet-render). No seed, prompt or job id. */
+/** A Render of an owned Kitchen Project (features controlnet-render, simulations-ux-overhaul). No seed, prompt or job id. */
 export class RenderViewDto implements RenderView {
   @ApiProperty({ format: 'uuid' })
   id!: string;
+
+  @ApiProperty({ format: 'uuid', description: 'The Simulation this Render belongs to' })
+  simulationId!: string;
 
   @ApiProperty({ enum: STATUSES })
   status!: RenderStatus;
@@ -26,8 +26,11 @@ export class RenderViewDto implements RenderView {
   @ApiProperty({ type: 'string', format: 'uuid', nullable: true, description: 'Source Photo; null if it was deleted later' })
   photoId!: string | null;
 
-  @ApiProperty({ type: 'string', nullable: true, example: 'scandinavian', description: 'Dominant Moodboard style; null for an uploads-only Moodboard' })
-  styleId!: string | null;
+  @ApiProperty({ type: 'integer', example: 0, description: '0-based position of the source Photo when the Simulation was created' })
+  photoPosition!: number;
+
+  @ApiProperty({ type: 'integer', example: 1, description: '1 for the first run, +1 per Retry' })
+  attempts!: number;
 
   @ApiProperty({ enum: MODES })
   mode!: RenderMode;
@@ -64,22 +67,4 @@ export class RenderViewDto implements RenderView {
 
   @ApiProperty({ type: 'string', nullable: true, description: 'Set only when succeeded' })
   thumbUrl!: string | null;
-}
-
-export class CreateRenderRequestDto implements CreateRenderRequest {
-  @ApiPropertyOptional({ format: 'uuid', description: 'Photo of this project to render; default: the Photo at position 0' })
-  photoId?: string;
-}
-
-export class CreateRenderResponseDto implements CreateRenderResponse {
-  @ApiProperty({ type: RenderViewDto })
-  render!: RenderViewDto;
-}
-
-export class RenderListResponseDto implements RenderListResponse {
-  @ApiProperty({ type: [RenderViewDto], description: 'Newest first' })
-  renders!: RenderViewDto[];
-
-  @ApiProperty({ type: 'integer', example: 10, description: 'Non-failed Renders allowed per project' })
-  maxRenders!: number;
 }

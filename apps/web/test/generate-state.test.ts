@@ -26,9 +26,9 @@ const ready = {
 const reduce = (...actions: Parameters<typeof generateReducer>[1][]) => actions.reduce(generateReducer, INITIAL_GENERATE_STATE);
 
 describe('generate state', () => {
-  it('claimLanding: render opens AI Results with an automatic start, budget opens the Budget page with an automatic start', () => {
+  it('claimLanding: render opens AI Results with an automatic start, budget opens the project page (no Simulation is selected yet)', () => {
     expect(claimLanding('p1', 'render')).toBe('/kitchen-projects/p1/results?claimed=1&start=1');
-    expect(claimLanding('p1', 'budget')).toBe('/kitchen-projects/p1/budget?claimed=1&start=1');
+    expect(claimLanding('p1', 'budget')).toBe('/kitchen-projects/p1?claimed=1');
   });
 
   it('parses the intent and builds login URLs (returnTo with intent, register mode)', () => {

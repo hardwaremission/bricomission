@@ -5,9 +5,11 @@ import { appendDigit, appendSeparator, backspace, keypadValue, stepText } from '
 import {
   cmToKeypadText,
   decimalSeparator,
+  DEFAULT_MEASUREMENT_UNIT,
   formatMeasurement,
   MEASUREMENT_FIELDS,
   MEASUREMENT_LIMITS_CM,
+  MEASUREMENT_PLACEHOLDERS_CM,
   parseMeasurement,
 } from '../src/lib/kitchen-draft/measurements';
 import { LOCALES } from '../src/i18n/locales';
@@ -114,5 +116,25 @@ describe('measurement keypad rules', () => {
     expect(stepText('', 1, 'heightCm', 'm')).toBe('1.8');
     expect(stepText('25', -1, 'lengthCm', 'm')).toBe('20');
     expect(stepText('600', 1, 'heightCm', 'cm')).toBe('600');
+  });
+});
+
+describe('cm default (simulations-ux-overhaul S1)', () => {
+  it('every new draft starts in cm, with whole-number placeholders inside the limits', () => {
+    expect(DEFAULT_MEASUREMENT_UNIT).toBe('cm');
+    for (const field of MEASUREMENT_FIELDS) {
+      const placeholder = MEASUREMENT_PLACEHOLDERS_CM[field];
+      expect(Number.isInteger(placeholder)).toBe(true);
+      expect(placeholder).toBeGreaterThanOrEqual(MEASUREMENT_LIMITS_CM[field].min);
+      expect(placeholder).toBeLessThanOrEqual(MEASUREMENT_LIMITS_CM[field].max);
+    }
+    expect(MEASUREMENT_PLACEHOLDERS_CM.lengthCm).toBe(400);
+    expect(formatMeasurement(MEASUREMENT_PLACEHOLDERS_CM.lengthCm, DEFAULT_MEASUREMENT_UNIT, 'en')).toBe('400');
+  });
+
+  it('the cm keypad takes whole numbers only (rules unchanged)', () => {
+    expect(appendSeparator('42', 'cm')).toBe('42');
+    expect(parseMeasurement('420', 'cm')).toEqual({ kind: 'value', cm: 420 });
+    expect(parseMeasurement('4,2', 'cm')).toEqual({ kind: 'invalid' });
   });
 });

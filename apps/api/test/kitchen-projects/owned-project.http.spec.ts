@@ -88,7 +88,7 @@ describe('HTTP /kitchen-projects/:projectId (owner routes and costly placeholder
     expect(down.body.code).toBe('storage_unavailable');
   });
 
-  for (const action of ['renders', 'budget'] as const) {
+  for (const action of ['simulations', 'budget'] as const) {
     it(`POST ${action}: 401 anonymous, 403 other roles, 404 non-owner and drafts, 409 not ready, then 202 owner + ready`, async () => {
       expect((await post(`/kitchen-projects/${owned.id}/${action}`)).status).toBe(401);
       expect((await post(`/kitchen-projects/${UNKNOWN}/${action}`)).status).toBe(401);
@@ -99,20 +99,27 @@ describe('HTTP /kitchen-projects/:projectId (owner routes and costly placeholder
       const incomplete = await post(`/kitchen-projects/${incompleteId}/${action}`, await k.token());
       expect(incomplete.status).toBe(409);
       expect(incomplete.body).toEqual({ statusCode: 409, message: 'Conflict', code: 'project_incomplete' });
+      if (action === 'budget') {
+        // A Budget needs a selected Simulation (phase B minimal rule; phase C rewrites the Budget).
+        const none = await post(`/kitchen-projects/${owned.id}/budget`, await k.token());
+        expect(none.status).toBe(409);
+        expect(none.body.code).toBe('no_simulation_selected');
+        k.seedReadySimulation(owned.id);
+      }
       const ready = await post(`/kitchen-projects/${owned.id}/${action}`, await k.token());
       expect(ready.status).toBe(202);
-      if (action === 'renders') expect(ready.body.render).toMatchObject({ status: 'queued', photoId: owned.photoId });
+      if (action === 'simulations') expect(ready.body.simulation).toMatchObject({ ordinal: 1, renders: [expect.objectContaining({ status: 'queued', photoId: owned.photoId })] });
       else expect(ready.body.budget).toMatchObject({ status: 'queued', currency: 'EUR', tiers: [] });
     });
   }
 
-  it('OpenAPI: owner and costly routes are bearer-only and document 401/403/404 (+409/202 renders and budget)', async () => {
+  it('OpenAPI: owner and costly routes are bearer-only and document 401/403/404 (+409/202 simulations and budget)', async () => {
     const doc = (await k.http().get('/docs-json')).body;
     const routes: Array<[string, 'get' | 'post']> = [
       ['/kitchen-projects/{projectId}', 'get'],
       ['/kitchen-projects/{projectId}/photos/{photoId}/content', 'get'],
       ['/kitchen-projects/{projectId}/moodboard/items/{itemId}/content', 'get'],
-      ['/kitchen-projects/{projectId}/renders', 'post'],
+      ['/kitchen-projects/{projectId}/simulations', 'post'],
       ['/kitchen-projects/{projectId}/budget', 'post'],
     ];
     for (const [path, method] of routes) {
@@ -120,8 +127,8 @@ describe('HTTP /kitchen-projects/:projectId (owner routes and costly placeholder
       expect(op.security).toEqual([{ bearer: [] }]);
       expect(Object.keys(op.responses)).toEqual(expect.arrayContaining(['401', '403', '404']));
     }
-    expect(Object.keys(doc.paths['/kitchen-projects/{projectId}/renders'].post.responses)).toEqual(expect.arrayContaining(['202', '409', '429']));
-    expect(Object.keys(doc.paths['/kitchen-projects/{projectId}/renders'].post.responses)).not.toContain('501');
+    expect(Object.keys(doc.paths['/kitchen-projects/{projectId}/simulations'].post.responses)).toEqual(expect.arrayContaining(['202', '409', '429']));
+    expect(Object.keys(doc.paths['/kitchen-projects/{projectId}/simulations'].post.responses)).not.toContain('501');
     expect(Object.keys(doc.paths['/kitchen-projects/{projectId}/budget'].post.responses)).toEqual(expect.arrayContaining(['202', '409', '429', '503']));
     expect(Object.keys(doc.paths['/kitchen-projects/{projectId}/budget'].post.responses)).not.toContain('501');
   });

@@ -144,9 +144,15 @@ services:
       GPU_BROKER_DEBUG_ENDPOINTS: ${GPU_BROKER_DEBUG_ENDPOINTS:-false}
       GPU_BROKER_LLM_CONCURRENCY: ${GPU_BROKER_LLM_CONCURRENCY:-1}
       GPU_BROKER_MAX_QUEUED: ${GPU_BROKER_MAX_QUEUED:-20}
-      # Renders (controlnet-render): ControlNet canny|depth and non-failed Renders per project.
+      # One llm job must outlive three pricing attempts (about 55 s each) plus a router-mode reload (about 7 s).
+      GPU_BROKER_LLM_TIMEOUT_MS: ${GPU_BROKER_LLM_TIMEOUT_MS:-240000}
+      # Renders (controlnet-render): ControlNet canny|depth. There is no per-project cap (Simulations).
       RENDER_CONTROL_MODE: ${RENDER_CONTROL_MODE:-canny}
-      RENDER_MAX_PER_PROJECT: ${RENDER_MAX_PER_PROJECT:-10}
+      # Simulations (simulations-ux-overhaul): model id sent to llama-server router mode (also the vision cache key)
+      # and the base IP-Adapter weight per reference for blend mode ip_adapter / both (blend mode itself is a platform setting).
+      LLM_MODEL: ${LLM_MODEL:-qwen3-vl}
+      SIMULATION_IPADAPTER_BASE_WEIGHT: ${SIMULATION_IPADAPTER_BASE_WEIGHT:-0.6}
+      SIMULATION_BOTH_BASE_WEIGHT: ${SIMULATION_BOTH_BASE_WEIGHT:-0.4}
       # ControlNet tuning (2026-11-15): canny thresholds, canny strength/end, depth assist (0 = off).
       RENDER_CANNY_LOW: ${RENDER_CANNY_LOW:-0.6}
       RENDER_CANNY_HIGH: ${RENDER_CANNY_HIGH:-0.95}
@@ -154,9 +160,12 @@ services:
       RENDER_CONTROL_END: ${RENDER_CONTROL_END:-0.5}
       RENDER_DEPTH_ASSIST_STRENGTH: ${RENDER_DEPTH_ASSIST_STRENGTH:-0.7}
       RENDER_DEPTH_ASSIST_END: ${RENDER_DEPTH_ASSIST_END:-1}
-      # Budgets (budget-tier-computation): VAT rate of the VAT-inclusive Catalog prices, history cap.
+      # Budgets (budget-tier-computation, simulations-ux-overhaul): VAT rate of the VAT-inclusive Catalog prices, LLM
+      # attempts per Budget (retries with feedback for verification and tier order, then relabel by total), and the
+      # fake LLM's tier order (ordered|misordered; misordered exercises retry and relabel). One current Budget per Simulation.
       BUDGET_VAT_PERCENT: ${BUDGET_VAT_PERCENT:-21}
-      BUDGET_MAX_PER_PROJECT: ${BUDGET_MAX_PER_PROJECT:-5}
+      BUDGET_MAX_ATTEMPTS: ${BUDGET_MAX_ATTEMPTS:-3}
+      AI_FAKE_BUDGET_ORDER: ${AI_FAKE_BUDGET_ORDER:-ordered}
       # Catalog RAG (ADR 0004). No depends_on: the embedder is opt-in (profile rag);
       # /catalog/search answers 503 while it is down.
       EMBEDDING_URL: http://embedder:8080
@@ -246,9 +255,14 @@ services:
     group_add:
       - video
       - "${RENDER_GID:-987}"
+    # Router mode (spike A3, docs/spikes/simulations-gpu-spike.md): models come from the preset
+    # file; the shared flags below are passed on to every model instance. One model at a time;
+    # POST /models/unload frees the GPU, the next request with "model" reloads it.
     command:
-      - -m
-      - /models/Qwen3-30B-A3B-Instruct-2507-Q4_K_M.gguf
+      - --models-preset
+      - /cfg/llama-models.ini
+      - --models-max
+      - "1"
       - --host
       - 0.0.0.0
       - --port
@@ -271,6 +285,7 @@ services:
       - "127.0.0.1:${LLAMA_PORT:-8080}:8080"
     volumes:
       - llm-models:/models:ro
+      - ./infra/ai/llama-models.ini:/cfg/llama-models.ini:ro
     healthcheck:
       test: ["CMD", "curl", "-fsS", "-o", "/dev/null", "http://127.0.0.1:8080/health"]
       interval: 5s

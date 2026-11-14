@@ -1,6 +1,9 @@
 import type { AiEndpointsProvider } from '../ai-endpoints.provider.js';
 import { AiBackendError } from './ai-backend.error.js';
-import type { LlmAdapter, LlmRequest, LlmResult } from './llm-adapter.js';
+import type { LlmAdapter, LlmMessage, LlmRequest, LlmResult } from './llm-adapter.js';
+
+/** Model name of the router-mode preset (`infra/ai/llama-models.ini`); every chat request must name it. */
+export const DEFAULT_LLM_MODEL = 'qwen3-vl';
 
 interface ChatCompletionResponse {
   choices?: { message?: { content?: unknown } }[];
@@ -9,10 +12,13 @@ interface ChatCompletionResponse {
 
 /** llama.cpp `llama-server` through its OpenAI-compatible, non-streaming chat endpoint. */
 export class LlamaServerLlmAdapter implements LlmAdapter {
-  constructor(private readonly endpoints: AiEndpointsProvider) {}
+  constructor(
+    private readonly endpoints: AiEndpointsProvider,
+    private readonly model: string = DEFAULT_LLM_MODEL,
+  ) {}
 
   async complete(req: LlmRequest, signal: AbortSignal): Promise<LlmResult> {
-    const body: Record<string, unknown> = { messages: req.messages, stream: false };
+    const body: Record<string, unknown> = { model: this.model, messages: req.messages.map(toWireMessage), stream: false };
     if (req.maxTokens !== undefined) body.max_tokens = req.maxTokens;
     if (req.jsonSchema !== undefined) {
       body.response_format = {
@@ -47,6 +53,17 @@ export class LlamaServerLlmAdapter implements LlmAdapter {
       completionTokens: toCount(json.usage?.completion_tokens),
     };
   }
+}
+
+/** Text stays a string; parts become OpenAI content parts, images as `image_url` data URIs. */
+function toWireMessage(message: LlmMessage): { role: string; content: unknown } {
+  if (typeof message.content === 'string') return { role: message.role, content: message.content };
+  return {
+    role: message.role,
+    content: message.content.map((part) =>
+      part.type === 'text' ? { type: 'text', text: part.text } : { type: 'image_url', image_url: { url: `data:${part.mime};base64,${part.data.toString('base64')}` } },
+    ),
+  };
 }
 
 function toCount(value: unknown): number {

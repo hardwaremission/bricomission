@@ -5,13 +5,14 @@ import { ComfyUiImageAdapter } from './adapters/comfyui-image.adapter.js';
 import { FakeImageAdapter } from './adapters/fake-image.adapter.js';
 import { FakeLlmAdapter } from './adapters/fake-llm.adapter.js';
 import type { ImageAdapter } from './adapters/image-adapter.js';
-import { LlamaServerLlmAdapter } from './adapters/llama-server-llm.adapter.js';
+import { DEFAULT_LLM_MODEL, LlamaServerLlmAdapter } from './adapters/llama-server-llm.adapter.js';
 import type { LlmAdapter } from './adapters/llm-adapter.js';
 import { gpuBrokerOptionsFromEnv } from './jobs/gpu-broker.options.js';
 import { GpuJobBrokerService } from './jobs/gpu-job-broker.service.js';
 import { GpuJobsDebugController } from './jobs/gpu-jobs-debug.controller.js';
 import { GpuJobsController } from './jobs/gpu-jobs.controller.js';
 import { GpuResidencyHook } from './jobs/gpu-residency.hook.js';
+import { LLM_UNLOADER, type LlmUnloader, LlamaRouterUnloader, NoopLlmUnloader } from './jobs/llm-unloader.js';
 
 export interface AiModuleOptions {
   /** Mount the debug `POST /ai/jobs`. Default: `GPU_BROKER_DEBUG_ENDPOINTS === 'true'`. */
@@ -33,6 +34,7 @@ export class AiModule {
     const env = process.env;
     const debugEndpoints = options.debugEndpoints ?? env.GPU_BROKER_DEBUG_ENDPOINTS === 'true';
     const useLocal = env.AI_ADAPTERS === 'local';
+    const llmModel = env.LLM_MODEL?.trim() || DEFAULT_LLM_MODEL;
     const providers: Provider[] = [
       { provide: GPU_BROKER_OPTIONS, useFactory: () => gpuBrokerOptionsFromEnv(env) },
       { provide: AI_ENDPOINTS, useFactory: (): AiEndpointsProvider => new EnvAiEndpointsProvider(env) },
@@ -41,8 +43,8 @@ export class AiModule {
         inject: [AI_ENDPOINTS],
         useFactory: (endpoints: AiEndpointsProvider): LlmAdapter =>
           useLocal
-            ? new LlamaServerLlmAdapter(endpoints)
-            : new FakeLlmAdapter({ delayMs: delayFromEnv(env.AI_FAKE_LLM_DELAY_MS, FAKE_LLM_DELAY_MS) }),
+            ? new LlamaServerLlmAdapter(endpoints, llmModel)
+            : new FakeLlmAdapter({ delayMs: delayFromEnv(env.AI_FAKE_LLM_DELAY_MS, FAKE_LLM_DELAY_MS), budgetOrder: env.AI_FAKE_BUDGET_ORDER === 'misordered' ? 'misordered' : 'ordered' }),
       },
       {
         provide: IMAGE_ADAPTER,
@@ -51,6 +53,11 @@ export class AiModule {
           useLocal
             ? new ComfyUiImageAdapter(endpoints)
             : new FakeImageAdapter({ delayMs: delayFromEnv(env.AI_FAKE_IMAGE_DELAY_MS, FAKE_IMAGE_DELAY_MS) }),
+      },
+      {
+        provide: LLM_UNLOADER,
+        inject: [AI_ENDPOINTS],
+        useFactory: (endpoints: AiEndpointsProvider): LlmUnloader => (useLocal ? new LlamaRouterUnloader(endpoints, llmModel) : new NoopLlmUnloader()),
       },
       GpuResidencyHook,
       GpuJobBrokerService,

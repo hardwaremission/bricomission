@@ -64,41 +64,36 @@ function GalleryTile({ tile, styleName, onToggle }: { tile: GalleryTileModel; st
 
 export interface StyleGalleryProps {
   styles: StyleGalleryStyleView[];
-  filter: string;
+  /** Active style ids; empty = All. */
+  filters: string[];
   tiles: GalleryTileModel[];
   styleName: (styleId: string) => string;
   onFilter: (filter: string) => void;
   onToggle: (galleryImageId: string) => void;
 }
 
-/** Style filter chips ("All" + one per style; a radiogroup that scrolls horizontally) over one 2-column grid. */
-export function StyleGallery({ styles, filter, tiles, styleName, onFilter, onToggle }: StyleGalleryProps) {
+/** Style filter chips ("All" + one per style; multi-select tag cloud that wraps, nothing hidden) over one 2-column grid. */
+export function StyleGallery({ styles, filters, tiles, styleName, onFilter, onToggle }: StyleGalleryProps) {
   const t = useTranslations('moodboard.gallery');
   const chips = [{ id: 'all', label: t('all') }, ...styles.map((style) => ({ id: style.id, label: styleName(style.id) }))];
   return (
     <>
-      <div
-        role="radiogroup"
-        aria-label={t('filter')}
-        data-testid="moodboard-style-filter"
-        data-scroll-x
-        className="-mx-md flex gap-2 overflow-x-auto px-md [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-      >
+      <div role="group" aria-label={t('filter')} data-testid="moodboard-style-filter" className="flex flex-wrap gap-2">
         {chips.map((chip) => {
-          const checked = filter === chip.id;
+          const checked = chip.id === 'all' ? filters.length === 0 : filters.includes(chip.id);
           return (
             <button
               key={chip.id}
               type="button"
-              role="radio"
-              aria-checked={checked}
+              aria-pressed={checked}
               data-filter={chip.id}
               onClick={() => onFilter(chip.id)}
-              className={`flex h-11 shrink-0 items-center rounded-pill px-md text-small leading-5 font-semibold whitespace-nowrap ${
+              className={`flex h-11 max-w-full items-center gap-[6px] rounded-pill px-md text-small leading-5 font-semibold ${
                 checked ? 'bg-primary text-white' : 'bg-surface-muted text-text'
               }`}
             >
-              {chip.label}
+              {checked ? <Check size={14} aria-hidden="true" className="shrink-0" /> : null}
+              <span className="text-left">{chip.label}</span>
             </button>
           );
         })}

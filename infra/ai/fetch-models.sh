@@ -17,6 +17,10 @@ FILES=(
   "/comfy-models/checkpoints/RealVisXL_V5.0_fp16.safetensors|SG161222/RealVisXL_V5.0|ac93e0dda1f6d448cae19bbfab8c5e720a5e48bc|RealVisXL_V5.0_fp16.safetensors|6938065488"
   "/comfy-models/controlnet/sdxl-depth.safetensors|diffusers/controlnet-depth-sdxl-1.0|17bb97973f29801224cd66f192c5ffacf82648b4|diffusion_pytorch_model.fp16.safetensors|2502139134"
   "/comfy-models/controlnet/sdxl-canny.safetensors|diffusers/controlnet-canny-sdxl-1.0|eb115a19a10d14909256db740ed109532ab1483c|diffusion_pytorch_model.fp16.safetensors|2502139136"
+  "/models/Qwen3-VL-30B-A3B-Instruct-Q4_K_M.gguf|unsloth/Qwen3-VL-30B-A3B-Instruct-GGUF|0af19e7479857aa7f3246466a4ad16c7e7299639|Qwen3-VL-30B-A3B-Instruct-Q4_K_M.gguf|18556688096"
+  "/models/Qwen3-VL-30B-A3B-Instruct-mmproj-F16.gguf|unsloth/Qwen3-VL-30B-A3B-Instruct-GGUF|0af19e7479857aa7f3246466a4ad16c7e7299639|mmproj-F16.gguf|1083500224"
+  "/comfy-models/ipadapter/ip-adapter-plus_sdxl_vit-h.safetensors|h94/IP-Adapter|018e402774aeeddd60609b4ecdb7e298259dc729|sdxl_models/ip-adapter-plus_sdxl_vit-h.safetensors|847517512"
+  "/comfy-models/clip_vision/CLIP-ViT-H-14-laion2B-s32B-b79K.safetensors|laion/CLIP-ViT-H-14-laion2B-s32B-b79K|1c2b8495b28150b8a4922ee1c8edee224c284c0c|model.safetensors|3944552236"
   "/annotators/depth-anything/Depth-Anything-V2-Small/depth_anything_v2_vits.pth|depth-anything/Depth-Anything-V2-Small|03876f8651c73a60fe4c2c48294e09fcb6838fcf|depth_anything_v2_vits.pth|99218434"
 )
 

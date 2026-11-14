@@ -6,6 +6,10 @@
 export const MEASUREMENT_FIELDS = ['lengthCm', 'widthCm', 'heightCm'] as const;
 export type MeasurementField = (typeof MEASUREMENT_FIELDS)[number];
 export type MeasurementUnit = 'm' | 'cm';
+/** Every new draft starts in cm (simulations-ux-overhaul S1); the toggle remembers the choice per draft screen. */
+export const DEFAULT_MEASUREMENT_UNIT: MeasurementUnit = 'cm';
+/** Empty-field hints in cm (S1: for example `400 cm`); never saved. */
+export const MEASUREMENT_PLACEHOLDERS_CM: Readonly<Record<MeasurementField, number>> = { lengthCm: 400, widthCm: 300, heightCm: 250 };
 export type Measurements = Record<MeasurementField, number | null>;
 
 export const MEASUREMENT_LIMITS_CM: Readonly<Record<MeasurementField, { min: number; max: number }>> = {

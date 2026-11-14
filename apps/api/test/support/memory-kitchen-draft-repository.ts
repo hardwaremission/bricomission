@@ -62,22 +62,31 @@ export class MemoryKitchenDraftRepository implements KitchenDraftRepository {
   async updateMeasurements(id: string, measurements: KitchenMeasurements, expiresAt: Date): Promise<KitchenDraftRecord> {
     this.maybeFail();
     const row = this.get(id);
+    // Mirrors the status CHECK: a claimed project cannot get an expiry from a draft mutation.
+    if (row.status !== 'draft') throw new Error('CheckViolation');
     row.measurements = { ...measurements };
     row.expiresAt = expiresAt;
     return this.record(row);
   }
 
-  async addPhoto(id: string, photo: NewKitchenPhoto, maxPhotos: number, expiresAt: Date): Promise<KitchenPhotoRecord | 'limit_reached'> {
+  async updateProjectMeasurements(id: string, measurements: KitchenMeasurements): Promise<KitchenProjectRecord> {
+    this.maybeFail();
+    const row = this.get(id);
+    row.measurements = { ...measurements };
+    return this.project(row);
+  }
+
+  async addPhoto(id: string, photo: NewKitchenPhoto, maxPhotos: number, expiresAt: Date | null): Promise<KitchenPhotoRecord | 'limit_reached'> {
     this.maybeFail();
     const row = this.get(id);
     if (row.photos.length >= maxPhotos) return 'limit_reached';
     const created = { ...photo, position: row.photos.length };
     row.photos.push(created);
-    row.expiresAt = expiresAt;
+    if (expiresAt) row.expiresAt = expiresAt;
     return { ...created };
   }
 
-  async deletePhoto(id: string, photoId: string, expiresAt: Date): Promise<KitchenPhotoRecord | null> {
+  async deletePhoto(id: string, photoId: string, expiresAt: Date | null): Promise<KitchenPhotoRecord | null> {
     this.maybeFail();
     const row = this.get(id);
     const photo = row.photos.find((candidate) => candidate.id === photoId);
@@ -86,11 +95,11 @@ export class MemoryKitchenDraftRepository implements KitchenDraftRepository {
       ...candidate,
       position: candidate.position > photo.position ? candidate.position - 1 : candidate.position,
     }));
-    row.expiresAt = expiresAt;
+    if (expiresAt) row.expiresAt = expiresAt;
     return { ...photo };
   }
 
-  async addMoodboardItem(id: string, item: NewMoodboardItem, maxItems: number, expiresAt: Date): Promise<AddMoodboardItemResult> {
+  async addMoodboardItem(id: string, item: NewMoodboardItem, maxItems: number, expiresAt: Date | null): Promise<AddMoodboardItemResult> {
     this.maybeFail();
     const row = this.get(id);
     const existing = item.galleryImageId === null ? undefined : row.moodboard.find((candidate) => candidate.galleryImageId === item.galleryImageId);
@@ -98,11 +107,11 @@ export class MemoryKitchenDraftRepository implements KitchenDraftRepository {
     if (row.moodboard.length >= maxItems) return 'limit_reached';
     const created = { ...item, position: row.moodboard.length };
     row.moodboard.push(created);
-    row.expiresAt = expiresAt;
+    if (expiresAt) row.expiresAt = expiresAt;
     return { item: { ...created }, created: true };
   }
 
-  async deleteMoodboardItem(id: string, itemId: string, expiresAt: Date): Promise<MoodboardItemRecord | null> {
+  async deleteMoodboardItem(id: string, itemId: string, expiresAt: Date | null): Promise<MoodboardItemRecord | null> {
     this.maybeFail();
     const row = this.get(id);
     const item = row.moodboard.find((candidate) => candidate.id === itemId);
@@ -111,7 +120,7 @@ export class MemoryKitchenDraftRepository implements KitchenDraftRepository {
       ...candidate,
       position: candidate.position > item.position ? candidate.position - 1 : candidate.position,
     }));
-    row.expiresAt = expiresAt;
+    if (expiresAt) row.expiresAt = expiresAt;
     return { ...item };
   }
 
@@ -152,8 +161,6 @@ export class MemoryKitchenDraftRepository implements KitchenDraftRepository {
   private get(id: string): Row {
     const row = this.rows.get(id);
     if (!row) throw new Error('RecordNotFound');
-    // Mirrors the status CHECK: a claimed project cannot get an expiry from a draft mutation.
-    if (row.status !== 'draft') throw new Error('CheckViolation');
     return row;
   }
 

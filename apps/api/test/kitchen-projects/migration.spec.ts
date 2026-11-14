@@ -151,3 +151,64 @@ describe('budget tier computation migration', () => {
     expect(names.indexOf(dir ?? '')).toBeGreaterThan(names.findIndex((name) => name.endsWith('_controlnet_render')));
   });
 });
+
+describe('simulations ux overhaul migration', () => {
+  const names = readdirSync(migrationsDir).filter((name) => /^\d+_/.test(name)).sort();
+  const dir = names.find((name) => name.endsWith('_simulations_ux_overhaul'));
+  const sql = readFileSync(join(migrationsDir, dir ?? 'missing', 'migration.sql'), 'utf8');
+
+  it('creates simulation, reference_style_trait and platform_setting with enums, per-project ordinal and cascade', () => {
+    for (const table of ['simulation', 'reference_style_trait', 'platform_setting']) expect(sql).toContain(`CREATE TABLE "${table}"`);
+    expect(sql).toContain(`CREATE TYPE "simulation_blend_mode" AS ENUM ('ip_adapter', 'vlm_text', 'both')`);
+    expect(sql).toContain(`CREATE TYPE "simulation_stage" AS ENUM ('describing', 'rendering', 'finished')`);
+    expect(sql).toMatch(/CREATE UNIQUE INDEX "simulation_kitchen_project_id_ordinal_key"/);
+    expect(sql).toMatch(/"simulation_kitchen_project_id_fkey" FOREIGN KEY \("kitchen_project_id"\) REFERENCES "kitchen_project"\("id"\) ON DELETE CASCADE/);
+    expect(sql).toMatch(/"reference_style_trait_pkey" PRIMARY KEY \("image_hash", "model"\)/);
+  });
+
+  it('allows one selected Simulation per project (partial unique index) and only a finished one', () => {
+    expect(sql).toContain('CREATE UNIQUE INDEX "simulation_one_selected_per_project" ON "simulation"("kitchen_project_id") WHERE "selected"');
+    expect(sql).toContain(`NOT "selected" OR "stage" = 'finished'`);
+  });
+
+  it('backfills one Simulation per Render, attaches the newest succeeded Budget and only then adds NOT NULL', () => {
+    expect(sql).toContain('INSERT INTO "simulation"');
+    expect(sql).toMatch(/'vlm_text',\s+NULL,/);
+    expect(sql).toContain('UPDATE "kitchen_render" SET "simulation_id" = "id"');
+    expect(sql).toMatch(/DELETE FROM "budget" WHERE "simulation_id" IS NULL/);
+    for (const table of ['kitchen_render', 'budget']) {
+      expect(sql.indexOf(`ALTER TABLE "${table}" ALTER COLUMN "simulation_id" SET NOT NULL`)).toBeGreaterThan(sql.indexOf('INSERT INTO "simulation"'));
+      expect(sql).toMatch(new RegExp(`"${table}_simulation_id_fkey" FOREIGN KEY \\("simulation_id"\\) REFERENCES "simulation"\\("id"\\) ON DELETE CASCADE`));
+    }
+    expect(sql).toContain('"photo_position" INTEGER NOT NULL DEFAULT 0');
+    expect(sql).toContain('"attempts" INTEGER NOT NULL DEFAULT 1');
+  });
+
+  it('never drops anything (the catalog HNSW index stays) and runs after the budget migration', () => {
+    expect(sql).not.toMatch(/DROP\s+(INDEX|TABLE|EXTENSION|CONSTRAINT|COLUMN)/i);
+    expect(sql).not.toMatch(/catalog_chunk/);
+    expect(names.indexOf(dir ?? '')).toBeGreaterThan(names.findIndex((name) => name.endsWith('_budget_tier_computation')));
+  });
+});
+
+describe('budget per simulation migration', () => {
+  const names = readdirSync(migrationsDir).filter((name) => /^\d+_/.test(name)).sort();
+  const dir = names.find((name) => name.endsWith('_budget_per_simulation'));
+  const sql = readFileSync(join(migrationsDir, dir ?? 'missing', 'migration.sql'), 'utf8');
+
+  it('adds the two partial unique indexes: one succeeded and one active Budget per Simulation', () => {
+    expect(sql).toContain(`CREATE UNIQUE INDEX "budget_one_succeeded_per_simulation" ON "budget"("simulation_id") WHERE "status" = 'succeeded'`);
+    expect(sql).toContain(`CREATE UNIQUE INDEX "budget_one_active_per_simulation" ON "budget"("simulation_id") WHERE "status" IN ('queued', 'running')`);
+  });
+
+  it('cleans existing duplicates before the indexes exist', () => {
+    expect(sql.indexOf('UPDATE "budget"')).toBeLessThan(sql.indexOf('CREATE UNIQUE INDEX'));
+    expect(sql.indexOf('DELETE FROM "budget"')).toBeLessThan(sql.indexOf('CREATE UNIQUE INDEX'));
+  });
+
+  it('never drops anything (the catalog HNSW index stays) and runs after the simulations migration', () => {
+    expect(sql).not.toMatch(/DROP\s+(INDEX|TABLE|EXTENSION|CONSTRAINT|COLUMN)/i);
+    expect(sql).not.toMatch(/catalog_chunk/);
+    expect(names.indexOf(dir ?? '')).toBeGreaterThan(names.findIndex((name) => name.endsWith('_simulations_ux_overhaul')));
+  });
+});

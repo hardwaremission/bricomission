@@ -233,12 +233,21 @@ echo "  GET /kitchen-projects/new/generate -> 200"
 web_claim=$(curl -sS --max-time 10 -o /dev/null -w '%{http_code}' -X POST "${web_public}/api/kitchen-projects/drafts/current/claim" 2>/dev/null || true)
 [ "$web_claim" = "403" ] || web_fail "POST /api/kitchen-projects/drafts/current/claim without Origin gave '${web_claim:-<none>}', expected 403"
 echo "  POST /api/kitchen-projects/drafts/current/claim (no Origin) -> 403"
-api_render=$(curl -sS --max-time 10 -o /dev/null -w '%{http_code}' -X POST "http://127.0.0.1:${api_port}/kitchen-projects/00000000-0000-4000-8000-000000000000/renders" 2>/dev/null || true)
-[ "$api_render" = "401" ] || web_fail "API POST /kitchen-projects/<id>/renders without a token gave '${api_render:-<none>}', expected 401"
-echo "  API POST /kitchen-projects/<id>/renders (no token) -> 401"
-api_renders=$(curl -sS --max-time 10 -o /dev/null -w '%{http_code}' "http://127.0.0.1:${api_port}/kitchen-projects/00000000-0000-4000-8000-000000000000/renders" 2>/dev/null || true)
-[ "$api_renders" = "401" ] || web_fail "API GET /kitchen-projects/<id>/renders without a token gave '${api_renders:-<none>}', expected 401"
-echo "  API GET /kitchen-projects/<id>/renders (no token) -> 401"
+api_sim_post=$(curl -sS --max-time 10 -o /dev/null -w '%{http_code}' -X POST "http://127.0.0.1:${api_port}/kitchen-projects/00000000-0000-4000-8000-000000000000/simulations" 2>/dev/null || true)
+[ "$api_sim_post" = "401" ] || web_fail "API POST /kitchen-projects/<id>/simulations without a token gave '${api_sim_post:-<none>}', expected 401"
+echo "  API POST /kitchen-projects/<id>/simulations (no token) -> 401"
+api_sims=$(curl -sS --max-time 10 -o /dev/null -w '%{http_code}' "http://127.0.0.1:${api_port}/kitchen-projects/00000000-0000-4000-8000-000000000000/simulations" 2>/dev/null || true)
+[ "$api_sims" = "401" ] || web_fail "API GET /kitchen-projects/<id>/simulations without a token gave '${api_sims:-<none>}', expected 401"
+echo "  API GET /kitchen-projects/<id>/simulations (no token) -> 401"
+api_edit_measurements=$(curl -sS --max-time 10 -o /dev/null -w '%{http_code}' -X PUT "http://127.0.0.1:${api_port}/kitchen-projects/00000000-0000-4000-8000-000000000000/measurements" 2>/dev/null || true)
+[ "$api_edit_measurements" = "401" ] || web_fail "API PUT /kitchen-projects/<id>/measurements without a token gave '${api_edit_measurements:-<none>}', expected 401"
+echo "  API PUT /kitchen-projects/<id>/measurements (no token) -> 401"
+api_edit_photos=$(curl -sS --max-time 10 -o /dev/null -w '%{http_code}' -X POST "http://127.0.0.1:${api_port}/kitchen-projects/00000000-0000-4000-8000-000000000000/photos" 2>/dev/null || true)
+[ "$api_edit_photos" = "401" ] || web_fail "API POST /kitchen-projects/<id>/photos without a token gave '${api_edit_photos:-<none>}', expected 401"
+echo "  API POST /kitchen-projects/<id>/photos (no token) -> 401"
+api_edit_moodboard_gallery_items=$(curl -sS --max-time 10 -o /dev/null -w '%{http_code}' -X POST "http://127.0.0.1:${api_port}/kitchen-projects/00000000-0000-4000-8000-000000000000/moodboard/gallery-items" 2>/dev/null || true)
+[ "$api_edit_moodboard_gallery_items" = "401" ] || web_fail "API POST /kitchen-projects/<id>/moodboard/gallery-items without a token gave '${api_edit_moodboard_gallery_items:-<none>}', expected 401"
+echo "  API POST /kitchen-projects/<id>/moodboard/gallery-items (no token) -> 401"
 api_budgets=$(curl -sS --max-time 10 -o /dev/null -w '%{http_code}' "http://127.0.0.1:${api_port}/kitchen-projects/00000000-0000-4000-8000-000000000000/budgets" 2>/dev/null || true)
 [ "$api_budgets" = "401" ] || web_fail "API GET /kitchen-projects/<id>/budgets without a token gave '${api_budgets:-<none>}', expected 401"
 echo "  API GET /kitchen-projects/00000000-0000-4000-8000-000000000000/budgets (no token) -> 401"
@@ -263,7 +272,7 @@ echo "  docker compose down                     # stop the stack (keeps named vo
 echo "Local AI (opt-in, GPU; never started by this script):"
 echo "  docker compose --profile ai-fetch run --rm ai-fetch   # one-time model download into volumes (~30 GB)"
 echo "  docker compose --profile ai up -d --wait               # llama-server + comfyui on the GPU"
-echo "  AI_ADAPTERS=local docker compose up -d --wait api      # API Renders through ComfyUI (then: bash scripts/ai/render-smoke.sh)"
+echo "  AI_ADAPTERS=local docker compose up -d --wait api      # API Renders through ComfyUI (then: bash scripts/ai/simulation-smoke.sh)"
 echo "  docker compose --profile ai stop llama-server comfyui  # stop only the GPU services (keeps volumes)"
 echo "Catalog RAG (opt-in, CPU-only embedder; never started by this script):"
 echo "  docker compose --profile rag-fetch run --rm embedder-fetch  # one-time embedding weight download (~640 MB)"

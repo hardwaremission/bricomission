@@ -1,5 +1,6 @@
 import type { components } from '@bricomission/api-client';
 import { isActive } from '../renders/render-state';
+import type { SimulationView } from '../simulations/simulation-state';
 
 export { browserTimer, consumeStartParam, FIRST_POLL_MS, isActive, POLL_MS, startPolling, type PollTimer } from '../renders/render-state';
 
@@ -17,57 +18,52 @@ export const ITEMS_COLLAPSED = 3;
 
 export interface BudgetState {
   load: 'loading' | 'ready' | 'signedOut' | 'notFound';
-  /** Newest first. */
+  /** The project's selected Simulation (the one this Budget prices); null = none selected. */
+  simulation: SimulationView | null;
+  /** Budgets of the selected Simulation, newest first: the current one plus an active or failed recompute (at most 2). */
   budgets: BudgetView[];
-  maxBudgets: number;
-  /** Budget shown (default: the active one, else the newest). */
-  shownId: string | null;
   online: boolean;
   /** A POST is in flight. */
   starting: boolean;
   /** Page alert from the last start attempt. */
-  alert: 'none' | 'queueFull' | 'searchDown' | 'catalogEmpty' | 'incomplete' | 'startFailed';
+  alert: 'none' | 'queueFull' | 'searchDown' | 'catalogEmpty' | 'incomplete' | 'noSelection' | 'notReady' | 'startFailed';
 }
 
-export const INITIAL_BUDGET_STATE: BudgetState = { load: 'loading', budgets: [], maxBudgets: 5, shownId: null, online: true, starting: false, alert: 'none' };
+export const INITIAL_BUDGET_STATE: BudgetState = { load: 'loading', simulation: null, budgets: [], online: true, starting: false, alert: 'none' };
 
 export type BudgetAction =
-  | { type: 'loaded'; budgets: BudgetView[]; maxBudgets: number }
+  | { type: 'loaded'; simulation: SimulationView | null; budgets: BudgetView[] }
   | { type: 'loadFailed'; kind: 'signedOut' | 'notFound' }
-  | { type: 'budgetsLoaded'; budgets: BudgetView[]; maxBudgets: number }
+  | { type: 'budgetsLoaded'; budgets: BudgetView[] }
   | { type: 'budgetUpdated'; budget: BudgetView }
   | { type: 'startRequested' }
   | { type: 'startFinished'; budget: BudgetView | null; alert?: BudgetState['alert'] }
-  | { type: 'budgetShown'; budgetId: string }
   | { type: 'connectivity'; online: boolean };
 
 function upsert(budgets: BudgetView[], budget: BudgetView): BudgetView[] {
   const rest = budgets.filter((candidate) => candidate.id !== budget.id);
-  return [budget, ...rest].sort((a, b) => (a.createdAt < b.createdAt ? 1 : a.createdAt > b.createdAt ? -1 : 0));
-}
-
-function withDefaults(state: BudgetState): BudgetState {
-  const shown = state.budgets.find(isActive) ?? state.budgets.find((budget) => budget.id === state.shownId) ?? state.budgets[0] ?? null;
-  return { ...state, shownId: shown?.id ?? null };
+  // A new Budget replaces the previous failed ones; the succeeded one stays until the new one succeeds.
+  const kept = budget.status === 'queued' || budget.status === 'running' ? rest.filter((candidate) => candidate.status !== 'failed') : rest;
+  // The API keeps one succeeded Budget per Simulation: a newer success replaces the older.
+  const pruned = budget.status === 'succeeded' ? kept.filter((candidate) => candidate.status !== 'succeeded') : kept;
+  return [budget, ...pruned].sort((a, b) => (a.createdAt < b.createdAt ? 1 : a.createdAt > b.createdAt ? -1 : 0));
 }
 
 export function budgetReducer(state: BudgetState, action: BudgetAction): BudgetState {
   switch (action.type) {
     case 'loaded':
-      return withDefaults({ ...state, load: 'ready', budgets: action.budgets, maxBudgets: action.maxBudgets, shownId: null });
+      return { ...state, load: 'ready', simulation: action.simulation, budgets: action.budgets };
     case 'loadFailed':
       return { ...state, load: action.kind };
     case 'budgetsLoaded':
-      return withDefaults({ ...state, budgets: action.budgets, maxBudgets: action.maxBudgets });
+      return { ...state, budgets: action.budgets };
     case 'budgetUpdated':
-      return withDefaults({ ...state, budgets: upsert(state.budgets, action.budget) });
+      return { ...state, budgets: upsert(state.budgets, action.budget) };
     case 'startRequested':
       return { ...state, starting: true, alert: 'none' };
     case 'startFinished':
       if (!action.budget) return { ...state, starting: false, alert: action.alert ?? 'none' };
-      return withDefaults({ ...state, starting: false, alert: 'none', budgets: upsert(state.budgets, action.budget), shownId: action.budget.id });
-    case 'budgetShown':
-      return activeBudget(state) ? state : withDefaults({ ...state, shownId: action.budgetId });
+      return { ...state, starting: false, alert: 'none', budgets: upsert(state.budgets, action.budget) };
     case 'connectivity':
       return { ...state, online: action.online };
   }
@@ -77,37 +73,48 @@ export function activeBudget(state: BudgetState): BudgetView | null {
   return state.budgets.find(isActive) ?? null;
 }
 
-export function shownBudget(state: BudgetState): BudgetView | null {
-  return state.budgets.find((budget) => budget.id === state.shownId) ?? null;
+/** The current (succeeded) Budget: shown, also while a recompute runs or after a failed one. */
+export function currentBudget(state: BudgetState): BudgetView | null {
+  return state.budgets.find((budget) => budget.status === 'succeeded') ?? null;
 }
 
-/** Non-failed Budgets: the history counter and the limit. */
-export function keptCount(state: BudgetState): number {
-  return state.budgets.filter((budget) => budget.status !== 'failed').length;
+/** The newest failed recompute (never while a Budget is active). */
+export function failedBudget(state: BudgetState): BudgetView | null {
+  return activeBudget(state) ? null : (state.budgets.find((budget) => budget.status === 'failed') ?? null);
 }
 
-/** Succeeded Budgets, newest first (the history strip, shown with two or more). */
-export function historyBudgets(state: BudgetState): BudgetView[] {
-  return state.budgets.filter((budget) => budget.status === 'succeeded');
+/** Why no Budget can be computed: nothing selected, or the selected Simulation is not fully rendered. */
+export function selectionIssue(state: BudgetState): 'noSelection' | 'notReady' | null {
+  if (state.load !== 'ready') return null;
+  if (state.alert === 'noSelection' || !state.simulation) return 'noSelection';
+  if (state.alert === 'notReady' || state.simulation.status !== 'succeeded') return 'notReady';
+  return null;
 }
 
-export type BudgetPhase = 'loading' | 'empty' | 'active' | 'failed' | 'succeeded';
+export type BudgetPhase = 'loading' | 'noSelection' | 'notReady' | 'empty' | 'computing' | 'recalculating' | 'failed' | 'succeeded';
 
 export function budgetPhase(state: BudgetState): BudgetPhase {
   if (state.load !== 'ready') return 'loading';
-  if (activeBudget(state) || state.starting) return 'active';
-  const shown = shownBudget(state);
-  if (!shown) return 'empty';
-  return shown.status === 'failed' ? 'failed' : 'succeeded';
+  const issue = selectionIssue(state);
+  if (issue) return issue;
+  const current = currentBudget(state);
+  if (activeBudget(state) || state.starting) return current ? 'recalculating' : 'computing';
+  if (failedBudget(state)) return 'failed';
+  return current ? 'succeeded' : 'empty';
 }
 
-export function limitReached(state: BudgetState): boolean {
-  return keptCount(state) >= state.maxBudgets;
-}
-
-/** The primary CTA can start a Budget. */
+/** The primary action can start (or restart) a Budget for the selected, fully rendered Simulation. */
 export function canStart(state: BudgetState): boolean {
-  return state.load === 'ready' && state.online && !state.starting && !activeBudget(state) && !limitReached(state);
+  return state.load === 'ready' && state.online && !state.starting && !activeBudget(state) && selectionIssue(state) === null;
+}
+
+/** Stage line of a computing Budget: reading image n of N, matching products, or waiting for the GPU. */
+export function computeStage(budget: BudgetView | null): { stage: 'queued' | 'inventory' | 'pricing'; n: number; count: number; percent: number } {
+  if (!budget || budget.status === 'queued') return { stage: 'queued', n: 0, count: budget?.progress.total ?? 0, percent: 0 };
+  const count = Math.max(budget.progress.total, 1);
+  if (budget.stage === 'pricing') return { stage: 'pricing', n: count, count, percent: 100 };
+  const n = Math.min(count, Math.max(1, budget.progress.done + 1));
+  return { stage: 'inventory', n, count, percent: Math.round((n / count) * 100) };
 }
 
 /** Jobs ahead in the GPU queue for the queued status line; null hides it (unknown or 0). */

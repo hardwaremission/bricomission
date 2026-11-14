@@ -5,8 +5,8 @@
  *   goes to the style whose first item has the lowest position.
  * - Style text: the internal manifest prompt of the Moodboard's first gallery item of that
  *   style, cut where the shared suffix ", interior design photography" starts.
- * - Upload items never change the prompt (no IP-Adapter weights). An uploads-only Moodboard uses
- *   the `modern-01` text and `styleId: null`.
+ * - Upload items never change this text (they reach a Simulation through the calculated style). An
+ *   uploads-only Moodboard uses the `modern-01` text and `styleId: null`.
  */
 
 /** Gallery lookups the prompt needs: the style of an image and its internal prompt. */
@@ -23,6 +23,8 @@ export interface RenderPromptItem {
 
 export interface RenderPrompt {
   styleId: string | null;
+  /** The dominant-style text alone (no prefix or suffix). */
+  text: string;
   positive: string;
   negative: string;
 }
@@ -43,6 +45,11 @@ export const RENDER_POSITIVE_SUFFIX = ', interior design photography, natural da
 export const RENDER_NEGATIVE_PROMPT =
   '(kettle:1.3), (dish rack:1.3), dish drainer, plastic tub, bowls, extra sink, extra faucet, bottles, utensils, dishes, small appliances, (clutter:1.3), (doorway:1.3), (glass door:1.3), extra door, archway, wall opening, new window, removed wall, structural change, blurry, cartoon, distorted perspective, warped walls, people, text, watermark';
 const NEUTRAL_STYLE_TEXT = 'modern kitchen';
+
+/** The full positive prompt around a style text (the fixed prefix and suffix stay). */
+export function composeRenderPositive(text: string): string {
+  return `${RENDER_POSITIVE_PREFIX}${text || NEUTRAL_STYLE_TEXT}${RENDER_POSITIVE_SUFFIX}`;
+}
 
 export function styleText(manifestPrompt: string): string {
   const cut = manifestPrompt.indexOf(SHARED_SUFFIX);
@@ -75,5 +82,5 @@ export function buildRenderPrompt(moodboard: readonly RenderPromptItem[], galler
   }
   const manifestPrompt = gallery.promptFor(imageId);
   const text = manifestPrompt ? styleText(manifestPrompt) : NEUTRAL_STYLE_TEXT;
-  return { styleId, positive: `${RENDER_POSITIVE_PREFIX}${text || NEUTRAL_STYLE_TEXT}${RENDER_POSITIVE_SUFFIX}`, negative: RENDER_NEGATIVE_PROMPT };
+  return { styleId, positive: composeRenderPositive(text), negative: RENDER_NEGATIVE_PROMPT, text: text || NEUTRAL_STYLE_TEXT };
 }

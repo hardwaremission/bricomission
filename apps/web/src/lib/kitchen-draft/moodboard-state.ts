@@ -9,6 +9,10 @@ import type { UploadErrorCode } from './upload';
  */
 export const MAX_MOODBOARD_ITEMS = 12;
 
+/** What the Moodboard state reads from a draft or a claimed project (edit pages: no `limits`). */
+export type MoodboardSourceView = Pick<KitchenDraftView, 'photos' | 'measurements' | 'moodboard'> & { limits?: KitchenDraftView['limits'] };
+
+/** A style id, or `all` (clears the selection). The filter is multi-select (simulations-ux-overhaul S2). */
 export type GalleryFilter = 'all' | string;
 
 export interface MoodboardState {
@@ -27,7 +31,8 @@ export interface MoodboardState {
   captureComplete: boolean;
   maxItems: number;
   gallery: { status: 'loading' | 'ready' | 'error'; styles: StyleGalleryStyleView[] };
-  filter: GalleryFilter;
+  /** Active style ids; empty = All. */
+  filters: string[];
   save: SaveStatus;
   expiredNotice: boolean;
 }
@@ -43,20 +48,20 @@ export const INITIAL_MOODBOARD_STATE: MoodboardState = {
   captureComplete: false,
   maxItems: MAX_MOODBOARD_ITEMS,
   gallery: { status: 'loading', styles: [] },
-  filter: 'all',
+  filters: [],
   save: 'idle',
   expiredNotice: false,
 };
 
 export type MoodboardAction =
-  | { type: 'draftLoaded'; draft: KitchenDraftView }
+  | { type: 'draftLoaded'; draft: MoodboardSourceView }
   | { type: 'draftMissing'; expired: boolean }
-  | { type: 'draftStarted'; draft: KitchenDraftView }
+  | { type: 'draftStarted'; draft: MoodboardSourceView }
   | { type: 'draftLost' }
   | { type: 'connectivity'; online: boolean }
   | { type: 'galleryLoaded'; styles: StyleGalleryStyleView[] }
   | { type: 'galleryFailed' }
-  | { type: 'filterChanged'; filter: GalleryFilter }
+  | { type: 'filterToggled'; filter: GalleryFilter }
   | { type: 'pickStarted'; galleryImageId: string }
   | { type: 'pickSucceeded'; galleryImageId: string; item: MoodboardItemView }
   | { type: 'pickFailed'; galleryImageId: string; offline: boolean }
@@ -75,7 +80,7 @@ export type MoodboardAction =
   | { type: 'dismissExpired' };
 
 /** Capture is complete when the draft has a photo and all three measurements. */
-export function isCaptureComplete(draft: KitchenDraftView): boolean {
+export function isCaptureComplete(draft: MoodboardSourceView): boolean {
   const { lengthCm, widthCm, heightCm } = draft.measurements;
   return draft.photos.length >= 1 && [lengthCm, widthCm, heightCm].every((value) => value !== null && value !== undefined);
 }
@@ -92,13 +97,13 @@ function updateTile(state: MoodboardState, localId: string, patch: Partial<Uploa
   return { ...state, uploads: state.uploads.map((tile) => (tile.localId === localId ? { ...tile, ...patch } : tile)) };
 }
 
-function fromDraft(state: MoodboardState, draft: KitchenDraftView): MoodboardState {
+function fromDraft(state: MoodboardState, draft: MoodboardSourceView): MoodboardState {
   return {
     ...state,
     hasDraft: true,
     items: sortedItems(draft.moodboard),
     captureComplete: isCaptureComplete(draft),
-    maxItems: draft.limits.maxMoodboardItems,
+    maxItems: draft.limits?.maxMoodboardItems ?? state.maxItems,
   };
 }
 
@@ -128,8 +133,8 @@ export function moodboardReducer(state: MoodboardState, action: MoodboardAction)
       return { ...state, gallery: { status: 'ready', styles: action.styles } };
     case 'galleryFailed':
       return { ...state, gallery: { status: state.gallery.styles.length > 0 ? 'ready' : 'error', styles: state.gallery.styles } };
-    case 'filterChanged':
-      return { ...state, filter: action.filter };
+    case 'filterToggled':
+      return { ...state, filters: toggleFilter(state.filters, action.filter) };
     case 'pickStarted':
       return { ...state, expiredNotice: false, save: 'saving', pendingPicks: [...state.pendingPicks, action.galleryImageId] };
     case 'pickSucceeded':
@@ -250,10 +255,16 @@ export function continueHint(state: MoodboardState): 'capture' | 'items' | null 
   return null;
 }
 
+/** `all` clears; a style id toggles in or out of the active set. */
+export function toggleFilter(filters: string[], filter: GalleryFilter): string[] {
+  if (filter === 'all') return [];
+  return filters.includes(filter) ? filters.filter((id) => id !== filter) : [...filters, filter];
+}
+
 /** Gallery images shown for the current filter, in manifest order. */
 export function visibleGalleryImages(state: MoodboardState): Array<{ styleId: string; index: number; image: StyleGalleryStyleView['images'][number] }> {
   return state.gallery.styles
-    .filter((style) => state.filter === 'all' || style.id === state.filter)
+    .filter((style) => state.filters.length === 0 || state.filters.includes(style.id))
     .flatMap((style) => style.images.map((image, index) => ({ styleId: style.id, index: index + 1, image })));
 }
 

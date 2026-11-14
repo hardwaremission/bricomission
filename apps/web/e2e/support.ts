@@ -34,8 +34,8 @@ export async function setLocaleCookie(context: BrowserContext, locale: Locale) {
 }
 
 /**
- * Horizontal overflow of the document and of every scroll container. Elements marked
- * `data-scroll-x` are designed horizontal scrollers (e.g. the Moodboard style chips) and skipped.
+ * Horizontal overflow of the document and of every scroll container (nothing in the app is a
+ * designed horizontal scroller any more: chips, pickers and thumbnails all wrap).
  */
 export async function horizontalOverflow(page: Page) {
   return page.evaluate(() => {
@@ -44,7 +44,7 @@ export async function horizontalOverflow(page: Page) {
     if (doc.scrollWidth > window.innerWidth) offenders.push(`document ${doc.scrollWidth}>${window.innerWidth}`);
     for (const el of Array.from(document.querySelectorAll<HTMLElement>('body *'))) {
       const style = getComputedStyle(el);
-      if (style.display === 'none' || !['auto', 'scroll'].includes(style.overflowX) || el.hasAttribute('data-scroll-x')) continue;
+      if (style.display === 'none' || !['auto', 'scroll'].includes(style.overflowX)) continue;
       if (el.scrollWidth > el.clientWidth + 1) offenders.push(`${el.tagName.toLowerCase()} ${el.scrollWidth}>${el.clientWidth}`);
     }
     return offenders;

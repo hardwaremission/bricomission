@@ -8,3 +8,6 @@ Crops of the public-domain `infra/ai/samples/kitchen-sample.jpg` (USDA Forest Se
   path end to end (the tile must show the 512x384 server thumbnail).
 
 Each file is under 300 kB.
+
+`fail-once.jpg`: a solid magenta 800x600 JPEG (3 kB). The fake image adapter treats it as a "poison photo": its
+first render fails once per seed and the retry succeeds (deterministic switch for Retry E2E, `AI_ADAPTERS=fake` only).

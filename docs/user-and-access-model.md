@@ -40,8 +40,11 @@ The API is default-deny. Every route needs a valid Keycloak access token unless 
 | Action | Anonymous | Homeowner | Professional (active) | Administrator |
 | --- | --- | --- | --- | --- |
 | Upload photos, Measurements, Moodboard (draft) | yes | yes | no | no |
-| Generate Render / Budget (costly AI) | no (Login Gate) | yes, within quota | no | no |
+| Generate a Simulation / Budget (costly AI) | no (Login Gate) | yes, within quota | no | no |
+| Read, select, delete own Simulations; retry a failed Render | no | yes, own claimed projects only (others 404) | 403 | 403 |
 | Read own Budgets (`GET .../budgets`) | no | yes, own claimed projects only (others 404) | 403 | 403 |
+| Edit photos, Measurements, Moodboard of a claimed project | no (drafts: browser token) | yes, owner only, refused (409) while a Simulation or Budget is active | no | no |
+| Read or change the style blend mode (`/admin/settings/style-blend`) | no | no | no | yes |
 | Chat with Persona | no | yes, own projects | no | no |
 | Shopping List PDF / publish Dossier | no | own projects | no | no |
 | View open Dossiers | no | own only | all, if Company validated | all |

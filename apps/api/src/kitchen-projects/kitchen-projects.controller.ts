@@ -3,27 +3,37 @@ import {
   BadRequestException,
   Body,
   Controller,
+  Delete,
   Get,
   Header,
   Headers,
   HttpCode,
+  HttpStatus,
   Param,
   ParseUUIDPipe,
   Post,
+  Put,
   Query,
+  Req,
+  Res,
   StreamableFile,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import {
   ApiAcceptedResponse,
   ApiBadRequestResponse,
   ApiBearerAuth,
+  ApiConsumes,
+  ApiCreatedResponse,
+  ApiNoContentResponse,
   ApiBody,
   ApiConflictResponse,
   ApiForbiddenResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
+  ApiPayloadTooLargeResponse,
   ApiParam,
   ApiProduces,
   ApiQuery,
@@ -32,20 +42,40 @@ import {
   ApiTags,
   ApiTooManyRequestsResponse,
   ApiUnauthorizedResponse,
+  ApiUnprocessableEntityResponse,
+  ApiUnsupportedMediaTypeResponse,
 } from '@nestjs/swagger';
+import type { Request, Response } from 'express';
 import { CurrentUser, Roles } from '../auth/auth.decorators.js';
 import type { AuthenticatedUser } from '../auth/auth.types.js';
 import { DRAFT_TOKEN_HEADER } from './draft-token.js';
-import { KitchenDraftErrorDto } from './kitchen-drafts.dto.js';
+import {
+  AddGalleryItemRequestDto,
+  InvalidMeasurementsErrorDto,
+  KitchenDraftErrorDto,
+  KitchenMeasurementsDto,
+  KitchenPhotoViewDto,
+  MoodboardItemViewDto,
+} from './kitchen-drafts.dto.js';
 import type { KitchenProjectRecord } from './kitchen-drafts.repository.js';
 import type { PhotoVariant } from './kitchen-drafts.service.js';
 import { ClaimKitchenDraftResponseDto, KitchenProjectErrorDto, KitchenProjectViewDto } from './kitchen-projects.dto.js';
 import { KitchenProjectsService } from './kitchen-projects.service.js';
+import { PhotoUploadInterceptor } from './photo-upload.interceptor.js';
+import { ProjectEditsService } from './project-edits.service.js';
 import { CurrentProject, OwnedProjectGuard } from './owned-project.guard.js';
 import { BudgetListResponseDto, BudgetViewDto, CreateBudgetResponseDto } from './budget/budget.dto.js';
 import { BudgetService } from './budget/budget.service.js';
-import { CreateRenderRequestDto, CreateRenderResponseDto, RenderListResponseDto, RenderViewDto } from './renders/renders.dto.js';
+import { RenderViewDto } from './renders/renders.dto.js';
 import { RENDER_VARIANTS, RendersService, type RenderVariant } from './renders/renders.service.js';
+import {
+  CreateSimulationResponseDto,
+  SelectSimulationRequestDto,
+  SelectSimulationResponseDto,
+  SimulationListResponseDto,
+  SimulationViewDto,
+} from './simulations/simulations.dto.js';
+import { SimulationsService } from './simulations/simulations.service.js';
 
 const NOT_OWNED = 'Unknown project, still a draft, or owned by another Account (same generic body)';
 
@@ -88,7 +118,9 @@ const Content = (variants: readonly string[] = ['thumb', 'full']) =>
 export class KitchenProjectsController {
   constructor(
     private readonly projects: KitchenProjectsService,
+    private readonly edits: ProjectEditsService,
     private readonly renders: RendersService,
+    private readonly simulations: SimulationsService,
     private readonly budgets: BudgetService,
   ) {}
 
@@ -110,10 +142,60 @@ export class KitchenProjectsController {
 
   @Get(':projectId')
   @Owned()
-  @ApiOperation({ summary: 'A claimed Kitchen Project of the caller (read-only)' })
+  @ApiOperation({ summary: 'A claimed Kitchen Project of the caller' })
   @ApiOkResponse({ type: KitchenProjectViewDto })
   get(@CurrentProject() project: KitchenProjectRecord): KitchenProjectViewDto {
     return this.projects.view(project);
+  }
+
+  @Put(':projectId/measurements')
+  @ApiOperation({
+    summary: 'Replace the room measurements of an owned project (whole centimetres, null = not entered)',
+    description: 'Same body and validation as the draft route. Refused while a Simulation or a Budget of the project is queued or running.',
+  })
+  @ApiBody({ type: KitchenMeasurementsDto })
+  @ApiOkResponse({ type: KitchenProjectViewDto })
+  @ApiBadRequestResponse({ type: InvalidMeasurementsErrorDto, description: '`invalid_measurements` with per-field reasons' })
+  @ApiConflictResponse({ type: KitchenProjectErrorDto, description: '`simulation_in_progress` or `budget_in_progress`' })
+  @Owned()
+  updateMeasurements(@CurrentProject() project: KitchenProjectRecord, @Body() body: unknown): Promise<KitchenProjectViewDto> {
+    return this.edits.updateMeasurements(project, body);
+  }
+
+  @Post(':projectId/photos')
+  @UseInterceptors(PhotoUploadInterceptor)
+  @ApiOperation({
+    summary: 'Add one photo to an owned project (JPEG, PNG, WebP or HEIC/HEIF; <= 15 MB; shortest edge >= 480 px; <= 50 MP; <= 8 per project)',
+    description: 'Same pipeline as the draft route: metadata-free JPEG full (<= 2560 px) and thumbnail (<= 512 px), the original is never stored. Refused while a Simulation or a Budget of the project is queued or running. Existing Simulations are not changed.',
+  })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({ schema: { type: 'object', required: ['photo'], properties: { photo: { type: 'string', format: 'binary' } } } })
+  @ApiCreatedResponse({ type: KitchenPhotoViewDto })
+  @ApiConflictResponse({ type: KitchenProjectErrorDto, description: '`photo_limit_reached`, `simulation_in_progress` or `budget_in_progress`' })
+  @ApiPayloadTooLargeResponse({ type: KitchenDraftErrorDto, description: '`photo_too_large`' })
+  @ApiUnsupportedMediaTypeResponse({ type: KitchenDraftErrorDto, description: '`photo_unsupported_type` (also for files that do not decode)' })
+  @ApiUnprocessableEntityResponse({ type: KitchenDraftErrorDto, description: '`photo_too_small`' })
+  @ApiServiceUnavailableResponse({ type: KitchenDraftErrorDto, description: '`storage_unavailable`, or database unreachable' })
+  // Applied first, so the storage-specific 503 description above wins in the OpenAPI document.
+  @Owned()
+  addPhoto(@CurrentProject() project: KitchenProjectRecord, @Req() request: Request): Promise<KitchenPhotoViewDto> {
+    // PhotoUploadInterceptor guarantees the file.
+    return this.edits.addPhoto(project, (request.file as Express.Multer.File).buffer);
+  }
+
+  @Delete(':projectId/photos/:photoId')
+  @HttpCode(204)
+  @ApiOperation({
+    summary: 'Delete a photo of an owned project (both objects); later photos move up one position',
+    description: 'Allowed down to zero photos (the project then answers 409 `project_incomplete` on Generate, as for a draft). Existing Simulations keep their Renders and `before` images.',
+  })
+  @ApiParam({ name: 'photoId', schema: { type: 'string', format: 'uuid' } })
+  @ApiNoContentResponse({ description: 'Deleted' })
+  @ApiConflictResponse({ type: KitchenProjectErrorDto, description: '`simulation_in_progress` or `budget_in_progress`' })
+  @ApiServiceUnavailableResponse({ type: KitchenDraftErrorDto, description: '`storage_unavailable` (nothing was deleted), or database unreachable' })
+  @Owned()
+  async deletePhoto(@CurrentProject() project: KitchenProjectRecord, @Param('photoId', new ParseUUIDPipe()) photoId: string): Promise<void> {
+    await this.edits.deletePhoto(project, photoId);
   }
 
   @Get(':projectId/photos/:photoId/content')
@@ -142,34 +224,142 @@ export class KitchenProjectsController {
     return new StreamableFile(await this.projects.moodboardContent(project, itemId, variant as PhotoVariant), { type: 'image/jpeg' });
   }
 
-  @Post(':projectId/renders')
-  @HttpCode(202)
+  @Post(':projectId/moodboard/gallery-items')
   @ApiOperation({
-    summary: 'Generate a Render of the kitchen (costly; queued on the GPU)',
-    description:
-      'Takes one Photo (body `photoId`, default the Photo at position 0) and the dominant Moodboard style, stores the centre-cropped "before" image and queues an exclusive image job (SDXL + ControlNet). Answers 202 with the `queued` Render; poll `GET .../renders/{renderId}`. One active Render per project; failed Renders do not count towards the limit.',
+    summary: 'Add a Style Gallery image to the Moodboard of an owned project (idempotent: an image already in it returns its item with 200)',
+    description: 'Refused while a Simulation or a Budget of the project is queued or running.',
   })
-  @ApiBody({ type: CreateRenderRequestDto, required: false })
-  @ApiAcceptedResponse({ type: CreateRenderResponseDto })
-  @ApiBadRequestResponse({ type: KitchenProjectErrorDto, description: 'Malformed project id, or `render_photo_unknown` (malformed or foreign photoId)' })
-  @ApiConflictResponse({
-    type: KitchenProjectErrorDto,
-    description: '`project_incomplete` (needs a photo, all three measurements and a Moodboard Item), `render_in_progress` or `render_limit_reached`',
-  })
-  @ApiTooManyRequestsResponse({ type: KitchenProjectErrorDto, description: '`gpu_queue_full`: no Render was created' })
-  @ApiServiceUnavailableResponse({ type: KitchenProjectErrorDto, description: '`storage_unavailable`, or database unreachable' })
-  // Applied first, so the render-specific 400/503 descriptions above win in the OpenAPI document.
+  @ApiBody({ type: AddGalleryItemRequestDto })
+  @ApiCreatedResponse({ type: MoodboardItemViewDto, description: 'Added' })
+  @ApiOkResponse({ type: MoodboardItemViewDto, description: 'Already in the Moodboard; nothing changed' })
+  @ApiConflictResponse({ type: KitchenProjectErrorDto, description: '`moodboard_limit_reached` (12 items), `simulation_in_progress` or `budget_in_progress`' })
   @Owned()
-  requestRender(@CurrentProject() project: KitchenProjectRecord, @Body() body: unknown, @CurrentUser() user: AuthenticatedUser): Promise<CreateRenderResponseDto> {
-    return this.renders.create(project, body, user.sub);
+  async addGalleryItem(
+    @CurrentProject() project: KitchenProjectRecord,
+    @Body() body: unknown,
+    @Res({ passthrough: true }) response: Response,
+  ): Promise<MoodboardItemViewDto> {
+    const { item, created } = await this.edits.addGalleryItem(project, body);
+    response.status(created ? HttpStatus.CREATED : HttpStatus.OK);
+    return item;
   }
 
-  @Get(':projectId/renders')
+  @Post(':projectId/moodboard/uploads')
+  @UseInterceptors(PhotoUploadInterceptor)
+  @ApiOperation({
+    summary: 'Upload an own reference photo to the Moodboard of an owned project (same rules as kitchen photos; counts toward the 12 items)',
+    description: 'Refused while a Simulation or a Budget of the project is queued or running.',
+  })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({ schema: { type: 'object', required: ['photo'], properties: { photo: { type: 'string', format: 'binary' } } } })
+  @ApiCreatedResponse({ type: MoodboardItemViewDto })
+  @ApiConflictResponse({ type: KitchenProjectErrorDto, description: '`moodboard_limit_reached`, `simulation_in_progress` or `budget_in_progress`' })
+  @ApiPayloadTooLargeResponse({ type: KitchenDraftErrorDto, description: '`photo_too_large`' })
+  @ApiUnsupportedMediaTypeResponse({ type: KitchenDraftErrorDto, description: '`photo_unsupported_type` (also for files that do not decode)' })
+  @ApiUnprocessableEntityResponse({ type: KitchenDraftErrorDto, description: '`photo_too_small`' })
+  @ApiServiceUnavailableResponse({ type: KitchenDraftErrorDto, description: '`storage_unavailable`, or database unreachable' })
+  // Applied first, so the storage-specific 503 description above wins in the OpenAPI document.
   @Owned()
-  @ApiOperation({ summary: 'The Renders of an owned project, newest first' })
-  @ApiOkResponse({ type: RenderListResponseDto })
-  listRenders(@CurrentProject() project: KitchenProjectRecord): Promise<RenderListResponseDto> {
-    return this.renders.list(project);
+  addMoodboardUpload(@CurrentProject() project: KitchenProjectRecord, @Req() request: Request): Promise<MoodboardItemViewDto> {
+    // PhotoUploadInterceptor guarantees the file.
+    return this.edits.addUpload(project, (request.file as Express.Multer.File).buffer);
+  }
+
+  @Delete(':projectId/moodboard/items/:itemId')
+  @HttpCode(204)
+  @ApiOperation({ summary: 'Remove a Moodboard Item of an owned project (an upload loses both objects); later items move up one position' })
+  @ApiParam({ name: 'itemId', schema: { type: 'string', format: 'uuid' } })
+  @ApiNoContentResponse({ description: 'Removed' })
+  @ApiConflictResponse({ type: KitchenProjectErrorDto, description: '`simulation_in_progress` or `budget_in_progress`' })
+  @ApiServiceUnavailableResponse({ type: KitchenDraftErrorDto, description: '`storage_unavailable` (nothing was deleted), or database unreachable' })
+  @Owned()
+  async removeMoodboardItem(@CurrentProject() project: KitchenProjectRecord, @Param('itemId', new ParseUUIDPipe()) itemId: string): Promise<void> {
+    await this.edits.removeItem(project, itemId);
+  }
+
+  @Post(':projectId/simulations')
+  @HttpCode(202)
+  @ApiOperation({
+    summary: 'Generate a Simulation: one Render per Photo from one calculated style (costly; queued on the GPU)',
+    description:
+      'Blends every Moodboard reference with weights (equal for the first Simulation of a project, new seeded random weights after that) into one style, creates one queued Render per Photo (up to 8) and runs them one after the other on the GPU. Answers 202 with the Simulation; poll `GET .../simulations/{simulationId}` for `stage` (`describing`, `rendering`, `finished`) and `progress` ("n of N"). One active Simulation per project; there is no other limit.',
+  })
+  @ApiAcceptedResponse({ type: CreateSimulationResponseDto })
+  @ApiConflictResponse({
+    type: KitchenProjectErrorDto,
+    description: '`project_incomplete` (needs a photo, all three measurements and a Moodboard Item) or `simulation_in_progress`',
+  })
+  @ApiTooManyRequestsResponse({ type: KitchenProjectErrorDto, description: '`gpu_queue_full`: no Simulation was created' })
+  @ApiServiceUnavailableResponse({ type: KitchenProjectErrorDto, description: '`storage_unavailable`, or database unreachable' })
+  // Applied first, so the simulation-specific 503 description above wins in the OpenAPI document.
+  @Owned()
+  createSimulation(@CurrentProject() project: KitchenProjectRecord, @CurrentUser() user: AuthenticatedUser): Promise<CreateSimulationResponseDto> {
+    return this.simulations.create(project, user.sub);
+  }
+
+  @Get(':projectId/simulations')
+  @Owned()
+  @ApiOperation({ summary: 'The Simulations of an owned project with their Renders, newest first' })
+  @ApiOkResponse({ type: SimulationListResponseDto })
+  listSimulations(@CurrentProject() project: KitchenProjectRecord): Promise<SimulationListResponseDto> {
+    return this.simulations.list(project);
+  }
+
+  @Get(':projectId/simulations/:simulationId')
+  @Owned()
+  @ApiOperation({ summary: 'One Simulation of an owned project (stage, progress, style summary, Renders, Budget)' })
+  @ApiParam({ name: 'simulationId', schema: { type: 'string', format: 'uuid' } })
+  @ApiOkResponse({ type: SimulationViewDto })
+  getSimulation(@CurrentProject() project: KitchenProjectRecord, @Param('simulationId', new ParseUUIDPipe()) simulationId: string): Promise<SimulationViewDto> {
+    return this.simulations.get(project, simulationId);
+  }
+
+  @Delete(':projectId/simulations/:simulationId')
+  @HttpCode(204)
+  @ApiOperation({
+    summary: 'Delete a Simulation with its Renders, their stored images and its Budget',
+    description: 'Objects are removed first (a storage failure keeps every row), then the rows. Clears the selection when it was selected.',
+  })
+  @ApiParam({ name: 'simulationId', schema: { type: 'string', format: 'uuid' } })
+  @ApiNoContentResponse({ description: 'Deleted' })
+  @ApiConflictResponse({ type: KitchenProjectErrorDto, description: '`simulation_in_progress`: it is still queued or running' })
+  @ApiServiceUnavailableResponse({ type: KitchenProjectErrorDto, description: '`storage_unavailable` (nothing was deleted), or database unreachable' })
+  @Owned()
+  async deleteSimulation(@CurrentProject() project: KitchenProjectRecord, @Param('simulationId', new ParseUUIDPipe()) simulationId: string): Promise<void> {
+    await this.simulations.delete(project, simulationId);
+  }
+
+  @Put(':projectId/selected-simulation')
+  @ApiOperation({
+    summary: 'Select the Simulation a Budget is computed for (or clear the selection with null)',
+    description: 'Only a finished Simulation with every Render succeeded can be selected. At most one is selected per project.',
+  })
+  @ApiBody({ type: SelectSimulationRequestDto })
+  @ApiOkResponse({ type: SelectSimulationResponseDto })
+  @ApiConflictResponse({ type: KitchenProjectErrorDto, description: '`simulation_not_ready`: not finished, or a Render failed' })
+  @Owned()
+  selectSimulation(@CurrentProject() project: KitchenProjectRecord, @Body() body: unknown): Promise<SelectSimulationResponseDto> {
+    return this.simulations.select(project, body);
+  }
+
+  @Post(':projectId/renders/:renderId/retry')
+  @HttpCode(202)
+  @ApiOperation({
+    summary: 'Retry one failed Render (same row, prompt, style and seed; attempts + 1)',
+    description: 'Answers 202 with the Simulation, which is `rendering` again. Counts as one Render for quotas.',
+  })
+  @ApiParam({ name: 'renderId', schema: { type: 'string', format: 'uuid' } })
+  @ApiAcceptedResponse({ type: CreateSimulationResponseDto })
+  @ApiConflictResponse({ type: KitchenProjectErrorDto, description: '`render_not_failed` or `simulation_in_progress`' })
+  @ApiTooManyRequestsResponse({ type: KitchenProjectErrorDto, description: '`gpu_queue_full`' })
+  @ApiServiceUnavailableResponse({ type: KitchenProjectErrorDto, description: 'Database unreachable' })
+  @Owned()
+  retryRender(
+    @CurrentProject() project: KitchenProjectRecord,
+    @Param('renderId', new ParseUUIDPipe()) renderId: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<CreateSimulationResponseDto> {
+    return this.simulations.retry(project, renderId, user.sub);
   }
 
   @Get(':projectId/renders/:renderId')
@@ -200,12 +390,12 @@ export class KitchenProjectsController {
   @ApiOperation({
     summary: 'Compute the Budget of the kitchen (costly; queued on the GPU)',
     description:
-      'Retrieves Catalog chunks, asks the LLM for four tiers (Luxury, High, Medium, Low) whose Line Items cite a Catalog chunk, verifies every quoted price against that chunk and computes all amounts in code (integer cents). Answers 202 with the `queued` Budget; poll `GET .../budgets/{budgetId}`. One active Budget per project; failed Budgets do not count towards the limit.',
+      'Retrieves Catalog chunks, asks the LLM for four tiers (Luxury, High, Medium, Low) whose Line Items cite a Catalog chunk, verifies every quoted price against that chunk and computes all amounts in code (integer cents). Computes for the selected Simulation. Answers 202 with the `queued` Budget; poll `GET .../budgets/{budgetId}`. One active Budget per project and one current Budget per Simulation: a recompute keeps the old Budget until the new one succeeds, then replaces it.',
   })
   @ApiAcceptedResponse({ type: CreateBudgetResponseDto })
   @ApiConflictResponse({
     type: KitchenProjectErrorDto,
-    description: '`project_incomplete` (needs a photo, all three measurements and a Moodboard Item), `catalog_empty`, `budget_in_progress` or `budget_limit_reached`',
+    description: '`project_incomplete` (needs a photo, all three measurements and a Moodboard Item), `no_simulation_selected`, `simulation_not_ready`, `catalog_empty`, or `budget_in_progress`',
   })
   @ApiTooManyRequestsResponse({ type: KitchenProjectErrorDto, description: '`gpu_queue_full`: no Budget was created' })
   @ApiServiceUnavailableResponse({ type: KitchenProjectErrorDto, description: '`embedding_unavailable` (the Catalog search is down), or database unreachable' })
@@ -217,7 +407,7 @@ export class KitchenProjectsController {
 
   @Get(':projectId/budgets')
   @Owned()
-  @ApiOperation({ summary: 'The Budgets of an owned project, newest first' })
+  @ApiOperation({ summary: 'The Budgets of the selected Simulation (current plus an active or failed recompute), newest first; empty without a selection' })
   @ApiOkResponse({ type: BudgetListResponseDto })
   listBudgets(@CurrentProject() project: KitchenProjectRecord): Promise<BudgetListResponseDto> {
     return this.budgets.list(project);

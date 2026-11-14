@@ -14,7 +14,7 @@ const u = (position: number): RenderPromptItem => ({ position, source: 'upload',
 describe('buildRenderPrompt (controlnet-render OQ-2/OQ-3)', () => {
   it('uses the dominant gallery style and its first Moodboard item, suffix stripped', () => {
     const prompt = buildRenderPrompt([g(0, 'a-1'), g(1, 'b-2'), g(2, 'b-1'), u(3)], gallery);
-    expect(prompt).toEqual({ styleId: 'b', positive: `${PREFIX}b-2 kitchen, oak${SUFFIX}`, negative: RENDER_NEGATIVE_PROMPT });
+    expect(prompt).toEqual({ styleId: 'b', positive: `${PREFIX}b-2 kitchen, oak${SUFFIX}`, text: 'b-2 kitchen, oak', negative: RENDER_NEGATIVE_PROMPT });
   });
 
   it('breaks a tie by the lowest position (order of the input does not matter)', () => {
@@ -24,7 +24,7 @@ describe('buildRenderPrompt (controlnet-render OQ-2/OQ-3)', () => {
 
   it('uploads never change the prompt; an uploads-only Moodboard uses modern-01 and styleId null', () => {
     expect(buildRenderPrompt([u(0), g(1, 'a-1'), u(2), u(3)], gallery).styleId).toBe('a');
-    expect(buildRenderPrompt([u(0), u(1)], gallery)).toEqual({ styleId: null, positive: `${PREFIX}modern-01 kitchen, oak${SUFFIX}`, negative: RENDER_NEGATIVE_PROMPT });
+    expect(buildRenderPrompt([u(0), u(1)], gallery)).toEqual({ styleId: null, positive: `${PREFIX}modern-01 kitchen, oak${SUFFIX}`, text: 'modern-01 kitchen, oak', negative: RENDER_NEGATIVE_PROMPT });
   });
 
   it('the negative prompt targets clutter and structural hallucinations within one CLIP chunk', () => {

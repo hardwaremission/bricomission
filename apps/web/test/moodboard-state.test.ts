@@ -12,6 +12,7 @@ import {
   type MoodboardState,
   remainingSlots,
   usedSlots,
+  toggleFilter,
   visibleGalleryImages,
 } from '../src/lib/kitchen-draft/moodboard-state';
 import type { KitchenDraftView, MoodboardItemView, StyleGalleryStyleView } from '../src/lib/kitchen-draft/types';
@@ -143,8 +144,22 @@ describe('moodboardReducer', () => {
     let state = moodboardReducer(loaded({ moodboard: [galleryItem('modern-01', 0)] }), { type: 'connectivity', online: false });
     expect(galleryTapAction(state, 'modern-01')).toEqual({ kind: 'none' });
     expect(galleryTapAction(state, 'modern-02')).toEqual({ kind: 'none' });
-    state = moodboardReducer(state, { type: 'filterChanged', filter: 'japandi' });
+    state = moodboardReducer(state, { type: 'filterToggled', filter: 'japandi' });
     expect(visibleGalleryImages(state).map(({ image }) => image.id)).toEqual(['japandi-01', 'japandi-02', 'japandi-03']);
+  });
+
+  it('the filter is multi-select: styles add and remove, All clears (simulations-ux-overhaul S2)', () => {
+    expect(toggleFilter([], 'japandi')).toEqual(['japandi']);
+    expect(toggleFilter(['japandi'], 'modern')).toEqual(['japandi', 'modern']);
+    expect(toggleFilter(['japandi', 'modern'], 'japandi')).toEqual(['modern']);
+    expect(toggleFilter(['japandi', 'modern'], 'all')).toEqual([]);
+    let state = moodboardReducer(loaded(), { type: 'filterToggled', filter: 'japandi' });
+    state = moodboardReducer(state, { type: 'filterToggled', filter: 'modern' });
+    expect(state.filters).toEqual(['japandi', 'modern']);
+    expect(new Set(visibleGalleryImages(state).map(({ styleId }) => styleId))).toEqual(new Set(['japandi', 'modern']));
+    state = moodboardReducer(state, { type: 'filterToggled', filter: 'all' });
+    expect(state.filters).toEqual([]);
+    expect(visibleGalleryImages(state).length).toBeGreaterThan(3);
   });
 
   it('upload tiles: queued, progress, success adds the item; failures keep a retryable tile', () => {

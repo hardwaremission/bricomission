@@ -1,4 +1,5 @@
 import 'reflect-metadata';
+import { randomUUID } from 'node:crypto';
 import type { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
@@ -14,13 +15,20 @@ import { makeImage } from './images.js';
 import { MemoryKitchenDraftRepository } from './memory-kitchen-draft-repository.js';
 import { MemoryObjectStorage } from './memory-object-storage.js';
 import { MemoryRenderRepository } from './memory-render-repository.js';
+import { MemorySimulationRepository } from './memory-simulation-repository.js';
+import { MemoryReferenceTraitRepository } from './memory-reference-trait-repository.js';
+import { MemoryPlatformSettingRepository } from './memory-platform-setting-repository.js';
+import { REFERENCE_TRAIT_REPOSITORY } from '../../src/kitchen-projects/simulations/reference-traits.repository.js';
+import { DEFAULT_SIMULATION_CONFIG, SIMULATION_CONFIG, type SimulationConfig } from '../../src/kitchen-projects/simulations/simulation.config.js';
+import { SIMULATION_REPOSITORY } from '../../src/kitchen-projects/simulations/simulations.repository.js';
+import { PLATFORM_SETTING_REPOSITORY } from '../../src/platform-settings/platform-settings.repository.js';
 import { IMAGE_ADAPTER } from '../../src/ai/ai.tokens.js';
 import { FakeImageAdapter } from '../../src/ai/adapters/fake-image.adapter.js';
 import type { FakeAdapterOptions } from '../../src/ai/adapters/fake-adapter.support.js';
 import { DEFAULT_RENDER_CONTROL, RENDER_CONFIG, type RenderConfig } from '../../src/kitchen-projects/renders/render.config.js';
 import { RENDER_REPOSITORY } from '../../src/kitchen-projects/renders/render.repository.js';
 import { LLM_ADAPTER } from '../../src/ai/ai.tokens.js';
-import { FakeLlmAdapter } from '../../src/ai/adapters/fake-llm.adapter.js';
+import { FakeLlmAdapter, type FakeLlmOptions } from '../../src/ai/adapters/fake-llm.adapter.js';
 import type { LlmAdapter } from '../../src/ai/adapters/llm-adapter.js';
 import { CatalogSearchService } from '../../src/catalog/catalog-search.service.js';
 import { BUDGET_CONFIG, DEFAULT_BUDGET_CONFIG, type BudgetConfig } from '../../src/kitchen-projects/budget/budget.config.js';
@@ -40,10 +48,16 @@ export interface KitchenAppOptions {
   renderConfig?: Partial<RenderConfig>;
   /** A pre-filled Render repository (recovery tests). */
   renders?: MemoryRenderRepository;
+  /** A pre-filled Simulation repository (recovery tests); build it over the same `renders` and `budgets`. */
+  simulations?: MemorySimulationRepository;
+  simulationConfig?: Partial<SimulationConfig>;
+  /** The vision cache and the platform settings (default: empty). */
+  traits?: MemoryReferenceTraitRepository;
+  platformSettings?: MemoryPlatformSettingRepository;
   broker?: Partial<GpuBrokerOptions>;
   /** The LLM adapter (default: the deterministic fake with its JSON mode). */
   llm?: LlmAdapter;
-  llmOptions?: FakeAdapterOptions;
+  llmOptions?: FakeLlmOptions;
   budgetConfig?: Partial<BudgetConfig>;
   /** A pre-filled Budget repository (recovery tests). */
   budgets?: MemoryBudgetRepository;
@@ -95,8 +109,12 @@ export async function createKitchenApp(options: KitchenAppOptions = {}) {
   const repo = new MemoryKitchenDraftRepository();
   const renders = options.renders ?? new MemoryRenderRepository();
   const image = new FakeImageAdapter(options.image ?? {});
-  const renderConfig: RenderConfig = { mode: 'canny', maxPerProject: 10, control: DEFAULT_RENDER_CONTROL, ...options.renderConfig };
+  const renderConfig: RenderConfig = { mode: 'canny', control: DEFAULT_RENDER_CONTROL, ...options.renderConfig };
   const budgets = options.budgets ?? new MemoryBudgetRepository();
+  const simulations = options.simulations ?? new MemorySimulationRepository(renders, budgets);
+  const traits = options.traits ?? new MemoryReferenceTraitRepository();
+  const platformSettings = options.platformSettings ?? new MemoryPlatformSettingRepository();
+  const simulationConfig: SimulationConfig = { ...DEFAULT_SIMULATION_CONFIG, queueRetryMs: 10, queueRetryMax: 3, ...options.simulationConfig };
   // Tests that inject a scripted adapter only read `calls`; the fake also has `maxActive`.
   const llm = (options.llm ?? new FakeLlmAdapter(options.llmOptions ?? {})) as FakeLlmAdapter;
   const budgetConfig: BudgetConfig = { ...DEFAULT_BUDGET_CONFIG, ...options.budgetConfig };
@@ -128,6 +146,14 @@ export async function createKitchenApp(options: KitchenAppOptions = {}) {
     .useValue(() => clock.now)
     .overrideProvider(RENDER_REPOSITORY)
     .useValue(renders)
+    .overrideProvider(SIMULATION_REPOSITORY)
+    .useValue(simulations)
+    .overrideProvider(REFERENCE_TRAIT_REPOSITORY)
+    .useValue(traits)
+    .overrideProvider(PLATFORM_SETTING_REPOSITORY)
+    .useValue(platformSettings)
+    .overrideProvider(SIMULATION_CONFIG)
+    .useValue(simulationConfig)
     .overrideProvider(IMAGE_ADAPTER)
     .useValue(image)
     .overrideProvider(RENDER_CONFIG)
@@ -184,7 +210,88 @@ export async function createKitchenApp(options: KitchenAppOptions = {}) {
     return req;
   }
 
-  return { app, moduleRef, repo, renders, budgets, llm, budgetConfig, searchCalls, image, renderConfig, storage, config, clock, keys, http, token, seedDraft, claim, jpeg };
+  /** A claimed, ready project of `sub` with `photos` photos (the others are portrait) and a gallery pick plus an own reference. */
+  async function ownedProject(sub = HOMEOWNER_SUB, photos = 1, parts: { gallery?: boolean; upload?: boolean } = { gallery: true, upload: true }) {
+    const seeded = await seedDraft({ photo: true, measurements: true, moodboard: parts.gallery ?? true, upload: parts.upload ?? false });
+    for (let i = 1; i < photos; i++) {
+      const portrait = await makeImage(600 + 10 * i, 900, 'jpeg');
+      const res = await http().post(`${DRAFTS}/current/photos`).set('X-Draft-Token', seeded.draftToken).attach('photo', portrait, { filename: 'p.jpg', contentType: 'image/jpeg' });
+      expect(res.status).toBe(201);
+    }
+    const claimed = await claim(await token(sub), seeded.draftToken);
+    expect(claimed.status).toBe(200);
+    return claimed.body.project as { id: string; photos: Array<{ id: string }> };
+  }
+
+  const bearer = async (sub = HOMEOWNER_SUB, roles = ['user']) => `Bearer ${await token(sub, roles)}`;
+
+  /** POST a Simulation; returns the supertest response. */
+  async function createSimulation(projectId: string, sub = HOMEOWNER_SUB) {
+    return http().post(`/kitchen-projects/${projectId}/simulations`).set('Authorization', await bearer(sub));
+  }
+
+  /** Polls the Simulation until it is finished (fake jobs finish within milliseconds). */
+  async function settleSimulation(projectId: string, simulationId: string, sub = HOMEOWNER_SUB) {
+    for (let i = 0; i < 300; i++) {
+      const res = await http().get(`/kitchen-projects/${projectId}/simulations/${simulationId}`).set('Authorization', await bearer(sub));
+      if (res.body.stage === 'finished') return res.body;
+      await new Promise((resolve) => setTimeout(resolve, 10));
+    }
+    throw new Error('simulation did not settle');
+  }
+
+  /** Creates a Simulation, waits for it and selects it (the precondition of a Budget). */
+  async function selectedSimulation(projectId: string) {
+    const created = await createSimulation(projectId);
+    expect(created.status).toBe(202);
+    const done = await settleSimulation(projectId, created.body.simulation.id);
+    expect(done.status).toBe('succeeded');
+    const put = await http().put(`/kitchen-projects/${projectId}/selected-simulation`).set('Authorization', await bearer()).send({ simulationId: done.id });
+    expect(put.status).toBe(200);
+    return done as { id: string };
+  }
+
+  /**
+   * Seeds a finished Simulation whose Renders (`renders`, default 1; one per photo position) all succeeded,
+   * straight into the memory repositories (no GPU adapters involved). Each Render's `full` image is stored
+   * (the Budget's inventory job reads it).
+   */
+  function seedReadySimulation(projectId: string, options: { selected?: boolean; id?: string; renders?: number } = {}) {
+    const id = options.id ?? randomUUID();
+    const now = new Date('2026-11-15T09:00:00.000Z');
+    const records = Array.from({ length: options.renders ?? 1 }, (_, position) => {
+      const renderId = randomUUID();
+      const base = `kitchen-projects/${projectId}/renders/${renderId}`;
+      storage.objects.set(`${base}/full.jpg`, { body: Buffer.from(jpeg), contentType: 'image/jpeg' });
+      return {
+        id: renderId,
+        kitchenProjectId: projectId,
+        simulationId: id,
+        photoId: null,
+        photoPosition: position,
+        attempts: 1,
+        status: 'succeeded' as const,
+        mode: 'canny' as const,
+        prompt: 'p',
+        seed: 1,
+        width: 1216,
+        height: 832,
+        beforeKey: `${base}/before.jpg`,
+        fullKey: `${base}/full.jpg`,
+        thumbKey: `${base}/thumb.jpg`,
+        errorCode: null,
+        gpuJobId: null,
+        inventory: null,
+        createdAt: now,
+        startedAt: now,
+        finishedAt: now,
+        seconds: 1,
+      };
+    });
+    return simulations.seed({ id, kitchenProjectId: projectId, selected: options.selected ?? true }, records);
+  }
+
+  return { ownedProject, seedReadySimulation, bearer, createSimulation, settleSimulation, selectedSimulation, app, moduleRef, repo, renders, simulations, traits, platformSettings, simulationConfig, budgets, llm, budgetConfig, searchCalls, image, renderConfig, storage, config, clock, keys, http, token, seedDraft, claim, jpeg };
 }
 
 export type KitchenApp = Awaited<ReturnType<typeof createKitchenApp>>;

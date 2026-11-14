@@ -68,22 +68,27 @@ export interface KitchenDraftRepository {
   /** The draft whose token hash matches, if it is a `draft` with `expiresAt > now`. */
   findActiveByTokenHash(tokenHash: Buffer, now: Date): Promise<KitchenDraftRecord | null>;
   updateMeasurements(id: string, measurements: KitchenMeasurements, expiresAt: Date): Promise<KitchenDraftRecord>;
+  /** Owner edit (simulations-ux-overhaul, Decision 14): replaces the measurements of a claimed project (no expiry to move). */
+  updateProjectMeasurements(id: string, measurements: KitchenMeasurements): Promise<KitchenProjectRecord>;
   /**
+   * The mutations below also serve claimed projects: `expiresAt = null` leaves the expiry alone
+   * (a claimed row has none and its status CHECK forbids one), a date slides a draft's expiry.
+   *
    * Appends a photo at position = current count, under a row lock on the draft that re-checks
    * the limit. Returns `limit_reached` when the draft already holds `maxPhotos` photos.
    */
-  addPhoto(id: string, photo: NewKitchenPhoto, maxPhotos: number, expiresAt: Date): Promise<KitchenPhotoRecord | 'limit_reached'>;
+  addPhoto(id: string, photo: NewKitchenPhoto, maxPhotos: number, expiresAt: Date | null): Promise<KitchenPhotoRecord | 'limit_reached'>;
   /** Deletes the photo and compacts the positions after it. Null when it is not in this draft. */
-  deletePhoto(id: string, photoId: string, expiresAt: Date): Promise<KitchenPhotoRecord | null>;
+  deletePhoto(id: string, photoId: string, expiresAt: Date | null): Promise<KitchenPhotoRecord | null>;
   /**
    * Appends a Moodboard Item at position = current count, under a row lock on the draft that
    * re-checks the limit. A gallery image already in the Moodboard is returned as is
    * (`created: false`, nothing changes). Returns `limit_reached` when the draft already holds
    * `maxItems` items.
    */
-  addMoodboardItem(id: string, item: NewMoodboardItem, maxItems: number, expiresAt: Date): Promise<AddMoodboardItemResult>;
+  addMoodboardItem(id: string, item: NewMoodboardItem, maxItems: number, expiresAt: Date | null): Promise<AddMoodboardItemResult>;
   /** Deletes the item and compacts the positions after it. Null when it is not in this draft. */
-  deleteMoodboardItem(id: string, itemId: string, expiresAt: Date): Promise<MoodboardItemRecord | null>;
+  deleteMoodboardItem(id: string, itemId: string, expiresAt: Date | null): Promise<MoodboardItemRecord | null>;
   /** Up to `limit` drafts with `expiresAt <= now`, with their object keys (photos and Moodboard uploads). */
   findExpired(now: Date, limit: number): Promise<Array<{ id: string; keys: string[] }>>;
   deleteDrafts(ids: readonly string[]): Promise<number>;
@@ -202,7 +207,12 @@ export class PrismaKitchenDraftRepository implements KitchenDraftRepository {
     return toRecord(row);
   }
 
-  addPhoto(id: string, photo: NewKitchenPhoto, maxPhotos: number, expiresAt: Date): Promise<KitchenPhotoRecord | 'limit_reached'> {
+  async updateProjectMeasurements(id: string, measurements: KitchenMeasurements): Promise<KitchenProjectRecord> {
+    const row = await this.prisma.kitchenProject.update({ where: { id }, data: { ...measurements }, select: DRAFT_SELECT });
+    return toProjectRecord(row);
+  }
+
+  addPhoto(id: string, photo: NewKitchenPhoto, maxPhotos: number, expiresAt: Date | null): Promise<KitchenPhotoRecord | 'limit_reached'> {
     return this.prisma.$transaction(async (tx) => {
       // Serializes concurrent uploads to the same draft.
       await tx.$queryRaw`SELECT id FROM kitchen_project WHERE id = ${id}::uuid FOR UPDATE`;
@@ -212,12 +222,12 @@ export class PrismaKitchenDraftRepository implements KitchenDraftRepository {
         data: { ...photo, kitchenProjectId: id, position: count },
         select: PHOTO_SELECT,
       });
-      await tx.kitchenProject.update({ where: { id }, data: { expiresAt } });
+      if (expiresAt) await tx.kitchenProject.update({ where: { id }, data: { expiresAt } });
       return created;
     });
   }
 
-  deletePhoto(id: string, photoId: string, expiresAt: Date): Promise<KitchenPhotoRecord | null> {
+  deletePhoto(id: string, photoId: string, expiresAt: Date | null): Promise<KitchenPhotoRecord | null> {
     return this.prisma.$transaction(async (tx) => {
       await tx.$queryRaw`SELECT id FROM kitchen_project WHERE id = ${id}::uuid FOR UPDATE`;
       const photo = await tx.kitchenPhoto.findFirst({ where: { id: photoId, kitchenProjectId: id }, select: PHOTO_SELECT });
@@ -227,12 +237,12 @@ export class PrismaKitchenDraftRepository implements KitchenDraftRepository {
         where: { kitchenProjectId: id, position: { gt: photo.position } },
         data: { position: { decrement: 1 } },
       });
-      await tx.kitchenProject.update({ where: { id }, data: { expiresAt } });
+      if (expiresAt) await tx.kitchenProject.update({ where: { id }, data: { expiresAt } });
       return photo;
     });
   }
 
-  addMoodboardItem(id: string, item: NewMoodboardItem, maxItems: number, expiresAt: Date): Promise<AddMoodboardItemResult> {
+  addMoodboardItem(id: string, item: NewMoodboardItem, maxItems: number, expiresAt: Date | null): Promise<AddMoodboardItemResult> {
     return this.prisma.$transaction(async (tx) => {
       // Serializes concurrent Moodboard changes to the same draft.
       await tx.$queryRaw`SELECT id FROM kitchen_project WHERE id = ${id}::uuid FOR UPDATE`;
@@ -249,12 +259,12 @@ export class PrismaKitchenDraftRepository implements KitchenDraftRepository {
         data: { ...item, kitchenProjectId: id, position: count },
         select: MOODBOARD_SELECT,
       });
-      await tx.kitchenProject.update({ where: { id }, data: { expiresAt } });
+      if (expiresAt) await tx.kitchenProject.update({ where: { id }, data: { expiresAt } });
       return { item: created, created: true };
     });
   }
 
-  deleteMoodboardItem(id: string, itemId: string, expiresAt: Date): Promise<MoodboardItemRecord | null> {
+  deleteMoodboardItem(id: string, itemId: string, expiresAt: Date | null): Promise<MoodboardItemRecord | null> {
     return this.prisma.$transaction(async (tx) => {
       await tx.$queryRaw`SELECT id FROM kitchen_project WHERE id = ${id}::uuid FOR UPDATE`;
       const item = await tx.moodboardItem.findFirst({ where: { id: itemId, kitchenProjectId: id }, select: MOODBOARD_SELECT });
@@ -264,7 +274,7 @@ export class PrismaKitchenDraftRepository implements KitchenDraftRepository {
         where: { kitchenProjectId: id, position: { gt: item.position } },
         data: { position: { decrement: 1 } },
       });
-      await tx.kitchenProject.update({ where: { id }, data: { expiresAt } });
+      if (expiresAt) await tx.kitchenProject.update({ where: { id }, data: { expiresAt } });
       return item;
     });
   }

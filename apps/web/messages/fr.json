@@ -219,11 +219,10 @@
   },
   "project": {
     "title": "Votre projet de cuisine",
-    "helper": "Générez un design de votre nouvelle cuisine ou obtenez votre budget.",
+    "helper": "Modifiez vos photos, mesures et styles à tout moment. Choisissez une simulation pour obtenir votre budget.",
     "claimed": "Votre cuisine est enregistrée dans votre compte.",
     "dismiss": "Fermer",
     "newProject": "Commencer un nouveau projet de cuisine",
-    "seeDesigns": "Voir mes designs",
     "signedOut": {
       "title": "Connectez-vous pour voir ce projet de cuisine",
       "signIn": "Se connecter"
@@ -233,15 +232,43 @@
       "home": "Aller à l'accueil"
     },
     "offline": "Vous êtes hors ligne. Votre projet de cuisine est en sécurité ; reconnectez-vous pour le voir.",
-    "seeBudget": "Voir mon budget"
+    "seeBudget": "Voir mon budget",
+    "summary": {
+      "photos": "{count, plural, one {# photo} other {# photos}}",
+      "styles": "{count, plural, one {# style ou référence} other {# styles et références}}",
+      "missing": "—",
+      "editPhotos": "Modifier les photos",
+      "editMeasurements": "Modifier les mesures",
+      "editStyles": "Modifier les styles"
+    },
+    "edit": {
+      "back": "Retour à mon projet de cuisine",
+      "photosTitle": "Modifiez vos photos",
+      "measurementsTitle": "Modifiez vos mesures",
+      "stylesTitle": "Modifiez vos styles",
+      "helper": "Les modifications sont enregistrées au fur et à mesure. Vos simulations existantes gardent les images d'origine.",
+      "save": "Enregistrer les modifications",
+      "saveHint": "Gardez au moins une photo et les trois mesures pour enregistrer.",
+      "blockedSimulation": "Attendez la fin de la simulation pour modifier votre projet.",
+      "blockedBudget": "Attendez la fin du budget pour modifier votre projet."
+    },
+    "budgetReason": "Sélectionnez une simulation pour activer votre budget.",
+    "generateMore": "Générer d'autres simulations",
+    "actionFailed": "Nous n'avons pas pu terminer. Réessayez dans un instant."
   },
   "results": {
     "back": "Retour à ma cuisine",
-    "titleDone": "Votre nouvelle cuisine",
     "titleActive": "Conception de votre cuisine",
-    "helperDone": "Style {style}, à partir de la photo {n}. Faites glisser la poignée pour comparer.",
-    "helperActive": "Style {style}, à partir de la photo {n}. Cela prend environ 10 à 30 secondes.",
-    "helperIdle": "Style {style}, à partir de la photo {n}.",
+    "titleDone": "Simulation {n}",
+    "helperActive": "Un style calculé à partir de {sources}, appliqué à {count, plural, one {votre photo de cuisine} other {chacune de vos # photos de cuisine}}.",
+    "helperActiveBare": "Un style calculé, appliqué à {count, plural, one {votre photo de cuisine} other {chacune de vos # photos de cuisine}}.",
+    "helperDone": "Style calculé à partir de {sources}. Photo {i} sur {count}. Faites glisser la poignée pour comparer.",
+    "helperDoneBare": "Photo {i} sur {count}. Faites glisser la poignée pour comparer.",
+    "sources": {
+      "gallery": "{count, plural, one {# style de la galerie} other {# styles de la galerie}}",
+      "own": "{count} de vos photos",
+      "join": "{first} et {second}"
+    },
     "slider": {
       "label": "Comparer avant et après",
       "before": "Avant",
@@ -250,20 +277,28 @@
       "afterAlt": "Le design de votre nouvelle cuisine"
     },
     "status": {
-      "running": "Génération…",
       "queued": "En attente du GPU",
-      "ahead": "{count, plural, one {# tâche avant la vôtre} other {# tâches avant la vôtre}}"
+      "ahead": "{count, plural, one {# tâche avant la vôtre} other {# tâches avant la vôtre}}",
+      "describing": "Analyse de vos références de style",
+      "rendering": "Rendu {n} sur {count}",
+      "percent": "{percent} %"
     },
-    "note": "Vous pouvez quitter cette page ; le rendu continue et apparaîtra ici une fois prêt.",
+    "tile": {
+      "photo": "Photo {n}",
+      "failed": "Photo {n} en échec",
+      "retry": "Réessayer",
+      "retryPhoto": "Réessayer la photo {n}"
+    },
+    "note": "Vous pouvez quitter cette page ; la simulation continue et apparaîtra ici une fois prête.",
     "photos": {
-      "title": "Photo pour le prochain rendu",
-      "helper": "Le rendu conserve les murs, les fenêtres et la plomberie de cette photo.",
+      "title": "Photos de cette simulation",
+      "helper": "Chaque photo est rendue avec le même style calculé.",
       "option": "Photo {n}"
     },
     "history": {
-      "title": "Vos rendus",
-      "counter": "{count} sur {max}",
-      "item": "Rendu {n}"
+      "title": "Vos simulations",
+      "counter": "{count}",
+      "item": "Simulation {n}"
     },
     "cta": {
       "again": "Générer à nouveau",
@@ -272,21 +307,22 @@
       "back": "Retour à ma cuisine"
     },
     "hints": {
-      "oneAtATime": "Un rendu à la fois.",
-      "limit": "Vous avez créé {max} rendus, le maximum pour ce projet."
+      "oneAtATime": "Une simulation à la fois.",
+      "offline": "Vous êtes hors ligne. Reconnectez-vous pour générer."
     },
     "alerts": {
-      "failed": "Nous n'avons pas pu créer ce rendu. Réessayez dans un instant.",
-      "interrupted": "Ce rendu a été interrompu. Réessayez.",
+      "failed": "Nous n'avons pas pu créer cette simulation. Réessayez dans un instant.",
+      "interrupted": "Cette simulation a été interrompue. Réessayez.",
       "queueFull": "Le designer est occupé pour le moment. Réessayez dans une minute.",
-      "uploadsOnly": "Vos propres photos ne peuvent pas encore guider le style, nous avons donc utilisé un style moderne neutre.",
-      "offline": "Vous êtes hors ligne. Vos rendus sont en sécurité ; reconnectez-vous pour voir les nouveaux."
+      "offline": "Vous êtes hors ligne. Vos simulations sont en sécurité ; reconnectez-vous pour voir les nouvelles.",
+      "partial": "{failed} photos sur {count} n'ont pas pu être rendues. Relancez-les pour pouvoir choisir cette simulation pour votre budget.",
+      "degraded": "Nous n'avons pas pu analyser toutes vos références ; cette simulation utilise donc votre style principal."
     }
   },
   "budget": {
     "back": "Retour à ma cuisine",
     "title": "Le budget de votre cuisine",
-    "helper": "Quatre options, du premium à l'essentiel. Les prix viennent du catalogue de produits ; touchez une option pour voir chaque article.",
+    "helper": "Quatre options, de premium à essentielle, d'après les éléments visibles dans votre simulation. Touchez une option pour voir chaque article.",
     "titleActive": "Calcul de votre budget",
     "helperActive": "Nous associons votre cuisine au catalogue de produits. Cela prend environ une minute.",
     "tiers": {
@@ -304,27 +340,22 @@
       "vat": "TVA {percent} %",
       "total": "Total (TVA incluse)"
     },
-    "history": {
-      "title": "Vos budgets",
-      "counter": "{count} sur {max}",
-      "item": "Budget {n}"
-    },
     "status": {
-      "running": "Calcul en cours…",
       "queued": "En attente du GPU",
-      "ahead": "{count, plural, one {# tâche avant la vôtre} other {# tâches avant la vôtre}}"
+      "ahead": "{count, plural, one {# tâche avant la vôtre} other {# tâches avant la vôtre}}",
+      "reading": "Lecture de l'image {n} sur {count}",
+      "matching": "Recherche des produits dans le catalogue"
     },
     "note": "Vous pouvez quitter cette page ; le budget continue et apparaîtra ici quand il sera prêt.",
     "hints": {
-      "oneAtATime": "Un budget à la fois.",
-      "limit": "Vous avez créé {max} budgets, le maximum pour ce projet."
+      "oneAtATime": "Un budget à la fois."
     },
     "empty": {
       "title": "Pas encore de budget",
       "helper": "Obtenez quatre options pour votre cuisine, du premium à l'essentiel."
     },
     "cta": {
-      "again": "Recalculer",
+      "again": "Recalculer le budget",
       "retry": "Réessayer",
       "start": "Obtenir mon budget",
       "back": "Retour à ma cuisine"
@@ -336,7 +367,42 @@
       "searchDown": "La recherche de prix est indisponible pour le moment. Réessayez dans une minute.",
       "queueFull": "Le concepteur est occupé en ce moment. Réessayez dans une minute.",
       "incomplete": "Ajoutez d'abord vos photos et vos mesures, puis obtenez votre budget.",
-      "offline": "Vous êtes hors ligne. Vos budgets sont en sécurité ; reconnectez-vous pour voir les nouveaux."
+      "offline": "Vous êtes hors ligne. Vos budgets sont en sécurité ; reconnectez-vous pour voir les nouveaux.",
+      "noSelection": "Sélectionnez une simulation dans votre projet de cuisine pour obtenir un budget.",
+      "notReady": "Cette simulation contient encore des photos non rendues. Relancez-les d'abord."
+    },
+    "basedOn": "D'après la simulation {n}",
+    "change": "Changer",
+    "relabeled": "Les options sont classées par prix total, de la plus chère à la moins chère.",
+    "recalculating": "Calcul d'un nouveau budget",
+    "goToSimulations": "Aller à mes simulations"
+  },
+  "simulations": {
+    "title": "Mes simulations",
+    "instruction": "Pour obtenir votre budget, sélectionnez une simulation ci-dessous. Le budget compte chaque élément visible dans ses images.",
+    "empty": {
+      "title": "Aucune simulation pour le moment",
+      "helper": "Générez votre première simulation pour voir votre nouvelle cuisine sous chaque photo."
+    },
+    "name": "Simulation {n}",
+    "meta": "{date} · {count, plural, one {# photo} other {# photos}}",
+    "rendering": "Rendu {n} sur {count}",
+    "selected": "Sélectionnée",
+    "selectedNamed": "Simulation {n}, sélectionnée",
+    "select": "Sélectionner",
+    "selectNamed": "Sélectionner la simulation {n}",
+    "open": "Ouvrir",
+    "openRetry": "Ouvrir et réessayer",
+    "openNamed": "Ouvrir la simulation {n}",
+    "openRetryNamed": "Ouvrir la simulation {n} et réessayer",
+    "delete": "Supprimer",
+    "deleteNamed": "Supprimer la simulation {n}",
+    "photosFailed": "{count, plural, one {# photo a échoué} other {# photos ont échoué}}",
+    "deleteDialog": {
+      "title": "Supprimer la simulation {n} ?",
+      "message": "Ses images et son budget seront supprimés définitivement. Vos photos et mesures sont conservées.",
+      "confirm": "Supprimer la simulation",
+      "cancel": "Annuler"
     }
   }
 }

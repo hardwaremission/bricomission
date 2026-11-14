@@ -25,7 +25,7 @@ describe('budget-client', () => {
 
   it('maps POST failures: 409 codes, 429, 503 embedding_unavailable, 401, 404, 502, 500 and offline', async () => {
     const conflict = (code: string) => createBudget(createApiClient(BASE, fakeFetch(409, { statusCode: 409, code })), PID);
-    for (const code of ['budget_in_progress', 'budget_limit_reached', 'project_incomplete', 'catalog_empty'] as const) expect(await conflict(code)).toEqual({ kind: 'conflict', code });
+    for (const code of ['budget_in_progress', 'no_simulation_selected', 'simulation_not_ready', 'project_incomplete', 'catalog_empty'] as const) expect(await conflict(code)).toEqual({ kind: 'conflict', code });
     expect(await conflict('weird')).toEqual({ kind: 'conflict', code: 'other' });
     expect(await createBudget(createApiClient(BASE, fakeFetch(429, { code: 'gpu_queue_full' })), PID)).toEqual({ kind: 'queueFull' });
     expect(await createBudget(createApiClient(BASE, fakeFetch(503, { code: 'embedding_unavailable' })), PID)).toEqual({ kind: 'searchDown' });
@@ -43,7 +43,7 @@ describe('budget-client', () => {
 
   it('loads the list and one Budget from the owner routes', async () => {
     const calls: Request[] = [];
-    const list = { budgets: [], maxBudgets: 5 };
+    const list = { budgets: [] };
     expect(await loadBudgets(createApiClient(BASE, fakeFetch(200, list, calls)), PID)).toEqual({ kind: 'ok', value: list });
     expect(calls[0]?.url).toBe(`${BASE}/kitchen-projects/${PID}/budgets`);
     const one = { id: BID, status: 'running' };

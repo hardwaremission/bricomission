@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import type { BudgetErrorCode, BudgetStatus, BudgetTier } from '@bricomission/shared-types';
+import type { BudgetErrorCode, BudgetStage, BudgetStatus, BudgetTier } from '@bricomission/shared-types';
 import { PrismaService } from '../../prisma/prisma.service.js';
 
 /** A verified Line Item row. Amounts are integer cents (BigInt in code, bigint in the database). */
@@ -32,7 +32,15 @@ export interface BudgetTierRecord {
 export interface BudgetRecord {
   id: string;
   kitchenProjectId: string;
+  /** The Simulation this Budget prices. */
+  simulationId: string;
   status: BudgetStatus;
+  /** Inventory reading, then pricing; `progress*` count the images read. */
+  stage: BudgetStage;
+  progressDone: number;
+  progressTotal: number;
+  /** Tier names were assigned by total rank after the last attempt (names only). */
+  relabeled: boolean;
   errorCode: BudgetErrorCode | null;
   currency: string;
   vatBps: number;
@@ -47,12 +55,15 @@ export interface BudgetRecord {
   tiers: BudgetTierRecord[];
 }
 
-export type NewBudget = Pick<BudgetRecord, 'id' | 'kitchenProjectId' | 'currency' | 'vatBps' | 'prompt' | 'createdAt'>;
+export type NewBudget = Pick<BudgetRecord, 'id' | 'kitchenProjectId' | 'simulationId' | 'currency' | 'vatBps' | 'prompt' | 'createdAt' | 'stage' | 'progressDone' | 'progressTotal'>;
 
-export type CreateBudgetResult = BudgetRecord | 'in_progress' | 'limit_reached';
+export type CreateBudgetResult = BudgetRecord | 'in_progress';
 
 export interface BudgetSuccess {
   tiers: BudgetTierRecord[];
+  relabeled: boolean;
+  /** The final prompt (with inventory and price bands); internal. */
+  prompt: string;
   attempts: number;
   promptTokens: number;
   completionTokens: number;
@@ -63,16 +74,24 @@ export interface BudgetSuccess {
 export interface BudgetRepository {
   /**
    * Under the project row lock: `in_progress` when a Budget of the project is queued or running,
-   * `limit_reached` when it already has `maxNonFailed` non-failed Budgets, else inserts `queued`.
+   * else deletes the failed Budgets of the Simulation and inserts `queued`. The succeeded Budget of
+   * the Simulation stays until the new one succeeds.
    */
-  createQueued(budget: NewBudget, maxNonFailed: number): Promise<CreateBudgetResult>;
-  /** Budgets of the project, newest first, with their tiers and Line Items. */
-  listByProject(projectId: string): Promise<BudgetRecord[]>;
+  createQueued(budget: NewBudget): Promise<CreateBudgetResult>;
+  /** Budgets of the Simulation, newest first, with their tiers and Line Items (current, plus an active or failed recompute). */
+  listBySimulation(simulationId: string): Promise<BudgetRecord[]>;
+  /** True when a Budget of the project is queued or running (owner edits are refused meanwhile). */
+  hasActive(projectId: string): Promise<boolean>;
+  /** Inventory progress of a running Budget. */
+  setProgress(id: string, stage: BudgetStage, done: number, total: number): Promise<void>;
   find(projectId: string, budgetId: string): Promise<BudgetRecord | null>;
   setGpuJob(id: string, gpuJobId: string): Promise<void>;
   /** `queued -> running`; false when the row is no longer queued. */
   markRunning(id: string, startedAt: Date): Promise<boolean>;
-  /** `running -> succeeded` and inserts the tiers and Line Items in one transaction; false when the row is no longer running. */
+  /**
+   * `running -> succeeded` in one transaction: deletes the Simulation's previous succeeded Budget, then
+   * inserts the tiers and Line Items; false when the row is no longer running.
+   */
   markSucceeded(id: string, success: BudgetSuccess): Promise<boolean>;
   /** `queued|running -> failed`; false when the row was already terminal. */
   markFailed(id: string, errorCode: BudgetErrorCode, finishedAt: Date, attempts?: number): Promise<boolean>;
@@ -130,21 +149,28 @@ const INCLUDE = { tiers: true, lineItems: true } as const;
 export class PrismaBudgetRepository implements BudgetRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  createQueued(budget: NewBudget, maxNonFailed: number): Promise<CreateBudgetResult> {
+  async hasActive(projectId: string): Promise<boolean> {
+    return (await this.prisma.budget.count({ where: { kitchenProjectId: projectId, status: { in: ACTIVE } } })) > 0;
+  }
+
+  createQueued(budget: NewBudget): Promise<CreateBudgetResult> {
     return this.prisma.$transaction(async (tx) => {
       // Serializes concurrent Budget requests of the same project.
       await tx.$queryRaw`SELECT id FROM kitchen_project WHERE id = ${budget.kitchenProjectId}::uuid FOR UPDATE`;
       const active = await tx.budget.count({ where: { kitchenProjectId: budget.kitchenProjectId, status: { in: ACTIVE } } });
       if (active > 0) return 'in_progress' as const;
-      const kept = await tx.budget.count({ where: { kitchenProjectId: budget.kitchenProjectId, status: { not: 'failed' } } });
-      if (kept >= maxNonFailed) return 'limit_reached' as const;
+      await tx.budget.deleteMany({ where: { simulationId: budget.simulationId, status: 'failed' } });
       return toRecord(await tx.budget.create({ data: { ...budget, status: 'queued' }, include: INCLUDE }));
     });
   }
 
-  async listByProject(projectId: string): Promise<BudgetRecord[]> {
-    const rows = await this.prisma.budget.findMany({ where: { kitchenProjectId: projectId }, orderBy: [{ createdAt: 'desc' }, { id: 'desc' }], include: INCLUDE });
+  async listBySimulation(simulationId: string): Promise<BudgetRecord[]> {
+    const rows = await this.prisma.budget.findMany({ where: { simulationId }, orderBy: [{ createdAt: 'desc' }, { id: 'desc' }], include: INCLUDE });
     return rows.map(toRecord);
+  }
+
+  async setProgress(id: string, stage: BudgetStage, done: number, total: number): Promise<void> {
+    await this.prisma.budget.updateMany({ where: { id, status: { in: ACTIVE } }, data: { stage, progressDone: done, progressTotal: total } });
   }
 
   async find(projectId: string, budgetId: string): Promise<BudgetRecord | null> {
@@ -163,9 +189,13 @@ export class PrismaBudgetRepository implements BudgetRepository {
 
   markSucceeded(id: string, success: BudgetSuccess): Promise<boolean> {
     return this.prisma.$transaction(async (tx) => {
+      const current = await tx.budget.findFirst({ where: { id, status: 'running' }, select: { simulationId: true } });
+      if (!current) return false;
+      // The partial unique index allows one succeeded Budget per Simulation: the old one goes first.
+      await tx.budget.deleteMany({ where: { simulationId: current.simulationId, status: 'succeeded', id: { not: id } } });
       const { count } = await tx.budget.updateMany({
         where: { id, status: 'running' },
-        data: { status: 'succeeded', attempts: success.attempts, promptTokens: success.promptTokens, completionTokens: success.completionTokens, finishedAt: success.finishedAt },
+        data: { status: 'succeeded', stage: 'pricing', relabeled: success.relabeled, prompt: success.prompt, attempts: success.attempts, promptTokens: success.promptTokens, completionTokens: success.completionTokens, finishedAt: success.finishedAt },
       });
       if (count !== 1) return false;
       await tx.budgetTier.createMany({

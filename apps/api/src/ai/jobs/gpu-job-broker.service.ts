@@ -228,6 +228,7 @@ export class GpuJobBrokerService implements GpuJobBroker, OnModuleInit, OnModule
 
     const work = async (): Promise<unknown> => {
       if (job.kind === 'image') await this.residency.beforeImage();
+      else await this.residency.beforeLlm();
       return job.run({ signal: abort.signal });
     };
     work().then(
@@ -256,6 +257,7 @@ export class GpuJobBrokerService implements GpuJobBroker, OnModuleInit, OnModule
     else job.reject(new GpuJobFailedError(job.id, errorCode ?? 'adapter_error'));
 
     if (job.kind === 'llm') {
+      void this.residency.afterLlm().catch(() => undefined);
       this.runningLlm -= 1;
       this.pump();
       return;

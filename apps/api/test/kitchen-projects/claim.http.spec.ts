@@ -156,7 +156,7 @@ describe('HTTP POST /kitchen-projects/drafts/current/claim', () => {
     expect(Reflect.getMetadata(ROLES_KEY, KitchenProjectsController)).toEqual(['user']);
     const proto = KitchenProjectsController.prototype as unknown as Record<string, object>;
     const handlers = Object.getOwnPropertyNames(proto).filter((name) => name !== 'constructor');
-    expect(handlers).toEqual(expect.arrayContaining(['claim', 'get', 'photoContent', 'moodboardContent', 'requestRender', 'requestBudget']));
+    expect(handlers).toEqual(expect.arrayContaining(['claim', 'get', 'photoContent', 'moodboardContent', 'createSimulation', 'requestBudget']));
     for (const name of handlers) expect(Reflect.getMetadata(IS_PUBLIC_KEY, proto[name] as object)).toBeUndefined();
   });
 });

@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useReducer, useRef } from 'react';
+import { useCallback, useEffect, useReducer, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
@@ -9,6 +9,14 @@ import { createApiClient, type ApiClient } from '@bricomission/api-client';
 import { loadDraft, startDraft } from '../../lib/kitchen-draft/draft-client';
 import { draftMarker } from '../../lib/kitchen-draft/draft-marker';
 import { addGalleryItem, loadStyleGallery, removeMoodboardItem } from '../../lib/kitchen-draft/moodboard-client';
+import {
+  addProjectGalleryItem,
+  type EditResult,
+  loadEditBlock,
+  loadProjectForEdit,
+  projectMoodboardUploadUrl,
+  removeProjectMoodboardItem,
+} from '../../lib/kitchen-draft/project-edit-client';
 import {
   canContinue,
   canEdit,
@@ -25,6 +33,7 @@ import {
 import type { MoodboardItemView } from '../../lib/kitchen-draft/types';
 import { MOODBOARD_UPLOAD_URL, precheckPhoto, uploadPhoto } from '../../lib/kitchen-draft/upload';
 import { CaptureAlert } from '../capture/CaptureAlert';
+import { EditBlockedAlert, type EditGate, EditGateScreen } from '../edit/EditStates';
 import { MoodboardGrid, type MoodboardGridItem } from './MoodboardGrid';
 import { StyleGallery } from './StyleGallery';
 
@@ -41,8 +50,15 @@ const newLocalId = () => `reference-${Date.now()}-${++localSeq}`;
  * picks and removals save at once; reference photos upload one at a time with progress.
  * Offline, every control except the style filter is disabled and nothing is queued.
  */
-export function MoodboardScreen() {
+/** Edit page of a claimed project (docs/design/simulations-ux-overhaul.md): owner routes, Save changes. */
+export interface MoodboardEdit {
+  projectId: string;
+}
+
+export function MoodboardScreen({ edit }: { edit?: MoodboardEdit } = {}) {
   const t = useTranslations('moodboard');
+  const tEdit = useTranslations('project.edit');
+  const [gate, setGate] = useState<EditGate>('ok');
   const tCapture = useTranslations('capture');
   const router = useRouter();
   const [state, dispatch] = useReducer(moodboardReducer, INITIAL_MOODBOARD_STATE);
@@ -52,11 +68,36 @@ export function MoodboardScreen() {
   const clientRef = useRef<ApiClient | null>(null);
   const client = useCallback(() => (clientRef.current ??= createApiClient(`${window.location.origin}/api`)), []);
   const files = useRef(new Map<string, File>());
-  const hasDraft = useRef(false);
+  const hasDraft = useRef(Boolean(edit));
   const starting = useRef<Promise<boolean> | null>(null);
   const pumping = useRef(false);
 
+  /** Edit pages: maps a refused or unreachable owner call to the page gate. Returns true when it did. */
+  const applyGate = useCallback((result: EditResult<unknown> | { kind: 'draft_missing' } | { kind: 'edit_blocked' }): boolean => {
+    if (result.kind === 'signedOut') setGate('signedOut');
+    else if (result.kind === 'missing' || result.kind === 'draft_missing') setGate('notFound');
+    else if (result.kind === 'blocked') setGate(result.reason);
+    else if (result.kind === 'edit_blocked') setGate('simulation');
+    else return false;
+    return true;
+  }, []);
+
   const load = useCallback(async () => {
+    if (edit) {
+      const [project, gallery, block] = await Promise.all([loadProjectForEdit(client(), edit.projectId), loadStyleGallery(client()), loadEditBlock(client(), edit.projectId)]);
+      if (gallery.kind === 'ok') dispatch({ type: 'galleryLoaded', styles: gallery.value.styles });
+      else dispatch({ type: 'galleryFailed' });
+      if (applyGate(project)) return;
+      if (project.kind === 'ok') {
+        setGate(block ?? 'ok');
+        dispatch({ type: 'connectivity', online: true });
+        dispatch({ type: 'draftLoaded', draft: project.value });
+      } else {
+        dispatch({ type: 'draftMissing', expired: false });
+        dispatch({ type: 'connectivity', online: false });
+      }
+      return;
+    }
     const [draft, gallery] = await Promise.all([loadDraft(client()), loadStyleGallery(client())]);
     if (gallery.kind === 'ok') dispatch({ type: 'galleryLoaded', styles: gallery.value.styles });
     else dispatch({ type: 'galleryFailed' });
@@ -75,7 +116,7 @@ export function MoodboardScreen() {
       dispatch({ type: 'draftMissing', expired: false });
       dispatch({ type: 'connectivity', online: false });
     }
-  }, [client]);
+  }, [client, edit, applyGate]);
 
   /** Starts the draft once (parallel changes share one call). */
   const ensureDraft = useCallback(async (): Promise<boolean> => {
@@ -115,7 +156,7 @@ export function MoodboardScreen() {
 
   // Reference upload pump: one photo at a time.
   useEffect(() => {
-    if (pumping.current || !canEdit(state)) return;
+    if (pumping.current || !canEdit(state) || gate !== 'ok') return;
     if (state.uploads.some((tile) => tile.status === 'uploading' || tile.status === 'processing')) return;
     const tile = state.uploads.find((candidate) => candidate.status === 'queued');
     const file = tile ? files.current.get(tile.localId) : undefined;
@@ -126,12 +167,14 @@ export function MoodboardScreen() {
       dispatch({ type: 'uploadStarted', localId });
       const send = () =>
         uploadPhoto<MoodboardItemView>(file, {
-          url: MOODBOARD_UPLOAD_URL,
+          url: edit ? projectMoodboardUploadUrl(edit.projectId) : MOODBOARD_UPLOAD_URL,
           onProgress: (progress) => dispatch({ type: 'uploadProgress', localId, progress }),
           onUploaded: () => dispatch({ type: 'uploadProcessing', localId }),
         });
       let result = (await ensureDraft()) ? await send() : ({ ok: false, code: 'network' } as const);
-      if (!result.ok && result.code === 'draft_missing') {
+      if (!result.ok && result.code === 'draft_missing' && edit) applyGate({ kind: 'draft_missing' });
+      else if (!result.ok && result.code === 'edit_blocked') applyGate({ kind: 'edit_blocked' });
+      else if (!result.ok && result.code === 'draft_missing') {
         draftLost();
         if (await ensureDraft()) result = await send();
       }
@@ -144,10 +187,21 @@ export function MoodboardScreen() {
         if (result.code === 'network' || result.code === 'moodboard_limit_reached') void load();
       }
     })();
-  }, [state, ensureDraft, draftLost, load]);
+  }, [state, gate, edit, applyGate, ensureDraft, draftLost, load]);
 
   const pick = async (galleryImageId: string) => {
     dispatch({ type: 'pickStarted', galleryImageId });
+    if (edit) {
+      const added = await addProjectGalleryItem(client(), edit.projectId, galleryImageId);
+      if (added.kind === 'ok') {
+        dispatch({ type: 'pickSucceeded', galleryImageId, item: added.value });
+      } else {
+        applyGate(added);
+        dispatch({ type: 'pickFailed', galleryImageId, offline: added.kind === 'offline' });
+        if (!applyGate(added)) void load();
+      }
+      return;
+    }
     let result = (await ensureDraft()) ? await addGalleryItem(client(), galleryImageId) : ({ kind: 'offline' } as const);
     if (result.kind === 'missing') {
       draftLost();
@@ -163,12 +217,12 @@ export function MoodboardScreen() {
 
   const removeItem = async (itemId: string) => {
     dispatch({ type: 'itemRemoving', itemId });
-    const result = await removeMoodboardItem(client(), itemId);
+    const result = edit ? await removeProjectMoodboardItem(client(), edit.projectId, itemId) : await removeMoodboardItem(client(), itemId);
     if (result.kind === 'ok') {
       dispatch({ type: 'itemRemoved', itemId });
     } else {
       dispatch({ type: 'itemRemoveFailed', itemId, offline: result.kind === 'offline' });
-      void load();
+      if (!edit || !applyGate(result as EditResult<null>)) void load();
     }
   };
 
@@ -201,11 +255,14 @@ export function MoodboardScreen() {
     dispatch({ type: 'tileRemoved', localId });
   };
 
+  const editPath = edit ? `/kitchen-projects/${edit.projectId}/edit/styles` : '';
+  if (edit && (gate === 'signedOut' || gate === 'notFound')) return <EditGateScreen gate={gate} projectId={edit.projectId} path={editPath} />;
+
   const styleName = (styleId: string) => (t.has(`styles.${styleId}`) ? t(`styles.${styleId}`) : styleId);
-  const editable = canEdit(state);
-  const ready = canContinue(state);
+  const editable = canEdit(state) && gate === 'ok';
+  const ready = edit ? editable && canContinue(state) : canContinue(state);
   const limitReached = remainingSlots(state) === 0;
-  const hint = ready ? null : continueHint(state);
+  const hint = ready ? null : edit ? (state.items.length === 0 ? 'items' : null) : continueHint(state);
   const statusVisible = state.save === 'saving' || state.save === 'failed' || state.save === 'offline' || (state.save === 'saved' && ready);
 
   let uploadNumber = 0;
@@ -233,29 +290,26 @@ export function MoodboardScreen() {
 
   return (
     <>
-      <main className="flex min-h-0 flex-1 flex-col gap-8 overflow-y-auto px-md pt-sm pb-lg" data-testid="moodboard-screen" data-phase={state.phase}>
+      <main className="flex min-h-0 flex-1 flex-col gap-8 overflow-y-auto px-md pt-sm pb-lg" data-testid="moodboard-screen" data-phase={state.phase} data-edit={edit ? 'styles' : undefined}>
+        {edit && (gate === 'simulation' || gate === 'budget') ? <EditBlockedAlert reason={gate} /> : null}
         {!state.online ? <CaptureAlert kind="offline" message={t('alerts.offline')} testIdPrefix="moodboard" /> : null}
         {state.online && state.expiredNotice ? (
-          <CaptureAlert
-            kind="expired"
-            message={t('alerts.expired')}
-            dismissLabel={t('alerts.dismiss')}
-            onDismiss={() => dispatch({ type: 'dismissExpired' })}
-            testIdPrefix="moodboard"
-          />
+          <CaptureAlert kind="expired" message={t('alerts.expired')} dismissLabel={t('alerts.dismiss')} onDismiss={() => dispatch({ type: 'dismissExpired' })} testIdPrefix="moodboard" />
         ) : null}
 
         <section className="flex flex-col gap-3">
-          <div className="flex flex-col gap-2">
-            <p className="text-small leading-5 font-semibold text-text-muted">{t('step', { current: 2, total: 3 })}</p>
-            <div className="flex h-1 gap-1" aria-hidden="true">
-              <span className="grow rounded-pill bg-primary" />
-              <span className="grow rounded-pill bg-primary" />
-              <span className="grow rounded-pill bg-border" />
+          {edit ? null : (
+            <div className="flex flex-col gap-2">
+              <p className="text-small leading-5 font-semibold text-text-muted">{t('step', { current: 2, total: 3 })}</p>
+              <div className="flex h-1 gap-1" aria-hidden="true">
+                <span className="grow rounded-pill bg-primary" />
+                <span className="grow rounded-pill bg-primary" />
+                <span className="grow rounded-pill bg-border" />
+              </div>
             </div>
-          </div>
-          <h1 className="text-h1 font-bold text-text">{t('title')}</h1>
-          <p className="text-body text-text-muted">{t('helper')}</p>
+          )}
+          <h1 className="text-h1 font-bold text-text">{edit ? tEdit('stylesTitle') : t('title')}</h1>
+          <p className="text-body text-text-muted">{edit ? tEdit('helper') : t('helper')}</p>
         </section>
 
         <section className="flex flex-col gap-3" aria-labelledby="moodboard-board-title">
@@ -301,10 +355,10 @@ export function MoodboardScreen() {
           </div>
           <StyleGallery
             styles={state.gallery.styles}
-            filter={state.filter}
+            filters={state.filters}
             tiles={tiles}
             styleName={styleName}
-            onFilter={(filter) => dispatch({ type: 'filterChanged', filter })}
+            onFilter={(filter) => dispatch({ type: 'filterToggled', filter })}
             onToggle={toggleGallery}
           />
         </section>
@@ -312,7 +366,12 @@ export function MoodboardScreen() {
 
       <footer className="flex shrink-0 flex-col gap-3 bg-surface px-md pt-3 pb-[calc(var(--spacing-lg)+env(safe-area-inset-bottom))] shadow-sheet">
         {statusVisible ? (
-          <p className="flex items-center justify-center gap-1.5 text-center text-small leading-5 text-text-muted" aria-live="polite" data-testid="moodboard-save-status" data-state={state.save}>
+          <p
+            className="flex items-center justify-center gap-1.5 text-center text-small leading-5 text-text-muted"
+            aria-live="polite"
+            data-testid="moodboard-save-status"
+            data-state={state.save}
+          >
             {state.save === 'saving' ? <Loader size={16} aria-hidden="true" className="shrink-0 animate-spin" /> : null}
             {state.save === 'saved' ? <Check size={16} aria-hidden="true" className="shrink-0 text-success" /> : null}
             {state.save === 'offline' ? <CloudOff size={16} aria-hidden="true" className="shrink-0 text-warning" /> : null}
@@ -339,18 +398,20 @@ export function MoodboardScreen() {
         )}
         <button
           type="button"
-          data-testid="moodboard-continue"
+          data-testid={edit ? 'edit-save' : 'moodboard-continue'}
           aria-disabled={!ready}
           aria-describedby={!ready && !statusVisible ? 'moodboard-continue-hint' : undefined}
           onClick={() => {
-            if (canContinue(stateRef.current)) router.push(GENERATE_PATH);
+            if (edit) {
+              if (ready) router.push(`/kitchen-projects/${edit.projectId}`);
+            } else if (canContinue(stateRef.current)) router.push(GENERATE_PATH);
           }}
           className={`flex min-h-[52px] w-full items-center justify-center gap-sm rounded-pill px-md py-[14px] text-center text-body font-semibold ${
             ready ? 'bg-primary text-white hover:bg-primary-hover' : 'cursor-not-allowed border border-border bg-surface-muted text-text-muted'
           }`}
         >
-          <span>{t('continue')}</span>
-          {ready ? <ArrowRight size={20} aria-hidden="true" className="shrink-0" /> : null}
+          <span>{edit ? tEdit('save') : t('continue')}</span>
+          {ready && !edit ? <ArrowRight size={20} aria-hidden="true" className="shrink-0" /> : null}
         </button>
       </footer>
     </>

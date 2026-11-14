@@ -18,7 +18,7 @@ export const DEFAULT_GPU_BROKER_OPTIONS: GpuBrokerOptions = {
   llmConcurrency: 1,
   maxQueued: 20,
   imageTimeoutMs: 180_000,
-  llmTimeoutMs: 120_000,
+  llmTimeoutMs: 240_000,
   retentionMs: 3_600_000,
   now: () => Date.now(),
   newId: () => randomUUID(),
