@@ -1,6 +1,7 @@
-import { type DynamicModule, Logger, Module, type Provider } from '@nestjs/common';
+import { type DynamicModule, Module, type Provider } from '@nestjs/common';
 import { AI_ENDPOINTS, GPU_BROKER_OPTIONS, IMAGE_ADAPTER, LLM_ADAPTER } from './ai.tokens.js';
 import { type AiEndpointsProvider, EnvAiEndpointsProvider } from './ai-endpoints.provider.js';
+import { ComfyUiImageAdapter } from './adapters/comfyui-image.adapter.js';
 import { FakeImageAdapter } from './adapters/fake-image.adapter.js';
 import { FakeLlmAdapter } from './adapters/fake-llm.adapter.js';
 import type { ImageAdapter } from './adapters/image-adapter.js';
@@ -22,8 +23,9 @@ const FAKE_IMAGE_DELAY_MS = 3000;
 const FAKE_LLM_DELAY_MS = 500;
 
 /**
- * AI layer: GPU job broker, adapters (selected by `AI_ADAPTERS=fake|local`, default fake)
- * and the job status endpoints.
+ * AI layer: GPU job broker, adapters (selected by `AI_ADAPTERS=fake|local`, default fake;
+ * local = llama-server and ComfyUI) and the job status endpoints. Global, so product modules
+ * (kitchen-projects Renders) share the one broker without re-registering the module.
  */
 @Module({})
 export class AiModule {
@@ -44,18 +46,18 @@ export class AiModule {
       },
       {
         provide: IMAGE_ADAPTER,
-        useFactory: (): ImageAdapter => {
-          if (useLocal) {
-            new Logger(AiModule.name).warn('AI_ADAPTERS=local: image adapter is still the fake (real one arrives with controlnet-render)');
-          }
-          return new FakeImageAdapter({ delayMs: delayFromEnv(env.AI_FAKE_IMAGE_DELAY_MS, FAKE_IMAGE_DELAY_MS) });
-        },
+        inject: [AI_ENDPOINTS],
+        useFactory: (endpoints: AiEndpointsProvider): ImageAdapter =>
+          useLocal
+            ? new ComfyUiImageAdapter(endpoints)
+            : new FakeImageAdapter({ delayMs: delayFromEnv(env.AI_FAKE_IMAGE_DELAY_MS, FAKE_IMAGE_DELAY_MS) }),
       },
       GpuResidencyHook,
       GpuJobBrokerService,
     ];
     return {
       module: AiModule,
+      global: true,
       controllers: debugEndpoints ? [GpuJobsController, GpuJobsDebugController] : [GpuJobsController],
       providers,
       exports: [GpuJobBrokerService, LLM_ADAPTER, IMAGE_ADAPTER, AI_ENDPOINTS],

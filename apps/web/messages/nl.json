@@ -219,11 +219,12 @@
   },
   "project": {
     "title": "Je keukenproject",
-    "helper": "Ontwerpen en offertes komen binnenkort. Je project blijft hier, klaar voor ze.",
+    "helper": "Maak een ontwerp van je nieuwe keuken. Offertes volgen binnenkort.",
     "claimed": "Je keuken is bewaard in je account.",
     "dismiss": "Sluiten",
     "newProject": "Een nieuw keukenproject starten",
-    "availableSoon": "Binnenkort beschikbaar",
+    "budgetsSoon": "Offertes: binnenkort beschikbaar",
+    "seeDesigns": "Mijn ontwerpen bekijken",
     "signedOut": {
       "title": "Log in om dit keukenproject te zien",
       "signIn": "Inloggen"
@@ -233,5 +234,53 @@
       "home": "Naar Home"
     },
     "offline": "Je bent offline. Je keukenproject is veilig; maak opnieuw verbinding om het te zien."
+  },
+  "results": {
+    "back": "Terug naar mijn keuken",
+    "titleDone": "Je nieuwe keuken",
+    "titleActive": "Je keuken wordt ontworpen",
+    "helperDone": "Stijl {style}, op basis van foto {n}. Sleep de schuif om te vergelijken.",
+    "helperActive": "Stijl {style}, op basis van foto {n}. Dit duurt ongeveer 10 tot 30 seconden.",
+    "helperIdle": "Stijl {style}, op basis van foto {n}.",
+    "slider": {
+      "label": "Voor en na vergelijken",
+      "before": "Voor",
+      "after": "Na",
+      "beforeAlt": "Je keuken ervoor",
+      "afterAlt": "Het ontwerp van je nieuwe keuken"
+    },
+    "status": {
+      "running": "Bezig met maken…",
+      "queued": "Wachten op de GPU",
+      "ahead": "{count, plural, one {# taak vóór de jouwe} other {# taken vóór de jouwe}}"
+    },
+    "note": "Je kunt deze pagina verlaten; de render gaat door en verschijnt hier zodra hij klaar is.",
+    "photos": {
+      "title": "Foto voor de volgende render",
+      "helper": "De render behoudt de muren, ramen en leidingen van deze foto.",
+      "option": "Foto {n}"
+    },
+    "history": {
+      "title": "Je renders",
+      "counter": "{count} van {max}",
+      "item": "Render {n}"
+    },
+    "cta": {
+      "again": "Opnieuw maken",
+      "retry": "Opnieuw proberen",
+      "generate": "Mijn keuken genereren",
+      "back": "Terug naar mijn keuken"
+    },
+    "hints": {
+      "oneAtATime": "Eén render tegelijk.",
+      "limit": "Je hebt {max} renders gemaakt, het maximum voor dit project."
+    },
+    "alerts": {
+      "failed": "We konden deze render niet maken. Probeer het zo opnieuw.",
+      "interrupted": "Deze render is onderbroken. Probeer het opnieuw.",
+      "queueFull": "De ontwerper is nu bezet. Probeer het over een minuut opnieuw.",
+      "uploadsOnly": "Je eigen foto's kunnen de stijl nog niet sturen, daarom hebben we een neutrale moderne stijl gebruikt.",
+      "offline": "Je bent offline. Je renders zijn veilig; maak opnieuw verbinding om nieuwe te zien."
+    }
   }
 }

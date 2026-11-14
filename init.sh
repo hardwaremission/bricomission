@@ -236,6 +236,9 @@ echo "  POST /api/kitchen-projects/drafts/current/claim (no Origin) -> 403"
 api_render=$(curl -sS --max-time 10 -o /dev/null -w '%{http_code}' -X POST "http://127.0.0.1:${api_port}/kitchen-projects/00000000-0000-4000-8000-000000000000/renders" 2>/dev/null || true)
 [ "$api_render" = "401" ] || web_fail "API POST /kitchen-projects/<id>/renders without a token gave '${api_render:-<none>}', expected 401"
 echo "  API POST /kitchen-projects/<id>/renders (no token) -> 401"
+api_renders=$(curl -sS --max-time 10 -o /dev/null -w '%{http_code}' "http://127.0.0.1:${api_port}/kitchen-projects/00000000-0000-4000-8000-000000000000/renders" 2>/dev/null || true)
+[ "$api_renders" = "401" ] || web_fail "API GET /kitchen-projects/<id>/renders without a token gave '${api_renders:-<none>}', expected 401"
+echo "  API GET /kitchen-projects/<id>/renders (no token) -> 401"
 
 echo
 echo "Stack is up and healthy (detached)."
@@ -257,6 +260,7 @@ echo "  docker compose down                     # stop the stack (keeps named vo
 echo "Local AI (opt-in, GPU; never started by this script):"
 echo "  docker compose --profile ai-fetch run --rm ai-fetch   # one-time model download into volumes (~30 GB)"
 echo "  docker compose --profile ai up -d --wait               # llama-server + comfyui on the GPU"
+echo "  AI_ADAPTERS=local docker compose up -d --wait api      # API Renders through ComfyUI (then: bash scripts/ai/render-smoke.sh)"
 echo "  docker compose --profile ai stop llama-server comfyui  # stop only the GPU services (keeps volumes)"
 echo "Catalog RAG (opt-in, CPU-only embedder; never started by this script):"
 echo "  docker compose --profile rag-fetch run --rm embedder-fetch  # one-time embedding weight download (~640 MB)"

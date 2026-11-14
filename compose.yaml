@@ -136,13 +136,24 @@ services:
       KEYCLOAK_ISSUER: http://localhost:${KEYCLOAK_PORT:-8180}/realms/BricoMission
       KEYCLOAK_JWKS_URL: http://keycloak:8080/realms/BricoMission/protocol/openid-connect/certs
       KEYCLOAK_AUDIENCE: bricomission-api
-      # AI layer (gpu-job-broker). fake = deterministic adapters, no GPU calls.
+      # AI layer (gpu-job-broker). fake = deterministic adapters, no GPU calls; local = llama-server
+      # for the LLM and ComfyUI for Renders (controlnet-render).
       AI_ADAPTERS: ${AI_ADAPTERS:-fake}
       LLM_BASE_URL: ${LLM_BASE_URL:-http://llama-server:8080}
       COMFYUI_BASE_URL: ${COMFYUI_BASE_URL:-http://comfyui:8188}
       GPU_BROKER_DEBUG_ENDPOINTS: ${GPU_BROKER_DEBUG_ENDPOINTS:-false}
       GPU_BROKER_LLM_CONCURRENCY: ${GPU_BROKER_LLM_CONCURRENCY:-1}
       GPU_BROKER_MAX_QUEUED: ${GPU_BROKER_MAX_QUEUED:-20}
+      # Renders (controlnet-render): ControlNet canny|depth and non-failed Renders per project.
+      RENDER_CONTROL_MODE: ${RENDER_CONTROL_MODE:-canny}
+      RENDER_MAX_PER_PROJECT: ${RENDER_MAX_PER_PROJECT:-10}
+      # ControlNet tuning (2026-11-15): canny thresholds, canny strength/end, depth assist (0 = off).
+      RENDER_CANNY_LOW: ${RENDER_CANNY_LOW:-0.6}
+      RENDER_CANNY_HIGH: ${RENDER_CANNY_HIGH:-0.95}
+      RENDER_CONTROL_STRENGTH: ${RENDER_CONTROL_STRENGTH:-0.8}
+      RENDER_CONTROL_END: ${RENDER_CONTROL_END:-0.5}
+      RENDER_DEPTH_ASSIST_STRENGTH: ${RENDER_DEPTH_ASSIST_STRENGTH:-0.7}
+      RENDER_DEPTH_ASSIST_END: ${RENDER_DEPTH_ASSIST_END:-1}
       # Catalog RAG (ADR 0004). No depends_on: the embedder is opt-in (profile rag);
       # /catalog/search answers 503 while it is down.
       EMBEDDING_URL: http://embedder:8080

@@ -219,11 +219,12 @@
   },
   "project": {
     "title": "Kjøkkenprosjektet ditt",
-    "helper": "Design og tilbud kommer snart. Prosjektet ditt blir her, klart for dem.",
+    "helper": "Lag et design av det nye kjøkkenet ditt. Tilbud kommer snart.",
     "claimed": "Kjøkkenet ditt er lagret på kontoen din.",
     "dismiss": "Lukk",
     "newProject": "Start et nytt kjøkkenprosjekt",
-    "availableSoon": "Kommer snart",
+    "budgetsSoon": "Tilbud: kommer snart",
+    "seeDesigns": "Se designene mine",
     "signedOut": {
       "title": "Logg inn for å se dette kjøkkenprosjektet",
       "signIn": "Logg inn"
@@ -233,5 +234,53 @@
       "home": "Gå til forsiden"
     },
     "offline": "Du er frakoblet. Kjøkkenprosjektet ditt er trygt; koble til igjen for å se det."
+  },
+  "results": {
+    "back": "Tilbake til kjøkkenet mitt",
+    "titleDone": "Det nye kjøkkenet ditt",
+    "titleActive": "Kjøkkenet ditt designes",
+    "helperDone": "Stil {style}, fra bilde {n}. Dra i håndtaket for å sammenligne.",
+    "helperActive": "Stil {style}, fra bilde {n}. Dette tar omtrent 10 til 30 sekunder.",
+    "helperIdle": "Stil {style}, fra bilde {n}.",
+    "slider": {
+      "label": "Sammenlign før og etter",
+      "before": "Før",
+      "after": "Etter",
+      "beforeAlt": "Kjøkkenet ditt før",
+      "afterAlt": "Designet av det nye kjøkkenet ditt"
+    },
+    "status": {
+      "running": "Lager…",
+      "queued": "Venter på GPU-en",
+      "ahead": "{count, plural, one {# jobb foran din} other {# jobber foran din}}"
+    },
+    "note": "Du kan forlate siden; renderingen fortsetter og vises her når den er klar.",
+    "photos": {
+      "title": "Bilde for neste rendering",
+      "helper": "Renderingen beholder vegger, vinduer og rør fra dette bildet.",
+      "option": "Bilde {n}"
+    },
+    "history": {
+      "title": "Renderingene dine",
+      "counter": "{count} av {max}",
+      "item": "Rendering {n}"
+    },
+    "cta": {
+      "again": "Lag på nytt",
+      "retry": "Prøv igjen",
+      "generate": "Generer kjøkkenet mitt",
+      "back": "Tilbake til kjøkkenet mitt"
+    },
+    "hints": {
+      "oneAtATime": "Én rendering om gangen.",
+      "limit": "Du har laget {max} renderinger, maksimum for dette prosjektet."
+    },
+    "alerts": {
+      "failed": "Vi kunne ikke lage denne renderingen. Prøv igjen om litt.",
+      "interrupted": "Denne renderingen ble avbrutt. Prøv igjen.",
+      "queueFull": "Designeren er opptatt akkurat nå. Prøv igjen om et minutt.",
+      "uploadsOnly": "Dine egne bilder kan ikke styre stilen ennå, så vi brukte en nøytral moderne stil.",
+      "offline": "Du er frakoblet. Renderingene dine er trygge; koble til igjen for å se nye."
+    }
   }
 }

@@ -219,11 +219,12 @@
   },
   "project": {
     "title": "Tu proyecto de cocina",
-    "helper": "Los diseños y presupuestos llegarán pronto. Tu proyecto se queda aquí, listo para ellos.",
+    "helper": "Genera un diseño de tu nueva cocina. Los presupuestos llegarán pronto.",
     "claimed": "Tu cocina está guardada en tu cuenta.",
     "dismiss": "Cerrar",
     "newProject": "Empezar un nuevo proyecto de cocina",
-    "availableSoon": "Disponible pronto",
+    "budgetsSoon": "Presupuestos: disponibles pronto",
+    "seeDesigns": "Ver mis diseños",
     "signedOut": {
       "title": "Inicia sesión para ver este proyecto de cocina",
       "signIn": "Iniciar sesión"
@@ -233,5 +234,53 @@
       "home": "Ir al inicio"
     },
     "offline": "Estás sin conexión. Tu proyecto de cocina está a salvo; vuelve a conectarte para verlo."
+  },
+  "results": {
+    "back": "Volver a mi cocina",
+    "titleDone": "Tu nueva cocina",
+    "titleActive": "Diseñando tu cocina",
+    "helperDone": "Estilo {style}, a partir de la foto {n}. Arrastra el control para comparar.",
+    "helperActive": "Estilo {style}, a partir de la foto {n}. Tarda unos 10 a 30 segundos.",
+    "helperIdle": "Estilo {style}, a partir de la foto {n}.",
+    "slider": {
+      "label": "Comparar antes y después",
+      "before": "Antes",
+      "after": "Después",
+      "beforeAlt": "Tu cocina antes",
+      "afterAlt": "El diseño de tu nueva cocina"
+    },
+    "status": {
+      "running": "Generando…",
+      "queued": "Esperando a la GPU",
+      "ahead": "{count, plural, one {# trabajo por delante del tuyo} other {# trabajos por delante del tuyo}}"
+    },
+    "note": "Puedes salir de esta página; el render sigue en marcha y aparecerá aquí cuando esté listo.",
+    "photos": {
+      "title": "Foto para el próximo render",
+      "helper": "El render conserva las paredes, ventanas y fontanería de esta foto.",
+      "option": "Foto {n}"
+    },
+    "history": {
+      "title": "Tus renders",
+      "counter": "{count} de {max}",
+      "item": "Render {n}"
+    },
+    "cta": {
+      "again": "Generar de nuevo",
+      "retry": "Intentar de nuevo",
+      "generate": "Generar mi cocina",
+      "back": "Volver a mi cocina"
+    },
+    "hints": {
+      "oneAtATime": "Un render cada vez.",
+      "limit": "Has creado {max} renders, el máximo para este proyecto."
+    },
+    "alerts": {
+      "failed": "No hemos podido crear este render. Inténtalo de nuevo en un momento.",
+      "interrupted": "Este render se interrumpió. Inténtalo de nuevo.",
+      "queueFull": "El diseñador está ocupado ahora mismo. Inténtalo de nuevo en un minuto.",
+      "uploadsOnly": "Tus propias fotos aún no pueden guiar el estilo, así que hemos usado un estilo moderno neutro.",
+      "offline": "Estás sin conexión. Tus renders están a salvo; vuelve a conectarte para ver los nuevos."
+    }
   }
 }

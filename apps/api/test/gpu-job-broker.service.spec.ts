@@ -6,16 +6,16 @@ import { GpuJobFailedError, GpuQueueFullError } from '../src/ai/jobs/gpu-job-bro
 import { GpuJobBrokerService } from '../src/ai/jobs/gpu-job-broker.service.js';
 import type { GpuBrokerOptions } from '../src/ai/jobs/gpu-broker.options.js';
 import { GpuResidencyHook } from '../src/ai/jobs/gpu-residency.hook.js';
-import { collectEvents, flush, GateQueue, testOptions } from './gpu-test-helpers.js';
+import { collectEvents, flush, GateQueue, imageRequest, testOptions } from './gpu-test-helpers.js';
 
-const renderReq = (seed: number): ImageRequest => ({ mode: 'depth', sourceImageKey: 'k.jpg', prompt: 'p', seed });
+const renderReq = (seed: number): ImageRequest => imageRequest({ seed });
 const chatReq = (content: string) => ({ messages: [{ role: 'user' as const, content }] });
 
 function setup(overrides: Partial<GpuBrokerOptions> = {}, hook = new GpuResidencyHook()) {
   const options = testOptions(overrides);
   const imageGates = new GateQueue();
   const llmGates = new GateQueue();
-  const image = new FakeImageAdapter({ gate: imageGates.next });
+  const image = new FakeImageAdapter({ gate: imageGates.next, echo: true });
   const llm = new FakeLlmAdapter({ gate: llmGates.next });
   const broker = new GpuJobBrokerService(options, hook);
   const submitImage = (seed: number) => broker.submit('image', ({ signal }) => image.render(renderReq(seed), signal));

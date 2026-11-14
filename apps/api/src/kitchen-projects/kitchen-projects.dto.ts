@@ -34,7 +34,15 @@ export class ClaimKitchenDraftResponseDto implements ClaimKitchenDraftResponse {
   project!: KitchenProjectViewDto;
 }
 
-const PROJECT_ERROR_CODES: KitchenProjectErrorCode[] = ['project_incomplete', 'not_available_yet', 'storage_unavailable'];
+const PROJECT_ERROR_CODES: KitchenProjectErrorCode[] = [
+  'project_incomplete',
+  'not_available_yet',
+  'storage_unavailable',
+  'render_photo_unknown',
+  'render_in_progress',
+  'render_limit_reached',
+  'gpu_queue_full',
+];
 
 export class KitchenProjectErrorDto {
   @ApiProperty({ type: 'integer' })

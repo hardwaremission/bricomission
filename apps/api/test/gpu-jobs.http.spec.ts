@@ -100,7 +100,7 @@ describe('HTTP /ai/jobs (debug endpoints on)', () => {
   let baseUrl: string;
   const imageGates = new GateQueue();
   const llmGates = new GateQueue();
-  const image = new FakeImageAdapter({ gate: imageGates.next });
+  const image = new FakeImageAdapter({ gate: imageGates.next, echo: true });
   const llm = new FakeLlmAdapter({ gate: llmGates.next });
 
   beforeAll(async () => {
@@ -211,7 +211,7 @@ describe('HTTP POST /ai/jobs queue full', () => {
     const gates = new GateQueue();
     const moduleRef = await Test.createTestingModule({ imports: [AiModule.register({ debugEndpoints: true })] })
       .overrideProvider(IMAGE_ADAPTER)
-      .useValue(new FakeImageAdapter({ gate: gates.next }))
+      .useValue(new FakeImageAdapter({ gate: gates.next, echo: true }))
       .compile();
     const app = configureApp(moduleRef.createNestApplication({ logger: false }));
     await app.init();

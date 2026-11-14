@@ -29,6 +29,8 @@ const DRAFTS = '/api/kitchen-projects/drafts';
 const CURRENT = `${DRAFTS}/current`;
 const CLAIM = `${CURRENT}/claim`;
 const PROJECT_URL = /\/kitchen-projects\/([0-9a-f-]{36})(\?claimed=1)?$/;
+// Since controlnet-render the render intent lands on AI Results (the page strips ?claimed=1&start=1).
+const RESULTS_URL = /\/kitchen-projects\/([0-9a-f-]{36})\/results$/;
 const PROFESSIONAL = 'bm-professional';
 const PROFESSIONAL_EMAIL = 'professional@bricomission.local';
 const professionalPassword = () => process.env.E2E_SEED_PROFESSIONAL_PASSWORD ?? 'bm-professional-dev';
@@ -46,7 +48,8 @@ interface GenerateMessages {
 interface ProjectMessages {
   title: string;
   claimed: string;
-  availableSoon: string;
+  budgetsSoon: string;
+  seeDesigns: string;
   signedOut: { title: string };
   notFound: { title: string };
 }
@@ -121,6 +124,11 @@ async function keycloakSignIn(page: Page, request: APIRequestContext, username =
 async function waitForProject(page: Page): Promise<string> {
   await page.waitForURL(PROJECT_URL, { timeout: 30_000 });
   return PROJECT_URL.exec(new URL(page.url()).pathname)?.[1] ?? '';
+}
+
+async function waitForResults(page: Page): Promise<string> {
+  await page.waitForURL(RESULTS_URL, { timeout: 30_000 });
+  return RESULTS_URL.exec(new URL(page.url()).pathname)?.[1] ?? '';
 }
 
 async function imagesLoaded(page: Page, testId: string) {
@@ -207,7 +215,8 @@ test.describe.serial('login gate and claim', () => {
     expect(cookieBefore).toBeDefined();
     homeownerDraftToken = cookieBefore!.value;
     await page.goto(GENERATE);
-    await page.getByTestId('generate-render').click();
+    // Budget intent: the claim lands on the owned page (the render intent opens AI Results: e2e/results.spec.ts).
+    await page.getByTestId('generate-budget').click();
     await page.getByTestId('login-gate-sign-in').click();
     await keycloakSignIn(page, request);
     ownedId = await waitForProject(page);
@@ -222,11 +231,12 @@ test.describe.serial('login gate and claim', () => {
     expect(await imagesLoaded(page, 'summary-moodboard-thumb')).toBe(true);
     await expect(page.getByTestId('summary-measurements')).toHaveText(fill(gm('en').summary.measurements, { length: '4.20', width: '3.10', height: '2.60' }));
     await expect(page.getByTestId('summary-edit-kitchen')).toHaveCount(0);
-    for (const cta of ['project-render', 'project-budget']) {
-      await expect(page.getByTestId(cta)).toHaveAttribute('aria-disabled', 'true');
-      await expect(page.getByTestId(cta)).toHaveAttribute('aria-describedby', 'project-available-soon');
-    }
-    await expect(page.getByTestId('project-available-soon')).toHaveText(p.availableSoon);
+    // controlnet-render: "Generate my kitchen" opens AI Results and starts a Render; budget stays disabled.
+    await expect(page.getByTestId('project-render')).toHaveText(gm('en').cta.render);
+    await expect(page.getByTestId('project-render')).toHaveAttribute('href', `/kitchen-projects/${ownedId}/results?start=1`);
+    await expect(page.getByTestId('project-budget')).toHaveAttribute('aria-disabled', 'true');
+    await expect(page.getByTestId('project-budget')).toHaveAttribute('aria-describedby', 'project-budgets-soon');
+    await expect(page.getByTestId('project-budgets-soon')).toHaveText(p.budgetsSoon);
     await expect(page.getByTestId('project-new')).toHaveAttribute('href', '/kitchen-projects/new');
     await checkLayout(page);
     await page.screenshot({ path: 'test-results/login-gate/5-owned-en.png' });
@@ -238,8 +248,8 @@ test.describe.serial('login gate and claim', () => {
     expect((await pageFetch(page, CURRENT)).status).toBe(404);
     expect(await draftCookie(page)).toBeUndefined();
     expect(await page.evaluate(() => window.localStorage.getItem('bm_draft_started'))).toBeNull();
-    // Costly placeholders on the owned, ready project.
-    expect((await pageFetch(page, `/api/kitchen-projects/${ownedId}/renders`, { method: 'POST' })).status).toBe(501);
+    // Costly actions on the owned, ready project: Renders are real since controlnet-render (202), budget is still 501.
+    expect((await apiJson(page, `/api/kitchen-projects/${ownedId}/renders`, 'POST', {})).status).toBe(202);
     expect((await pageFetch(page, `/api/kitchen-projects/${ownedId}/budget`, { method: 'POST' })).status).toBe(501);
 
     // Idempotent: the same draft token again with the same Account gives the same project.
@@ -339,8 +349,8 @@ test.describe.serial('login gate and claim', () => {
     await checkLayout(page);
     await page.unroute(`${WEB}${CLAIM}`);
     await page.getByTestId('generate-retry').click();
-    expect(await waitForProject(page)).toBe(draftId);
-    await expect(page.getByTestId('project-claimed')).toBeVisible();
+    expect(await waitForResults(page)).toBe(draftId);
+    await expect(page.getByTestId('results-screen')).toBeVisible();
 
     // A signed-in visit to Generate without intent never claims by itself.
     const second = await seedDraft(page, 'en');

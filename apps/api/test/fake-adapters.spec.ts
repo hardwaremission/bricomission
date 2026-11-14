@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { FakeImageAdapter } from '../src/ai/adapters/fake-image.adapter.js';
 import { FakeLlmAdapter } from '../src/ai/adapters/fake-llm.adapter.js';
-import { Gate } from './gpu-test-helpers.js';
+import sharp from 'sharp';
+import { Gate, imageRequest, TINY_JPEG } from './gpu-test-helpers.js';
 
 const signal = () => new AbortController().signal;
 
@@ -16,19 +17,24 @@ describe('fake AI adapters', () => {
     expect(other.text).not.toBe(a.text);
   });
 
-  it('FakeImageAdapter is deterministic (same input, same output)', async () => {
-    const req = { mode: 'depth' as const, sourceImageKey: 'photos/1.jpg', prompt: 'oak', seed: 7 };
+  it('FakeImageAdapter is a deterministic, visible transform of the input (same input, same PNG of the request size)', async () => {
+    const req = imageRequest({ seed: 7 });
     const a = await new FakeImageAdapter().render(req, signal());
     const b = await new FakeImageAdapter().render({ ...req }, signal());
-    expect(a).toEqual(b);
-    expect(a.imageKey).toMatch(/^fake\/[0-9a-f]{16}\.png$/);
-    expect((await new FakeImageAdapter().render({ ...req, seed: 8 }, signal())).imageKey).not.toBe(a.imageKey);
+    expect(a.image.equals(b.image)).toBe(true);
+    const meta = await sharp(a.image).metadata();
+    expect(meta).toMatchObject({ format: 'png', width: 160, height: 120 });
+    // The border is the tint colour: the output differs visibly from the input.
+    const { data } = await sharp(a.image).raw().toBuffer({ resolveWithObject: true });
+    [41, 104, 236].forEach((channel, i) => expect(Math.abs((data[i] ?? 0) - channel)).toBeLessThanOrEqual(2));
+    const other = await new FakeImageAdapter().render(imageRequest({ image: await sharp(TINY_JPEG).negate().jpeg().toBuffer() }), signal());
+    expect(other.image.equals(a.image)).toBe(false);
   });
 
   it('fakes track concurrent calls and record requests', async () => {
     const gate = new Gate();
     const fake = new FakeImageAdapter({ gate: gate.wait });
-    const req = { mode: 'canny' as const, sourceImageKey: 'k', prompt: 'p', seed: 1 };
+    const req = imageRequest({ mode: 'canny' });
     const p1 = fake.render(req, signal());
     const p2 = fake.render(req, signal());
     expect(fake.active).toBe(2);
@@ -49,7 +55,7 @@ describe('fake AI adapters', () => {
 
     const already = new AbortController();
     already.abort();
-    await expect(new FakeImageAdapter().render({ mode: 'depth', sourceImageKey: 'k', prompt: 'p', seed: 1 }, already.signal)).rejects.toMatchObject({
+    await expect(new FakeImageAdapter().render(imageRequest(), already.signal)).rejects.toMatchObject({
       name: 'AbortError',
     });
   });

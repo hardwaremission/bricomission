@@ -185,9 +185,17 @@ export interface ClaimKitchenDraftResponse {
 export type KitchenProjectErrorCode =
   /** 409: not ready for generation (needs a photo, all three measurements and a Moodboard Item). */
   | 'project_incomplete'
-  /** 501: the costly action is not implemented yet (controlnet-render, budget-tier-computation). */
+  /** 501: the costly action is not implemented yet (budget-tier-computation). */
   | 'not_available_yet'
-  | 'storage_unavailable';
+  | 'storage_unavailable'
+  /** 400: `photoId` is malformed or not a Photo of this project (controlnet-render). */
+  | 'render_photo_unknown'
+  /** 409: a Render of this project is already queued or running. */
+  | 'render_in_progress'
+  /** 409: the project already has `RENDER_MAX_PER_PROJECT` non-failed Renders. */
+  | 'render_limit_reached'
+  /** 429: the GPU job queue is full; no Render was created. */
+  | 'gpu_queue_full';
 
 /** Per-field reason in a 400 `invalid_measurements` body. */
 export type KitchenMeasurementFieldError = 'not_integer' | 'out_of_range';
@@ -237,4 +245,62 @@ export interface StyleGalleryStyleView {
 /** Body of `GET /style-gallery`. */
 export interface StyleGalleryView {
   styles: StyleGalleryStyleView[];
+}
+
+// --- Renders (feature controlnet-render) ---
+
+/** Lifecycle of a Render: `queued -> running -> succeeded | failed`. */
+export type RenderStatus = 'queued' | 'running' | 'succeeded' | 'failed';
+
+/** ControlNet that keeps the room geometry. */
+export type RenderMode = 'canny' | 'depth';
+
+/** Public failure code of a Render. Backend messages are never exposed. */
+export type RenderErrorCode = 'adapter_error' | 'timeout' | 'interrupted' | 'storage_unavailable';
+
+/**
+ * One Render of an owned Kitchen Project (`GET /kitchen-projects/:projectId/renders/:renderId`).
+ * `before` is the exact centre crop of the source Photo given to the image model; `full` has the
+ * same size. URLs are API-relative paths; `fullUrl`/`thumbUrl` are set only when `succeeded`.
+ * The seed, the prompt and the GPU job id stay internal.
+ */
+export interface RenderView {
+  id: string;
+  status: RenderStatus;
+  /** Source Photo; null if that Photo was deleted later. */
+  photoId: string | null;
+  /** Dominant Moodboard style used for the prompt; null when the Moodboard has only uploads. */
+  styleId: string | null;
+  mode: RenderMode;
+  width: number;
+  height: number;
+  /** 1-based GPU queue position while `queued` (when known), otherwise null. */
+  position: number | null;
+  /** Kind of GPU work it waits behind while `queued`, otherwise null. */
+  waitingFor: GpuJobKind | null;
+  errorCode: RenderErrorCode | null;
+  createdAt: string;
+  startedAt: string | null;
+  finishedAt: string | null;
+  beforeUrl: string;
+  fullUrl: string | null;
+  thumbUrl: string | null;
+}
+
+/** Body of `POST /kitchen-projects/:projectId/renders` (all fields optional). */
+export interface CreateRenderRequest {
+  /** Photo to render; default: the Photo at position 0. */
+  photoId?: string;
+}
+
+/** 202 body of `POST /kitchen-projects/:projectId/renders`. */
+export interface CreateRenderResponse {
+  render: RenderView;
+}
+
+/** Body of `GET /kitchen-projects/:projectId/renders`, newest first. */
+export interface RenderListResponse {
+  renders: RenderView[];
+  /** Non-failed Renders allowed per project (`RENDER_MAX_PER_PROJECT`). */
+  maxRenders: number;
 }

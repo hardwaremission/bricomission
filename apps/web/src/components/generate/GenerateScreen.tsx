@@ -10,6 +10,7 @@ import { loadDraft } from '../../lib/kitchen-draft/draft-client';
 import { draftMarker } from '../../lib/kitchen-draft/draft-marker';
 import {
   canAct,
+  claimLanding,
   generateHint,
   generateReducer,
   GENERATE_PATH,
@@ -84,7 +85,8 @@ export function GenerateScreen() {
       if (outcome.kind === 'ok') {
         // The bm_draft cookie is gone; the marker must not turn the next 404 into "expired".
         draftMarker('clear');
-        router.replace(`/kitchen-projects/${outcome.projectId}?claimed=1`);
+        // Render intent: AI Results starts the first Render (controlnet-render); budget: the owned page.
+        router.replace(claimLanding(outcome.projectId, intent));
         return;
       }
       dispatch({ type: 'claimFinished', outcome });

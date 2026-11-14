@@ -1,6 +1,7 @@
 import {
   applyDecorators,
   BadRequestException,
+  Body,
   Controller,
   Get,
   Header,
@@ -14,8 +15,10 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import {
+  ApiAcceptedResponse,
   ApiBadRequestResponse,
   ApiBearerAuth,
+  ApiBody,
   ApiConflictResponse,
   ApiForbiddenResponse,
   ApiNotFoundResponse,
@@ -28,6 +31,7 @@ import {
   ApiSecurity,
   ApiServiceUnavailableResponse,
   ApiTags,
+  ApiTooManyRequestsResponse,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { CurrentUser, Roles } from '../auth/auth.decorators.js';
@@ -39,6 +43,8 @@ import type { PhotoVariant } from './kitchen-drafts.service.js';
 import { ClaimKitchenDraftResponseDto, KitchenProjectErrorDto, KitchenProjectViewDto } from './kitchen-projects.dto.js';
 import { KitchenProjectsService } from './kitchen-projects.service.js';
 import { CurrentProject, OwnedProjectGuard } from './owned-project.guard.js';
+import { CreateRenderRequestDto, CreateRenderResponseDto, RenderListResponseDto, RenderViewDto } from './renders/renders.dto.js';
+import { RENDER_VARIANTS, RendersService, type RenderVariant } from './renders/renders.service.js';
 
 const NOT_OWNED = 'Unknown project, still a draft, or owned by another Account (same generic body)';
 
@@ -61,10 +67,10 @@ const Owned = () =>
     ApiServiceUnavailableResponse({ description: 'Database unreachable' }),
   );
 
-const Content = () =>
+const Content = (variants: readonly string[] = ['thumb', 'full']) =>
   applyDecorators(
     Header('Cache-Control', 'private, max-age=3600'),
-    ApiQuery({ name: 'variant', required: true, enum: ['thumb', 'full'] }),
+    ApiQuery({ name: 'variant', required: true, enum: [...variants] }),
     ApiProduces('image/jpeg'),
     ApiOkResponse({ description: 'JPEG bytes', content: { 'image/jpeg': { schema: { type: 'string', format: 'binary' } } } }),
     ApiServiceUnavailableResponse({ type: KitchenDraftErrorDto, description: '`storage_unavailable`, or database unreachable' }),
@@ -91,7 +97,10 @@ const Costly = (summary: string, feature: string) =>
 @Roles('user')
 @Controller('kitchen-projects')
 export class KitchenProjectsController {
-  constructor(private readonly projects: KitchenProjectsService) {}
+  constructor(
+    private readonly projects: KitchenProjectsService,
+    private readonly renders: RendersService,
+  ) {}
 
   @Post('drafts/current/claim')
   @HttpCode(200)
@@ -144,9 +153,56 @@ export class KitchenProjectsController {
   }
 
   @Post(':projectId/renders')
-  @Costly('Generate a Render of the kitchen (costly; placeholder)', 'controlnet-render')
-  requestRender(@CurrentProject() project: KitchenProjectRecord): void {
-    this.projects.requestCostlyAction(project, 'render');
+  @HttpCode(202)
+  @ApiOperation({
+    summary: 'Generate a Render of the kitchen (costly; queued on the GPU)',
+    description:
+      'Takes one Photo (body `photoId`, default the Photo at position 0) and the dominant Moodboard style, stores the centre-cropped "before" image and queues an exclusive image job (SDXL + ControlNet). Answers 202 with the `queued` Render; poll `GET .../renders/{renderId}`. One active Render per project; failed Renders do not count towards the limit.',
+  })
+  @ApiBody({ type: CreateRenderRequestDto, required: false })
+  @ApiAcceptedResponse({ type: CreateRenderResponseDto })
+  @ApiBadRequestResponse({ type: KitchenProjectErrorDto, description: 'Malformed project id, or `render_photo_unknown` (malformed or foreign photoId)' })
+  @ApiConflictResponse({
+    type: KitchenProjectErrorDto,
+    description: '`project_incomplete` (needs a photo, all three measurements and a Moodboard Item), `render_in_progress` or `render_limit_reached`',
+  })
+  @ApiTooManyRequestsResponse({ type: KitchenProjectErrorDto, description: '`gpu_queue_full`: no Render was created' })
+  @ApiServiceUnavailableResponse({ type: KitchenProjectErrorDto, description: '`storage_unavailable`, or database unreachable' })
+  // Applied first, so the render-specific 400/503 descriptions above win in the OpenAPI document.
+  @Owned()
+  requestRender(@CurrentProject() project: KitchenProjectRecord, @Body() body: unknown, @CurrentUser() user: AuthenticatedUser): Promise<CreateRenderResponseDto> {
+    return this.renders.create(project, body, user.sub);
+  }
+
+  @Get(':projectId/renders')
+  @Owned()
+  @ApiOperation({ summary: 'The Renders of an owned project, newest first' })
+  @ApiOkResponse({ type: RenderListResponseDto })
+  listRenders(@CurrentProject() project: KitchenProjectRecord): Promise<RenderListResponseDto> {
+    return this.renders.list(project);
+  }
+
+  @Get(':projectId/renders/:renderId')
+  @Owned()
+  @ApiOperation({ summary: 'One Render of an owned project (status, queue position, content URLs)' })
+  @ApiParam({ name: 'renderId', schema: { type: 'string', format: 'uuid' } })
+  @ApiOkResponse({ type: RenderViewDto })
+  getRender(@CurrentProject() project: KitchenProjectRecord, @Param('renderId', new ParseUUIDPipe()) renderId: string): Promise<RenderViewDto> {
+    return this.renders.get(project, renderId);
+  }
+
+  @Get(':projectId/renders/:renderId/content')
+  @Owned()
+  @Content(RENDER_VARIANTS)
+  @ApiParam({ name: 'renderId', schema: { type: 'string', format: 'uuid' } })
+  @ApiOperation({ summary: 'A Render image (metadata-free JPEG): `before` always, `full`/`thumb` once succeeded (404 before)' })
+  async renderContent(
+    @CurrentProject() project: KitchenProjectRecord,
+    @Param('renderId', new ParseUUIDPipe()) renderId: string,
+    @Query('variant') variant: unknown,
+  ): Promise<StreamableFile> {
+    if (typeof variant !== 'string' || !(RENDER_VARIANTS as readonly string[]).includes(variant)) throw new BadRequestException();
+    return new StreamableFile(await this.renders.content(project, renderId, variant as RenderVariant), { type: 'image/jpeg' });
   }
 
   @Post(':projectId/budget')

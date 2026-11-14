@@ -12,10 +12,15 @@ import { MoodboardController } from './moodboard/moodboard.controller.js';
 import { MoodboardService } from './moodboard/moodboard.service.js';
 import { OwnedProjectGuard } from './owned-project.guard.js';
 import { PhotoUploadInterceptor } from './photo-upload.interceptor.js';
+import { RENDER_CONFIG, readRenderConfig } from './renders/render.config.js';
+import { PrismaRenderRepository, RENDER_REPOSITORY } from './renders/render.repository.js';
+import { RenderRecoveryService } from './renders/render-recovery.service.js';
+import { RendersService } from './renders/renders.service.js';
 
 /**
  * Anonymous kitchen capture drafts (kitchen-capture-draft), their Moodboard (moodboard-selection)
- * and claimed, owned Kitchen Projects (login-gate-claim). Needs StorageModule. Exports
+ * claimed, owned Kitchen Projects (login-gate-claim) and their Renders (controlnet-render).
+ * Needs StorageModule and the global AiModule (GPU job broker, image adapter). Exports
  * OwnedProjectGuard and KitchenProjectsService for the costly features.
  */
 @Module({
@@ -32,6 +37,10 @@ import { PhotoUploadInterceptor } from './photo-upload.interceptor.js';
     OwnedProjectGuard,
     PhotoUploadInterceptor,
     DraftCleanupService,
+    { provide: RENDER_CONFIG, useFactory: () => readRenderConfig() },
+    { provide: RENDER_REPOSITORY, useClass: PrismaRenderRepository },
+    RendersService,
+    RenderRecoveryService,
   ],
   exports: [KITCHEN_DRAFT_REPOSITORY, OwnedProjectGuard, KitchenProjectsService],
 })

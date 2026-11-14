@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   canAct,
+  claimLanding,
   claimOutcome,
   generateHint,
   generateReducer,
@@ -25,6 +26,11 @@ const ready = {
 const reduce = (...actions: Parameters<typeof generateReducer>[1][]) => actions.reduce(generateReducer, INITIAL_GENERATE_STATE);
 
 describe('generate state', () => {
+  it('claimLanding: render opens AI Results with an automatic start, budget the owned page', () => {
+    expect(claimLanding('p1', 'render')).toBe('/kitchen-projects/p1/results?claimed=1&start=1');
+    expect(claimLanding('p1', 'budget')).toBe('/kitchen-projects/p1?claimed=1');
+  });
+
   it('parses the intent and builds login URLs (returnTo with intent, register mode)', () => {
     expect(parseIntent('render')).toBe('render');
     expect(parseIntent('budget')).toBe('budget');

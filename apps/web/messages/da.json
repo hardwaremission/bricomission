@@ -219,11 +219,12 @@
   },
   "project": {
     "title": "Dit køkkenprojekt",
-    "helper": "Design og tilbud kommer snart. Dit projekt bliver her, klar til dem.",
+    "helper": "Lav et design af dit nye køkken. Tilbud kommer snart.",
     "claimed": "Dit køkken er gemt på din konto.",
     "dismiss": "Luk",
     "newProject": "Start et nyt køkkenprojekt",
-    "availableSoon": "Kommer snart",
+    "budgetsSoon": "Tilbud: kommer snart",
+    "seeDesigns": "Se mine designs",
     "signedOut": {
       "title": "Log ind for at se dette køkkenprojekt",
       "signIn": "Log ind"
@@ -233,5 +234,53 @@
       "home": "Gå til forsiden"
     },
     "offline": "Du er offline. Dit køkkenprojekt er sikkert; opret forbindelse igen for at se det."
+  },
+  "results": {
+    "back": "Tilbage til mit køkken",
+    "titleDone": "Dit nye køkken",
+    "titleActive": "Dit køkken designes",
+    "helperDone": "Stil {style}, fra foto {n}. Træk i håndtaget for at sammenligne.",
+    "helperActive": "Stil {style}, fra foto {n}. Det tager cirka 10 til 30 sekunder.",
+    "helperIdle": "Stil {style}, fra foto {n}.",
+    "slider": {
+      "label": "Sammenlign før og efter",
+      "before": "Før",
+      "after": "Efter",
+      "beforeAlt": "Dit køkken før",
+      "afterAlt": "Designet af dit nye køkken"
+    },
+    "status": {
+      "running": "Laver…",
+      "queued": "Venter på GPU'en",
+      "ahead": "{count, plural, one {# job foran dit} other {# job foran dit}}"
+    },
+    "note": "Du kan forlade siden; renderingen fortsætter og vises her, når den er klar.",
+    "photos": {
+      "title": "Foto til næste rendering",
+      "helper": "Renderingen bevarer vægge, vinduer og VVS fra dette foto.",
+      "option": "Foto {n}"
+    },
+    "history": {
+      "title": "Dine renderinger",
+      "counter": "{count} af {max}",
+      "item": "Rendering {n}"
+    },
+    "cta": {
+      "again": "Lav igen",
+      "retry": "Prøv igen",
+      "generate": "Generér mit køkken",
+      "back": "Tilbage til mit køkken"
+    },
+    "hints": {
+      "oneAtATime": "Én rendering ad gangen.",
+      "limit": "Du har lavet {max} renderinger, det maksimale for dette projekt."
+    },
+    "alerts": {
+      "failed": "Vi kunne ikke lave denne rendering. Prøv igen om lidt.",
+      "interrupted": "Denne rendering blev afbrudt. Prøv igen.",
+      "queueFull": "Designeren har travlt lige nu. Prøv igen om et minut.",
+      "uploadsOnly": "Dine egne fotos kan ikke styre stilen endnu, så vi brugte en neutral moderne stil.",
+      "offline": "Du er offline. Dine renderinger er i sikkerhed; opret forbindelse igen for at se nye."
+    }
   }
 }

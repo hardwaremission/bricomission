@@ -219,11 +219,12 @@
   },
   "project": {
     "title": "Your kitchen project",
-    "helper": "Designs and budgets are coming soon. Your project stays here, ready for them.",
+    "helper": "Generate a design of your new kitchen. Budgets are coming soon.",
     "claimed": "Your kitchen is saved to your account.",
     "dismiss": "Close",
     "newProject": "Start a new kitchen project",
-    "availableSoon": "Available soon",
+    "budgetsSoon": "Budgets: available soon",
+    "seeDesigns": "See my designs",
     "signedOut": {
       "title": "Sign in to see this kitchen project",
       "signIn": "Sign in"
@@ -233,5 +234,53 @@
       "home": "Go to Home"
     },
     "offline": "You're offline. Your kitchen project is safe; reconnect to see it."
+  },
+  "results": {
+    "back": "Back to my kitchen",
+    "titleDone": "Your new kitchen",
+    "titleActive": "Designing your kitchen",
+    "helperDone": "{style} style, from photo {n}. Drag the handle to compare.",
+    "helperActive": "{style} style, from photo {n}. This takes about 10 to 30 seconds.",
+    "helperIdle": "{style} style, from photo {n}.",
+    "slider": {
+      "label": "Compare before and after",
+      "before": "Before",
+      "after": "After",
+      "beforeAlt": "Your kitchen before",
+      "afterAlt": "Your new kitchen design"
+    },
+    "status": {
+      "running": "Generating…",
+      "queued": "Waiting for the GPU",
+      "ahead": "{count, plural, one {# job ahead of yours} other {# jobs ahead of yours}}"
+    },
+    "note": "You can leave this page; the render keeps going and appears here when it's ready.",
+    "photos": {
+      "title": "Photo for the next render",
+      "helper": "The render keeps the walls, windows and plumbing of this photo.",
+      "option": "Photo {n}"
+    },
+    "history": {
+      "title": "Your renders",
+      "counter": "{count} of {max}",
+      "item": "Render {n}"
+    },
+    "cta": {
+      "again": "Generate again",
+      "retry": "Try again",
+      "generate": "Generate my kitchen",
+      "back": "Back to my kitchen"
+    },
+    "hints": {
+      "oneAtATime": "One render at a time.",
+      "limit": "You've created {max} renders, the maximum for this project."
+    },
+    "alerts": {
+      "failed": "We couldn't create this render. Try again in a moment.",
+      "interrupted": "This render was interrupted. Try again.",
+      "queueFull": "The designer is busy right now. Try again in a minute.",
+      "uploadsOnly": "Your own photos can't guide the style yet, so we used a neutral modern style.",
+      "offline": "You're offline. Your renders are safe; reconnect to see new ones."
+    }
   }
 }

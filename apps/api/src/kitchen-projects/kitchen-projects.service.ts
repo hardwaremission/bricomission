@@ -11,8 +11,8 @@ import { moodboardItemView } from './moodboard/moodboard.js';
 import { MoodboardService } from './moodboard/moodboard.service.js';
 import { isReadyForGeneration } from './readiness.js';
 
-/** The costly actions guarded by the Login Gate (login-gate-claim placeholders). */
-export type CostlyAction = 'render' | 'budget';
+/** Costly actions still behind a placeholder (Renders are real since controlnet-render). */
+export type CostlyAction = 'budget';
 
 export function projectView(project: KitchenProjectRecord, gallery: StyleGalleryService): KitchenProjectView {
   const base = `/kitchen-projects/${project.id}`;
@@ -28,7 +28,7 @@ export function projectView(project: KitchenProjectRecord, gallery: StyleGallery
 
 /**
  * Claimed Kitchen Projects (feature login-gate-claim): the claim of the browser's anonymous draft
- * at the Login Gate, the owner's read view and content, and the costly-action placeholders.
+ * at the Login Gate, the owner's read view and content, and the Budget placeholder.
  * Database failures give 503; logs carry error class names only.
  */
 @Injectable()
@@ -70,7 +70,8 @@ export class KitchenProjectsService {
   /**
    * Placeholder of a costly action: 409 `project_incomplete` when the project is not ready for
    * generation, else 501 `not_available_yet`. It never calls the GPU job broker or an adapter;
-   * controlnet-render and budget-tier-computation replace the 501 and keep the 409 rule.
+   * budget-tier-computation replaces the 501 and keeps the 409 rule (controlnet-render did so
+   * for Renders: see RendersService).
    */
   requestCostlyAction(project: KitchenProjectRecord, action: CostlyAction): never {
     if (!isReadyForGeneration(project)) throw draftError(HttpStatus.CONFLICT, 'project_incomplete');

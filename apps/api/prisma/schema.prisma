@@ -78,6 +78,7 @@ model KitchenProject {
   updatedAt      DateTime             @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
   photos         KitchenPhoto[]
   moodboardItems MoodboardItem[]
+  renders        KitchenRender[]
 
   @@index([expiresAt])
   @@index([ownerSub])
@@ -97,6 +98,7 @@ model KitchenPhoto {
   height           Int
   byteSize         Int            @map("byte_size")
   createdAt        DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
+  renders          KitchenRender[]
 
   @@index([kitchenProjectId, position])
   @@map("kitchen_photo")
@@ -130,4 +132,54 @@ model MoodboardItem {
   @@unique([kitchenProjectId, galleryImageId])
   @@index([kitchenProjectId, position])
   @@map("moodboard_item")
+}
+
+/// Lifecycle of a Render (feature controlnet-render).
+enum KitchenRenderStatus {
+  queued
+  running
+  succeeded
+  failed
+
+  @@map("kitchen_render_status")
+}
+
+/// ControlNet that keeps the room geometry.
+enum KitchenRenderMode {
+  canny
+  depth
+
+  @@map("kitchen_render_mode")
+}
+
+/// A Render of a claimed Kitchen Project (feature controlnet-render): SDXL + ControlNet from one
+/// Photo and the dominant Moodboard style. Objects in MinIO: `before` (centre crop of the Photo,
+/// the model input), `full` and `thumb` (metadata-free JPEGs; `full` has the size of `before`).
+/// `prompt`, `seed` and `gpuJobId` are internal provenance, never returned by a route.
+/// Hand-written CHECKs in the migration tie the keys and codes to `status`.
+model KitchenRender {
+  id               String              @id @db.Uuid
+  kitchenProjectId String              @map("kitchen_project_id") @db.Uuid
+  kitchenProject   KitchenProject      @relation(fields: [kitchenProjectId], references: [id], onDelete: Cascade)
+  photoId          String?             @map("photo_id") @db.Uuid
+  photo            KitchenPhoto?       @relation(fields: [photoId], references: [id], onDelete: SetNull)
+  status           KitchenRenderStatus @default(queued)
+  mode             KitchenRenderMode
+  styleId          String?             @map("style_id")
+  prompt           String
+  seed             Int
+  width            Int
+  height           Int
+  beforeKey        String              @map("before_key")
+  fullKey          String?             @map("full_key")
+  thumbKey         String?             @map("thumb_key")
+  errorCode        String?             @map("error_code")
+  gpuJobId         String?             @map("gpu_job_id") @db.Uuid
+  createdAt        DateTime            @default(now()) @map("created_at") @db.Timestamptz(3)
+  startedAt        DateTime?           @map("started_at") @db.Timestamptz(3)
+  finishedAt       DateTime?           @map("finished_at") @db.Timestamptz(3)
+  seconds          Float?              @db.Real
+
+  @@index([kitchenProjectId, createdAt])
+  @@map("kitchen_render")
 }

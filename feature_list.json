@@ -349,13 +349,24 @@
     "title": "Homeowner gets a photorealistic Render that keeps the room geometry",
     "user_visible_behavior": "A signed-in Homeowner requests a Render; ComfyUI SDXL + ControlNet produces an image from their photo and Moodboard, stored in MinIO and shown with a before/after slider.",
     "depends_on": ["gpu-job-broker", "login-gate-claim"],
-    "status": "not_started",
+    "status": "accepted",
     "verification": [
       "Integration run on the real GPU: one Render produced from a sample photo within the measured time budget",
       "Visual check: window, door and plumbing positions match the source photo (screenshot evidence)",
       "API test with fake adapter covers storage and ownership"
     ],
-    "evidence": [],
+    "evidence": [
+      "2026-11-14 implementer (main checkout, COMPOSE_PROJECT_NAME default, WEB_PORT 3100, API_PORT 3000). No sudo, .env not read, no volume removed. Spec docs/specs/controlnet-render.md (Implementation Notes list deviations); design docs/design/controlnet-render.md (approved 2026-11-15).",
+      "Workspace gate: pnpm install --frozen-lockfile ok; pnpm -r lint exit 0; pnpm -r test api 298 passed (34 files; new test/renders/{renders.http,render-prompt,render-geometry,comfyui-image.adapter,render-recovery}.spec.ts = 34 tests, migration spec +3), web 469 passed (29 files; render-state 8, render-client 3, claimLanding 1), api-client 3. OpenAPI regenerated (openapi.json + schema.ts); only non-additive change: POST /kitchen-projects/{projectId}/renders 501 -> 202/400/409/429/503.",
+      "Stack: ./init.sh exit 0, 6 healthy, new Web line 'API GET /kitchen-projects/<id>/renders (no token) -> 401'; ./scripts/keycloak-smoke.sh exit 0; pnpm test:e2e 152 passed, 1 skipped (new e2e/results.spec.ts 3 tests: claim intent=render -> /results auto-start, running card, slider keys+drag with before/after 1216x832, Generate again with photo 2, history, See my designs, en/es 390 + de/fi 360 layouts; mocked queued/failed/interrupted/429/limit/uploads-only/offline/signed-out/not-found; login-gate.spec updated for 202 and the /results landing).",
+      "Fake API flow (bash scripts/ai/render-smoke.sh --no-gpu --warm 1): anonymous 401, professional 403, POST 202, second POST 409 render_in_progress, succeeded 3.41 s, content before/full/thumb 200 image/jpeg, professional content 403, no prompt/seed/job id in the list, before = full = 1216x832. psql \\d kitchen_render: CHECKs kitchen_render_status_columns/error_code/size, FKs CASCADE and SET NULL, index (kitchen_project_id, created_at); catalog_chunk_embedding_hnsw_idx present. MinIO: renders/<rid>/{before,full,thumb}.jpg. docker compose restart -t 0 api during an active Render -> failed/interrupted, next POST 202.",
+      "Real GPU (AI_ADAPTERS=local, profile ai up, llama-server loaded+idle, canny, flock /tmp/bricomission-gpu.lock): landscape 1216x832 cold 20.83 s (budget 35), warm 9.12 s and 10.25 s (budget 20); portrait 832x1216 cold 14.32 s, warm 8.58 s. VRAM baseline 1849 MiB, LLM idle 4904 MiB, peak 16256/16304 MiB (+14407 MiB), no OOM, no ComfyUI errors, llama-server answered afterwards -> GpuResidencyHook stays no-op (OQ-9 not triggered). GPU services stopped with docker compose --profile ai stop llama-server comfyui; api back on fake.",
+      "Geometry evidence (left before, right Render): docs/spikes/assets/controlnet-render-compare.jpg and controlnet-render-compare-portrait.jpg. Implementer reading: windows, sink/tap, counter runs, stove and fridges unchanged; centre tall cabinet became a glazed door; canny keeps clutter literally. Superseded by the 2026-11-15 tuning below.",
+      "2026-11-15 tuning after developer feedback (geometry ok; remove clutter; never turn a cabinet/wall into a door, opening or window): new prompt (constraints first, 32-token prefix; negative with clutter + structural terms, 72 CLIP tokens measured with the SD tokenizer in the ComfyUI image) and env-configurable ControlNet: RENDER_CANNY_LOW/HIGH 0.6/0.95, RENDER_CONTROL_STRENGTH 0.8, RENDER_CONTROL_END 0.5, depth assist RENDER_DEPTH_ASSIST_STRENGTH 0.7 / RENDER_DEPTH_ASSIST_END 1 (second ControlNet, no new weights, no DB/API change). 19 settings tried via a direct ComfyUI harness (grid docs/spikes/assets/controlnet-render-tuning.jpg; details in the spec Implementation Notes).",
+      "2026-11-15 real GPU with tuned defaults (AI_ADAPTERS=local, llama-server idle, flock): landscape cold 19.55 s, warm 10.24/10.51 s; portrait cold 17.45 s, warm 10.81 s; VRAM peak 16227/16304 MiB, no OOM. Evidence overwritten: docs/spikes/assets/controlnet-render-compare.jpg and -portrait.jpg. Windows, sink, counters, stove, fridges unchanged; pantry stays a tall cabinet; no new door/opening/window. NOT solved: clutter is restyled, not removed (kettle, vessel bowls in place of dish racks, bottle, plates); clutter-removing settings broke structure on some seeds. GPU services stopped; api back on fake.",
+      "2026-11-15 gates: pnpm -r lint exit 0; pnpm -r test api 303 (35 files; new render-config.spec, updated render-prompt/comfyui-image.adapter/renders.http), web 469, api-client 3 (OpenAPI unchanged); bash scripts/ai/render-smoke.sh --no-gpu all checks passed. E2E not rerun (no web change).",
+      "Accepted 2026-11-15 by /feature-flow: independent validator accept (lint, unit api 298/web 469/api-client 3, ./init.sh, pnpm test:e2e 152 passed 1 skipped, keycloak-smoke, --no-gpu smoke, curl ownership/concurrency/limit/recovery/metadata checks) and delta accept after tuning (api 303 tests, ./init.sh, --no-gpu smoke no longer touches docs/spikes/assets). Developer confirmed the geometry (structure kept, tall cabinet stays a cabinet); clutter removal deferred to render-declutter."
+    ],
     "notes": "UI gate: AI Results screen (render part). Quota checks are added by daily-quota-enforcement."
   },
   {
@@ -704,5 +715,20 @@
     ],
     "evidence": [],
     "notes": "Re-check: a crafted kc_locale on a Keycloak login-actions URL might store a Keycloak locale attribute on the account; nothing may set it (keycloak-login-theme option (a)). Replaces i18n-all-locales (2026-11-13): the 11 locales, detection, Language Selection screen and device persistence moved into web-pwa-shell. PRD: persist the user's choice in the database. Every UI feature must add its strings to all 11 message files (missing-key test)."
+  },
+  {
+    "id": "render-declutter",
+    "area": "ai-visuals",
+    "title": "Renders show a decluttered kitchen without structural changes",
+    "user_visible_behavior": "Before a Render, loose objects in the kitchen photo (kettles, dish racks, bottles, small appliances, clutter) are detected and removed by masked inpainting, so the Render shows clean counters while walls, doors, windows, openings and cabinet positions stay exactly as in the photo.",
+    "depends_on": ["controlnet-render"],
+    "status": "not_started",
+    "verification": [
+      "Real GPU: the landscape and portrait samples render with no kettle, dish racks, bottles or plants on counters, and the tall cabinet stays a cabinet (side-by-side evidence, several seeds)",
+      "Detection and inpainting run offline after a one-time weight download; time per Render stays within a measured budget",
+      "API test with fake adapters covers the extra pipeline step"
+    ],
+    "evidence": [],
+    "notes": "Developer decision 2026-11-15 after controlnet-render tuning: prompt and ControlNet tuning cannot remove objects whose outlines Canny enforces without risking structural hallucinations (cabinet to door), which would make budgets unrealistic. Approach to decide in planning: automatic segmentation mask (e.g. open-vocabulary detection + segmentation) + inpainting before ControlNet, or user-marked mask. Structure preservation is a hard rule."
   }
 ]
