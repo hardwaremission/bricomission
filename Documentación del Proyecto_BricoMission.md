@@ -8,16 +8,17 @@
 | **Fecha límite** | 22 de noviembre |
 | **Entorno de desarrollo** | Linux CachyOS 7.3.3-1 · AMD Ryzen 9 5950X · 64 GB RAM · AMD Radeon RX 9070 XT 16 GB |
 | **Infraestructura** | Contenedores Docker orquestados con Docker Compose v2 |
-| **Última Modificación** | 2026-11-12 |
+| **Última Modificación** | 2026-11-15 |
 
 ## **📑 Índice de Contenidos**
 
+> 0. [Alcance del MVP (actualizado el 2026-11-15)](#alcance-del-mvp-actualizado-el-2026-11-15)  
 > 1. [1\. Definición del Proyecto: Cuestionario y Conclusiones Extensas](#bookmark=id.w0o1qpdf5feo)  
    * 1.1. [El Problema, la Solución, Roles y Estrategia](#bookmark=id.7cj7ubdjsws)  
    * 1.2. [Flujo de Usuario y Experiencia Visual (UX/UI)](#bookmark=id.4zocsm5qxi7i)  
    * 1.3. [Lógica de Negocio: IA, Presupuestos y Marketplace B2B](#bookmark=id.uwqlcn9em3dc)  
    * 1.4. [Decisiones de Arquitectura Técnica](#bookmark=id.oxh8nbs5ea49)  
-   * 1.5. [Fuera del alcance del MVP (Fase 2: App Nativa iOS y LiDAR)](#bookmark=id.fh57v5ns3m7m)  
+   * 1.5. [Fuera del alcance del MVP (Fase 2: marketplace, administración, App Nativa iOS y LiDAR)](#bookmark=id.fh57v5ns3m7m)  
 > 2. [2\. El Entorno de Trabajo: HARNESS de DevExpert](#bookmark=id.2pr8kb9tqtxk)  
    * [¿Qué es el Harness Starter Evolucionado?](#bookmark=id.69s02dv1cch2)  
    * [Flujo Completo del Arnés y Subagentes](#bookmark=id.8tkwa7opaooj)  
@@ -37,6 +38,27 @@
    * 5.6. Validación visual y exportación a MP4  
    * 5.7. Versionado del proyecto de presentación
 
+## **Alcance del MVP (actualizado el 2026-11-15)**
+
+> **Decisión del desarrollador (2026-11-15).** El MVP que se entrega a los tutores de DevExpert (fecha límite 2026-11-22, vídeo demo de 15 minutos) queda **cerrado** con una feature nueva, `diagnostics-dashboard`. Todo lo demás pasa a la **Fase 2** (la siguiente fase, fuera del proyecto presentado a los tutores). El resto de este documento conserva el alcance original como historia: cada requisito que pertenece a la Fase 2 lleva la etiqueta **[Fase 2]** (en el PRD en inglés, **[Phase 2]**).
+
+**MVP entregado = las 16 features ya `accepted` en `feature_list.json` más `diagnostics-dashboard`:**
+
+* Núcleo de infraestructura y servicios de IA (Docker Compose, llama.cpp, ComfyUI), esqueleto de la API y PWA web.
+* Realm de Keycloak con los tres roles y el login con marca propia con código por email.
+* Marca y pantalla de bienvenida (splash).
+* Captura (fotos y medidas en cm) y Moodboard con Style Gallery.
+* Login Gate (reclamación del borrador al iniciar sesión).
+* Cola de trabajos de GPU (GPU job broker) y renders con ControlNet.
+* Ingesta RAG del catálogo.
+* Cuatro niveles de presupuesto verificados (Budget Tiers).
+* Simulaciones que mezclan un estilo calculado con cada foto de la cocina, con «Mis simulaciones» y un presupuesto por simulación.
+* **`diagnostics-dashboard` (nueva, cierra el MVP):** una web de escritorio independiente (URL y puerto propios, solo localhost, perfil de Compose, sin login) que muestra toda la arquitectura como un grafo en vivo con estilo *blueprint* (al estilo de los Blueprints de Unreal Engine). Cada componente de frontend y backend es un nodo (los contenedores y los módulos internos de la API); los nodos de IA indican su modelo; las conexiones entre los módulos que están trabajando se iluminan y se animan en tiempo real; un panel de registro plegable junto al grafo narra línea a línea qué nodo habla con cuál y qué envía o recibe (por ejemplo, el *prompt* del presupuesto o el *prompt* de estilo visual construido a partir de varias imágenes); cada módulo tiene un widget con CPU %, RAM, VRAM y GPU %, y hay una leyenda global. Es solo diagnóstico y explica la arquitectura por sí mismo. En la presentación se muestra la app en un navegador en vertical junto al panel en un navegador de escritorio.
+
+**Fase 2 (22 features con `"phase": "phase-2"` en `feature_list.json`; una feature sin campo `phase` pertenece al MVP):** `budget-chat-personas`, `budget-prompt-macros`, `diy-shopping-list-pdf`, `dossier-publication`, `professional-registration`, `admin-company-validation`, `admin-marketplace-settings`, `b2b-dossier-feed`, `bid-submission-revision`, `homeowner-bid-acceptance`, `bid-live-notifications`, `contract-pdf-generation`, `contract-electronic-acceptance`, `commission-simulated-checkout`, `commission-paypal-sandbox`, `daily-quota-enforcement`, `admin-quota-controls`, `admin-user-management`, `admin-service-endpoints`, `google-sso-login`, `language-preference-account`, `render-declutter`. Es decir: chat de presupuesto con personas y *prompt macros*, lista de la compra DIY en PDF, marketplace (dossier, pujas, notificaciones, contrato, comisión y pagos), registro y validación de profesionales, cuotas y todo el panel de administración, Google SSO y la preferencia de idioma por cuenta, además de la limpieza de objetos en los renders.
+
+**Decisión sobre los roles (2026-11-15).** Los tres roles (Usuario, Profesional y Administrador) siguen **definidos y sembrados** en el realm de Keycloak, y el Administrador ya puede leer la API de ajustes de plataforma de solo administrador. La regla original que los llamaba obligatorios se entiende ahora como decisión de alcance: **los roles existen; su funcionalidad es Fase 2**. Las funciones de Profesional y Administrador (marketplace, pujas, validación de CIF, cuotas, panel de administración, CRUD de usuarios, modo de pago, contratos) **no están construidas** en el MVP.
+
 ## **1\. Definición del Proyecto: Cuestionario y Conclusiones Extensas**
 
 Para superar el bloqueo de análisis y definir un MVP (Producto Mínimo Viable) sólido que cumpliera con todos los requisitos del curso (cero código manual, uso de IA, integración de NotebookLM y OpenPencil), se realizó un cuestionario interactivo de 25 preguntas.  
@@ -47,7 +69,7 @@ A continuación, se detallan exhaustivamente las conclusiones, decisiones estrat
 > * **Sector:** Reformas del hogar, específicamente centrado en **cocinas** como MVP (con la arquitectura de base de datos preparada para escalar a toda la vivienda en el futuro).  
 > * **El Problema:** El usuario final se frustra ante el desconocimiento de los costes reales y la dificultad extrema para visualizar cómo quedará la reforma. Por otro lado, los profesionales pierden muchísimo tiempo y dinero con clientes indecisos ("mareantes") que piden presupuestos sin intención real de compra o sin ideas claras.  
 > * **La Solución (BricoMission):** Una plataforma B2C/B2B integral donde el usuario introduce las medidas de su cocina y sube fotos, genera alternativas fotorrealistas con IA (respetando la geometría de su casa), y ajusta presupuestos exactos charlando con un LLM. Finalmente, el usuario elige entre dos caminos: obtener una lista de la compra al céntimo (hazlo tú mismo / DIY) o lanzar el proyecto empaquetado a un marketplace de profesionales para cerrar un contrato digital vinculante.  
-> * **Roles de Usuario (Regla Estricta del Sistema):**  
+> * **Roles de Usuario (Regla Estricta del Sistema; [Fase 2] para la funcionalidad de Profesional y Administrador, ver «Alcance del MVP», 2026-11-15: los tres roles existen y están sembrados en Keycloak, sus funciones son Fase 2):**  
 >   Aunque el *harness* pueda sugerir otros roles en su fase de descubrimiento, el sistema debe implementar y respetar obligatoriamente un mínimo de 3 perfiles:  
   1. **Usuario (B2C):** El consumidor final o particular que utiliza la aplicación para planificar y visualizar su reforma.  
   2. **Profesional (B2B):** Empresa o autónomo que ofrece servicios de obra, fabricación y montaje (escalable a reformas integrales en el futuro).  
@@ -59,14 +81,15 @@ A continuación, se detallan exhaustivamente las conclusiones, decisiones estrat
      * **Gestión de Energía/Tokens:** Podrá modificar los límites globales diarios, así como **sobreescribir el límite para usuarios específicos** (dar más tokens) o **resetear manualmente el consumo diario** de un usuario en particular (ideal para demostraciones de producto o casos de soporte).  
      * Podrá reconfigurar visualmente los *endpoints* de las diferentes IAs (cambiar de Ollama a OpenAI, ajustar URLs, etc.) y **las credenciales/rutas del almacenamiento de archivos (MinIO/S3)** sin necesidad de tocar código fuente ni variables de entorno.  
      * **Pasarela de Pagos Dual:** Podrá alternar visualmente entre un modo de cobro simulado offline y la integración real con PayPal Sandbox.  
-> * **Estrategia de Demo (Vídeo de 15 minutos para el 22 de noviembre):**  
-  * **Minutos 0-5 (Storytelling / Caso Real):** Narración ágil desde la perspectiva del usuario final (B2C) subiendo fotos de su cocina, interactuando con la IA y viendo cómo llegan las pujas en tiempo real. Breve muestra del panel B2B del profesional.  
+> * **Estrategia de Demo (Vídeo de 15 minutos para el 22 de noviembre; actualizada el 2026-11-15, ver el final de esta viñeta):**  
+  * **Minutos 0-5 (Storytelling / Caso Real):** Narración ágil desde la perspectiva del usuario final (B2C) subiendo fotos de su cocina, interactuando con la IA y viendo cómo llegan las pujas en tiempo real [Fase 2: pujas y panel B2B del profesional]. Breve muestra del panel B2B del profesional [Fase 2].  
   * **Minutos 5-15 (Pitch de Arquitectura Técnica):** Demostración del dominio del curso explicando el *behind the scenes*: el uso del HARNESS, las fuentes en NotebookLM, la capa de abstracción con LiteLLM ejecutando Ollama en la GPU local, el pipeline de ControlNet, la automatización en GitHub vía MCP, las directrices dadas en OpenPencil y la infraestructura en contenedores Docker.  
-  * **Producción del vídeo:** Se realizará como último paso, una vez terminado el MVP, siguiendo el proceso descrito en la sección 5 (guion propuesto por el agente, narración con voz propia, transcripción con marcas de tiempo, capturas mediante el MCP del navegador y montaje en HyperFrames).
+  * **Producción del vídeo:** Se realizará como último paso, una vez terminado el MVP, siguiendo el proceso descrito en la sección 5 (guion propuesto por el agente, narración con voz propia, transcripción con marcas de tiempo, capturas mediante el MCP del navegador y montaje en HyperFrames).  
+  * **Actualización 2026-11-15:** la demo muestra la app (PWA en un navegador en vertical) junto al panel `diagnostics-dashboard` (navegador de escritorio). Las escenas de pujas en tiempo real y del panel B2B quedan fuera (Fase 2) y se sustituyen por la narración del panel de diagnóstico. Guion actualizado en las secciones 5.1 y PRD §8.
 
 ### **1.2. Flujo de Usuario y Experiencia Visual (UX/UI)**
 
-> * **Internacionalización (i18n):** La plataforma debe nacer con soporte multiidioma. Para el MVP, la aplicación estará traducida explícitamente a los siguientes idiomas: **Inglés, Español, Francés, Alemán, Italiano, Portugués, Holandés, Sueco, Noruego, Danés y Finlandés**. Detectará automáticamente el idioma del dispositivo/navegador. Si el idioma está en esta lista de soportados, el usuario entra directo al flujo principal. Si no lo está, se mostrará una pantalla inicial explícita para seleccionar idioma (con un desplegable donde el inglés es la opción por defecto). Este idioma se guardará en la cuenta del usuario para recordarlo en futuros accesos web.  
+> * **Internacionalización (i18n):** La plataforma debe nacer con soporte multiidioma (la preferencia de idioma guardada por cuenta es [Fase 2]: `language-preference-account`). Para el MVP, la aplicación estará traducida explícitamente a los siguientes idiomas: **Inglés, Español, Francés, Alemán, Italiano, Portugués, Holandés, Sueco, Noruego, Danés y Finlandés**. Detectará automáticamente el idioma del dispositivo/navegador. Si el idioma está en esta lista de soportados, el usuario entra directo al flujo principal. Si no lo está, se mostrará una pantalla inicial explícita para seleccionar idioma (con un desplegable donde el inglés es la opción por defecto). Este idioma se guardará en la cuenta del usuario para recordarlo en futuros accesos web.  
 > * **Diseño Minimalista (OpenPencil):** Estilo limpio, estructurado y con mucho espacio en blanco (inspirado en Apple e IKEA). La premisa es ocultar la enorme complejidad técnica (LLMs, RAG, ControlNet, Bases de Datos) detrás de una interfaz extremadamente sencilla e intuitiva.  
 > * **Flujo de Diseño Dirigido por MCP (Model Context Protocol):**  
   * Cuando el agente necesite una nueva vista, ordenará al desarrollador crear/abrir un archivo .fig en la ruta /design/openpencil/ (por ejemplo, dividiendo por dominios: bricomission\_B2C\_app.fig o bricomission\_B2B\_dashboard.fig).  
@@ -75,23 +98,25 @@ A continuación, se detallan exhaustivamente las conclusiones, decisiones estrat
   * El desarrollador actuará como supervisor. Si hay que hacer cambios visuales, se los pedirá al agente conversando por el chat, y este los aplicará vía MCP.  
   * **Extracción e Implementación:** Una vez el desarrollador confirme los diseños como válidos, el agente utilizará el MCP de OpenPencil para "leer" la estructura, propiedades visuales y layout del diseño definitivo. Basándose strictly en esta lectura directa, el agente procederá a implementar el código frontend de las ventanas, reanudando así la ejecución de la skill del *harness*.  
 > * **Onboarding y "Lazy Login":** Para maximizar el *engagement*, el usuario puede entrar a la app, subir sus fotos, seleccionar su estilo y ver cómo funciona el sistema de forma anónima. El registro (Paywall lógico) se exige de forma estricta justo en el paso previo a realizar llamadas costosas a la API de IA (generación de imágenes finales o presupuestos).  
-> * **Registro Seguro:** Se utilizarán inicios de sesión de un clic (Google/Apple SSO) o mediante número de teléfono (OTP) para asegurar a los profesionales del marketplace que hay personas reales y verificadas detrás de las peticiones.  
+> * **Registro Seguro [Fase 2: Google SSO; en el MVP, usuario y contraseña de Keycloak con código por email]:** Se utilizarán inicios de sesión de un clic (Google/Apple SSO) o mediante número de teléfono (OTP) para asegurar a los profesionales del marketplace que hay personas reales y verificadas detrás de las peticiones.  
 > * **Generación Fotorrealista (ControlNet):** Se descartó el uso de renderizado 3D puro o *inpainting* por zonas para el MVP. Se optó por **ControlNet (Depth Map / Canny)**. La IA analiza la foto subida por el usuario, extrae la geometría global (dónde está la ventana, la puerta, las tomas de agua) y genera una imagen completamente nueva en un solo paso aplicando el estilo deseado, respetando la estructura original milimétricamente.
 
 ### **1.3. Lógica de Negocio: IA, Presupuestos y Marketplace B2B**
 
-> * **Motor de Presupuestos Conversacional (LLM Chat):** El sistema calcula inicialmente 4 niveles de presupuesto (Lujo, Alto, Medio, Bajo). A partir de ahí, el usuario refina los materiales charlando de forma natural con un LLM. Los botones clásicos de la interfaz (ej. cambiar un desplegable de material) actuarán en la sombra inyectando *prompts* estructurados al chat para recalcular los costes.  
-> * **Perfiles de Personalidad de la IA:** El usuario podrá cambiar la actitud del asistente virtual en tiempo real mediante un desplegable, alterando el *system prompt* del agente:  
+> *Nota 2026-11-15: el chat con personas, las macros, el marketplace B2B, la monetización con pasarela dual y las cuotas de energía de este apartado son **[Fase 2]**. El MVP entregado incluye los cuatro niveles de presupuesto verificados (el LLM extrae, el código calcula) y las simulaciones con presupuesto por simulación.*
+
+> * **Motor de Presupuestos Conversacional (LLM Chat; el chat y las macros son [Fase 2], los cuatro niveles son MVP):** El sistema calcula inicialmente 4 niveles de presupuesto (Lujo, Alto, Medio, Bajo). A partir de ahí, el usuario refina los materiales charlando de forma natural con un LLM. Los botones clásicos de la interfaz (ej. cambiar un desplegable de material) actuarán en la sombra inyectando *prompts* estructurados al chat para recalcular los costes.  
+> * **Perfiles de Personalidad de la IA [Fase 2]:** El usuario podrá cambiar la actitud del asistente virtual en tiempo real mediante un desplegable, alterando el *system prompt* del agente:  
   1. *El Jefe de Obra Estricto:* Directo. Avisa de complicaciones técnicas ("Picar el suelo sube un 15% la albañilería").  
   2. *El Diseñador Empático:* Inspirador. Si te pasas de presupuesto, sugiere alternativas estéticas (porcelánico en lugar de mármol).  
   3. *El Amigo Ahorrador:* Enfocado en recortar gastos innecesarios de la lista de la compra.  
   4. *El Asistente Neutro:* Frío y rápido. Escupe números exactos sin emitir juicios ni florituras.  
 > * **Conocimiento Basado en RAG (NotebookLM):** La IA no debe alucinar precios. Se subirán catálogos reales de *partners* (IKEA, BricoDepot, Leroy Merlin) a NotebookLM para que el agente extraiga los precios exactos (al céntimo) y genere listas de la compra reales y ejecutables.  
-> * **Marketplace B2B (Anti-Mareantes y Anti-Bypass):** Los profesionales reciben un dossier hermético y cerrado con todo especificado (fotos, medidas, calidades). Tienen 15 días para enviar, ajustar y cerrar sus presupuestos. **No hay chat habilitado** entre cliente y profesional en esta fase. Para asegurar el modelo de negocio, **las pujas que recibe el usuario son completamente anónimas** (se muestra el precio, plazos y valoraciones de calidad, pero NO el nombre ni contacto de la empresa). Esto evita que el usuario se salte la plataforma para contratar al profesional directamente.  
-> * **Modelo de Monetización B2B y Pasarela Dual:** Al aceptar un presupuesto, BricoMission se asegura el cobro de una comisión por éxito. Para el MVP, el Administrador dispondrá de un interruptor para alternar entre dos modos de pago:  
+> * **Marketplace B2B (Anti-Mareantes y Anti-Bypass) [Fase 2]:** Los profesionales reciben un dossier hermético y cerrado con todo especificado (fotos, medidas, calidades). Tienen 15 días para enviar, ajustar y cerrar sus presupuestos. **No hay chat habilitado** entre cliente y profesional en esta fase. Para asegurar el modelo de negocio, **las pujas que recibe el usuario son completamente anónimas** (se muestra el precio, plazos y valoraciones de calidad, pero NO el nombre ni contacto de la empresa). Esto evita que el usuario se salte la plataforma para contratar al profesional directamente.  
+> * **Modelo de Monetización B2B y Pasarela Dual [Fase 2]:** Al aceptar un presupuesto, BricoMission se asegura el cobro de una comisión por éxito. En el plan original del MVP (ahora Fase 2), el Administrador dispondrá de un interruptor para alternar entre dos modos de pago:  
   1. **Cobro Simulado (Offline):** Genera el contrato PDF y guarda un registro interno de "Comisión Pendiente" sin necesidad de internet (ideal para demostraciones seguras).  
   2. **Integración con PayPal (Test Mode):** Conecta con la pasarela de PayPal en entorno Sandbox para demostrar un flujo de checkout completo y real.  
-> * **Monetización Adicional (Energía / Tokens y Feature Flag):** El MVP operará en modelo *Freemium* para B2C. Se dejará programada una "Feature Flag" (palanca en base de datos) para habilitar un modelo de "Energía/Tokens Diarios".  
+> * **Monetización Adicional (Energía / Tokens y Feature Flag) [Fase 2]:** El plan original del MVP (ahora Fase 2) operaba en modelo *Freemium* para B2C. Se dejará programada una "Feature Flag" (palanca en base de datos) para habilitar un modelo de "Energía/Tokens Diarios".  
   * Este modelo define globalmente cuántas llamadas de LLM y cuántas generaciones de imagen puede realizar un usuario cada día.  
   * A través del panel de Administración, esta configuración puede **sobreescribirse a nivel de usuario individual** (para aumentar su límite) o **resetearse a cero manualmente** bajo demanda, una funcionalidad crítica para poder realizar demostraciones continuas del producto sin bloqueos.
 
@@ -104,7 +129,7 @@ A continuación, se detallan exhaustivamente las conclusiones, decisiones estrat
 > * **Sistema Operativo y Scripts:** La máquina de desarrollo principal funciona con **Linux CachyOS 7.3.3-1** (base Arch). Todos los scripts de automatización y verificación que se generen (empezando por `init.sh`) serán **scripts bash (`.sh`)**; no se generarán versiones PowerShell (`.ps1`).  
 > * **Infraestructura en Contenedores (Docker Compose v2):** Todos los programas que el proyecto necesita como requisito (PostgreSQL, Keycloak, MinIO, el servidor de modelos LLM y el servicio de generación de imágenes con ControlNet) se ejecutarán en **contenedores Docker** siempre que sea posible, en lugar de instalarse de forma nativa en el host. El entorno completo se levanta con un único `compose.yaml` en la raíz del repositorio (`docker compose up -d`), con imágenes en versiones fijas, volúmenes nombrados persistentes y *healthchecks*. Tras la primera descarga de imágenes y modelos, todo funciona 100% *offline*. Solo se instalará de forma nativa aquello que no pueda contenerizarse razonablemente, y esa excepción deberá quedar justificada por escrito.  
 > * **Backend y Base de Datos Local:** **PostgreSQL** se ejecuta en un contenedor dentro del stack de Docker Compose. Esto garantiza que la demostración en vídeo será 100% *offline*, sin latencias de red ni caídas de servidores externos, y que el entorno se puede reproducir en cualquier máquina. El backend expondrá una **API REST robusta y agnóstica**, diseñada para servir a la web ahora y a la app móvil en el futuro.  
-> * **Almacenamiento de Archivos (Object Storage):** Uso de una instancia local de **MinIO** configurada para simular un bucket de AWS S3. Esto asegura un almacenamiento robusto de las fotos subidas, imágenes generadas por IA y PDFs generados manteniéndose 100% offline para la demo, pero dejando la arquitectura lista para dar el salto directo a S3 o Supabase Storage en producción. La configuración y credenciales de MinIO serán accesibles y modificables visualmente desde el panel de Administración.  
+> * **Almacenamiento de Archivos (Object Storage):** Uso de una instancia local de **MinIO** configurada para simular un bucket de AWS S3. Esto asegura un almacenamiento robusto de las fotos subidas, imágenes generadas por IA y PDFs generados manteniéndose 100% offline para la demo, pero dejando la arquitectura lista para dar el salto directo a S3 o Supabase Storage en producción. La configuración y credenciales de MinIO serán accesibles y modificables visualmente desde el panel de Administración [Fase 2].  
 > * **Capa de Abstracción de IA (LiteLLM/AI SDK):** Se utilizará una librería que unifique el formato de los *prompts*. Esto permitirá conectar la app tanto a APIs comerciales (OpenAI) como a modelos locales servidos mediante **Ollama** o **lemonade-server.ai** aprovechando la GPU **AMD Radeon 9070 XT (16GB)**. Esto ahorra costes durante las iteraciones de desarrollo y permite una demo totalmente gratuita y local. La GPU se expone a los contenedores mediante **ROCm** (dispositivos `/dev/kfd` y `/dev/dri`); si el rendimiento o la compatibilidad de RDNA4 lo exigieran, se permite ejecutar la inferencia de forma nativa o mediante el backend Vulkan, y esta decisión se validará durante `/build-brief`.  
 > * **Hardware de Desarrollo y Límites de los Modelos Locales:** Inventario medido en la máquina de desarrollo (2026-11-12):
 
@@ -139,9 +164,11 @@ A continuación, se detallan exhaustivamente las conclusiones, decisiones estrat
     * Si ROCm falla, la alternativa es llama.cpp con backend Vulkan (RADV ya funciona en el host).  
   * **Almacenamiento:** los pesos de los modelos y los volúmenes de Docker ocuparán decenas de GB. Se recomienda montar uno de los NVMe de datos (1,8 TB o 4 TB) para modelos y volúmenes, sin llenar el disco del sistema.  
 
-> * **Notificaciones en Tiempo Real (MVP):** Implementación estricta mediante **Server-Sent Events (SSE)**. Esta tecnología nativa de los navegadores permite un flujo ligero y unidireccional del servidor al cliente web para alertar sobre nuevas pujas, manteniendo la infraestructura 100% local y evitando dependencias de la nube como FCM o Pusher durante la demo offline.
+> * **Notificaciones en Tiempo Real ([Fase 2] desde el 2026-11-15, `bid-live-notifications`; originalmente MVP):** Implementación estricta mediante **Server-Sent Events (SSE)**. Esta tecnología nativa de los navegadores permite un flujo ligero y unidireccional del servidor al cliente web para alertar sobre nuevas pujas, manteniendo la infraestructura 100% local y evitando dependencias de la nube como FCM o Pusher durante la demo offline.
 
-### **1.5. Fuera del alcance del MVP (Fase 2: App Nativa iOS y LiDAR)**
+### **1.5. Fuera del alcance del MVP (Fase 2: marketplace, administración, App Nativa iOS y LiDAR)**
+
+**Actualización 2026-11-15:** la Fase 2 contiene ahora, además de lo que sigue (app nativa iOS, LiDAR y notificaciones push nativas), el marketplace B2B completo (dossier, registro y validación de profesionales, pujas, aceptación, notificaciones en vivo, contrato, comisión y pagos), el panel de Administración (cuotas, usuarios, endpoints de servicios, ajustes del marketplace), el chat de presupuesto con personas y las macros, la lista de la compra DIY en PDF, Google SSO, la preferencia de idioma por cuenta y la limpieza de objetos en los renders (las 22 features listadas en «Alcance del MVP»). Lo que sigue se conserva como estaba.
 
 Aunque el MVP pivota hacia una arquitectura web PWA para asegurar la viabilidad técnica antes del 22 de noviembre (sorteando limitaciones de compilación en macOS), la visión final del producto incluye un desarrollo nativo avanzado. Esta información se preserva strictly como "Fase 2":
 
@@ -238,15 +265,18 @@ El siguiente documento es el texto fundacional que se pasará a la skill build-b
 \*\*Project Name:\*\* BricoMission  
 \*\*Target Platform:\*\* Mobile-First Responsive Web Application (PWA) \+ REST API Backend  
 \*\*Repository Target:\*\* DevExpert \`harness-starter\`   
-\*\*Last Modified:\*\* 2026-11-12
+\*\*Last Modified:\*\* 2026-11-15
+
+\*\*MVP Scope Update (2026-11-15):\*\* The MVP delivered to the course tutors is closed by one new feature, \`diagnostics-dashboard\` (new requirement in Section 9). Every requirement, priority and user story below that belongs to a feature carrying \`"phase": "phase-2"\` in \`feature_list.json\` is tagged \*\*\[Phase 2\]\*\*; the text is kept as the original plan and is NOT part of the delivered MVP. \*\*Updated MVP priority order:\*\* (1) Docker Compose core stack and local AI services, (2) API skeleton and web PWA shell, (3) Keycloak realm with the three roles and branded email-code login, (4) brand and splash, (5) Capture (photos and measurements in cm) and Moodboard with Style Gallery, (6) Login Gate claim, (7) GPU job broker and ControlNet Renders, (8) catalog RAG ingestion, (9) four verified Budget Tiers, (10) Simulations (calculated style across every kitchen photo, My simulations, Budget per simulation), (11) \`diagnostics-dashboard\`. Everything else is \[Phase 2\] (next phase, outside the project presented to the tutors).  
 
 \*\*Documentation Strategy for Harness:\*\* The agent must split these requirements into a modular architecture (e.g., \`01\_ui\_spec.md\`, \`02\_ai\_pipeline.md\`, \`03\_marketplace\_logic.md\`, \`04\_database\_schema.md\`) rather than a single monolithic file during development.
 
 \#\# 1\. Executive Summary & Demo Strategy  
 BricoMission is an AI-powered platform designed to disrupt the kitchen renovation sector. It bridges the gap between home DIYers and professional contractors, solving the problem of hidden costs for users and time-wasting ("tire-kickers") for professionals.   
 \*\*Demo Context (15-Minute Video Pitch Target for Nov 22nd):\*\*  
-\*   \*\*Part 1 (5 mins):\*\* Real-case storytelling demonstrating the B2C homeowner web flow (photo uploads, AI persona chat, visual generation) and a brief look at the B2B contractor dashboard receiving real-time bids.  
+\*   \*\*Part 1 (5 mins):\*\* Real-case storytelling demonstrating the B2C homeowner web flow (photo uploads, AI persona chat \[Phase 2\], visual generation) and a brief look at the B2B contractor dashboard receiving real-time bids \[Phase 2\].  
 \*   \*\*Part 2 (10 mins):\*\* Technical architecture pitch showcasing the integration of the DevExpert harness, NotebookLM (RAG with IKEA catalogs), LiteLLM abstraction running Ollama on a local AMD Radeon 9070 XT GPU, OpenPencil UX workflows via MCP, strict prompt engineering, GitHub MCP automation, and the containerized Docker Compose infrastructure.  
+\*\*Demo Update (2026-11-15):\*\* the demo shows the app in a portrait browser next to the \`diagnostics-dashboard\` in a desktop browser; scenes that depend on Phase 2 features (bids, B2B dashboard, Admin dashboard, persona chat) are dropped and replaced by the diagnostics narration (see Sections 8 and 9).  
 \*\*Video Production:\*\* The demo video is the final deliverable, produced only after the MVP is complete, following the pipeline defined in Section 8.
 
 \#\# 2\. Technical Architecture & Infrastructure  
@@ -264,22 +294,23 @@ BricoMission is an AI-powered platform designed to disrupt the kitchen renovatio
     \*   \*\*CPU fallback:\*\* Small LLMs, embeddings and Whisper may run on the CPU at reduced speed (roughly a few to ~10 tokens/s for a 7-8B Q4 model). Spilling VRAM into GTT/system memory or swap is not acceptable for the demo.  
     \*   \*\*GPU stack:\*\* RDNA4 requires ROCm ≥ 6.4 inside the container images (e.g., \`ollama/ollama:rocm\`, a ROCm build of ComfyUI); the host only needs the in-kernel \`amdgpu\` driver. Fallback: llama.cpp with the Vulkan backend.  
     \*   \*\*Storage:\*\* Model weights and Docker volumes may live on a dedicated data NVMe (optional Docker data-root move); by default they use the system disk.  
-\*   \*\*Identity & Access Management (IAM):\*\* Keycloak. A dedicated "BricoMission" realm will be configured to handle all user authentication, role-based access control (RBAC), SSO integrations (Google/Apple), and B2B OTP validation, keeping auth logic cleanly separated from the core application.  
+\*   \*\*Identity & Access Management (IAM):\*\* Keycloak. A dedicated "BricoMission" realm will be configured to handle all user authentication, role-based access control (RBAC), SSO integrations (Google/Apple \[Phase 2: \`google-sso-login\`\]), and B2B OTP validation, keeping auth logic cleanly separated from the core application.  
 \*   \*\*Frontend / Client:\*\* Mobile-First Responsive Web Application (PWA) optimized for mobile browser viewports.  
 \*   \*\*Backend & API:\*\* Local PostgreSQL running as a container in the Docker Compose stack to guarantee zero external latency, reproducibility, and full offline capability during the presentation. The backend must expose a robust, framework-agnostic REST API. This API will serve the MVP web frontend but is fundamentally structured to support a future Native iOS mobile application without major refactoring.  
-\*   \*\*File Storage (Object Storage):\*\* A local instance of \*\*MinIO\*\* acting as an AWS S3-compatible storage bucket. This guarantees robust offline file handling for user-uploaded photos, AI-generated images, and PDF contracts for the MVP while keeping the codebase strictly cloud-ready (S3/Supabase Storage API) for production. The connection strings and credentials for this MinIO bucket MUST be visually configurable via the Administrator dashboard without needing code changes.  
-\*   \*\*Internationalization (i18n):\*\* The application must be built with multi-language support from day one. For the MVP, the supported language list is explicitly: \*\*English, Spanish, French, German, Italian, Portuguese, Dutch, Swedish, Norwegian, Danish, and Finnish\*\*. It must detect browser/device language automatically and persist the user's choice in the database.  
+\*   \*\*File Storage (Object Storage):\*\* A local instance of \*\*MinIO\*\* acting as an AWS S3-compatible storage bucket. This guarantees robust offline file handling for user-uploaded photos, AI-generated images, and PDF contracts for the MVP while keeping the codebase strictly cloud-ready (S3/Supabase Storage API) for production. The connection strings and credentials for this MinIO bucket MUST be visually configurable via the Administrator dashboard without needing code changes \[Phase 2: \`admin-service-endpoints\`\].  
+\*   \*\*Internationalization (i18n):\*\* The application must be built with multi-language support from day one. For the MVP, the supported language list is explicitly: \*\*English, Spanish, French, German, Italian, Portuguese, Dutch, Swedish, Norwegian, Danish, and Finnish\*\*. It must detect browser/device language automatically and persist the user's choice in the database \[Phase 2: \`language-preference-account\`\].  
 \*   \*\*AI Abstraction Layer:\*\* Implementation of an AI SDK (like Vercel AI SDK or LiteLLM) to allow hot-swapping between models. The primary development and demo environment will use local endpoints (Ollama or lemonade-server.ai) running on an AMD Radeon 9070 XT (16GB) to avoid API costs, with cloud API fallbacks ready.  
 \*   \*\*Image Generation AI:\*\* ControlNet (Depth/Canny maps) to generate full photorealistic images in a single pass while strictly preserving the room's global structural geometry (walls, windows, doors, water inputs) extracted from user-uploaded standard 2D photos.  
 \*   \*\*RAG / Knowledge Base (NotebookLM):\*\* The LLM logic must be grounded strictly on commercial catalogs (e.g., IKEA, Leroy Merlin) uploaded to NotebookLM. This ensures exact pricing, standard furniture dimensions, and executable DIY shopping lists without LLM hallucinations.
 
 \#\# 3\. User Roles & Access Model (STRICT REQUIREMENT)  
+\*Scope decision (2026-11-15):\* the three roles remain DEFINED and seeded in the Keycloak realm, and the Administrator can already read the admin-only platform setting API. The Professional and Administrator functions below (marketplace, bidding, CIF validation, quotas, admin panel, user CRUD, payment mode, contracts) are \*\*\[Phase 2\]\*\* and are not built in the delivered MVP: the roles exist, their functionality is Phase 2.  
 While the DevExpert harness might propose various generic roles during discovery, this system MUST implement at least the following three specific and distinct roles:  
 1\.  \*\*User (Homeowner / B2C):\*\* The end consumer utilizing the application to plan, visualize, and budget their kitchen renovation.  
-2\.  \*\*Professional (Contractor / B2B):\*\* The company or independent contractor offering services.   
+2\.  \*\*Professional (Contractor / B2B) \[Phase 2 functionality\]:\*\* The company or independent contractor offering services.   
     \*   \*\*Registration & Grouping:\*\* Professionals must register using a Corporate Email, Company Name, and CIF (Tax ID). Their account remains in a "Pending Validation" state until an Administrator verifies them.  
     \*   \*\*Multi-tenant Visibility:\*\* Once approved, Professionals are grouped under their verified Company entity. In their B2B dashboard, they have full edit/management rights over the projects they personally manage, but they can also view (in read-only mode for tracking) the projects managed by other co-workers within the same Company.  
-3\.  \*\*Administrator (Platform Manager):\*\* The internal platform administrator. This role requires a dedicated, 100% visual administration dashboard on the web platform. Through this UI, the Admin must be able to:  
+3\.  \*\*Administrator (Platform Manager) \[Phase 2 functionality\]:\*\* The internal platform administrator. This role requires a dedicated, 100% visual administration dashboard on the web platform. Through this UI, the Admin must be able to:  
     \*   Receive alerts for new Professional registrations, manually validate the provided CIF/Company Name, and link them to new or existing Company entities.  
     \*   Manage all platform users (CRUD operations).  
     \*   \*\*Token & Energy Quota Management:\*\* Monitor LLM and image generation token usage per user. The Admin MUST have the ability to override global daily token limits for specific users (granting them a higher allowance) and manually reset any user's daily consumption counter to zero on-demand (critical for product demos and VIP support).  
@@ -300,14 +331,15 @@ While the DevExpert harness might propose various generic roles during discovery
     1\.  Language Selection Screen (Conditional).  
     2\.  Data Input / Photo Upload Screen (Manual measurements).  
     3\.  Moodboard/Style Selection.  
-    4\.  AI Results & Chat Interface (The Core Engine with Persona dropdown).  
+    4\.  AI Results & Chat Interface (The Core Engine with Persona dropdown \[Phase 2\]; the MVP ships Results and Simulations without chat).  
     5\.  Budget Tier Overview (4 levels).  
-    6\.  DIY Partner Selection (e.g., IKEA PDF generation).  
-    7\.  Marketplace Bidding Dashboard (B2C view).  
-    8\.  Digital Contract / PDF View (With mathematical penalty clauses).  
-    9\.  B2B Contractor Dashboard (Incoming anonymized locked dossiers & peer tracking).  
-    10\. B2B Bid Submission & Contract Signing.  
-    11\. \*\*Admin Dashboard:\*\* Visual configuration (AI endpoints, MinIO/S3 credentials), token override/reset controls, payment gateway toggles, and user management.
+    6\.  DIY Partner Selection (e.g., IKEA PDF generation). \[Phase 2\]  
+    7\.  Marketplace Bidding Dashboard (B2C view). \[Phase 2\]  
+    8\.  Digital Contract / PDF View (With mathematical penalty clauses). \[Phase 2\]  
+    9\.  B2B Contractor Dashboard (Incoming anonymized locked dossiers & peer tracking). \[Phase 2\]  
+    10\. B2B Bid Submission & Contract Signing. \[Phase 2\]  
+    11\. \*\*Admin Dashboard:\*\* Visual configuration (AI endpoints, MinIO/S3 credentials), token override/reset controls, payment gateway toggles, and user management. \[Phase 2\]  
+    12\. \*\*Diagnostics Dashboard (desktop, MVP, added 2026-11-15):\*\* the live blueprint-style architecture graph of Section 9, designed in \`design/openpencil/bricomission_diagnostics.fig\`.
 
 \#\# 5\. Detailed End-to-End User Flow (B2C Homeowner)
 
@@ -332,10 +364,10 @@ While the DevExpert harness might propose various generic roles during discovery
 
 \#\#\# Phase 3: Registration Gate & Paywall  
 \*   \*\*Login Trigger:\*\* The moment the user requests any action requiring a costly API/LLM call (e.g., "Generate My Kitchen visuals" or "Calculate exact Budget"), a mandatory login gate appears.  
-\*   \*\*Auth Methods:\*\* Google SSO, Apple SSO, or Phone Number (OTP for B2B trust validation).  
-\*   \*\*B2B Registration Requirements:\*\* Professionals attempting to bypass this gate must provide Corporate Email, Company Name, and CIF to proceed into the Admin validation queue.  
-\*   \*\*Profile Data:\*\* Upon registration, the user's active language preference, role, and basic credentials are saved to the backend database to maintain state across web sessions.  
-\*   \*\*Monetization / Quota Strategy:\*\*   
+\*   \*\*Auth Methods:\*\* Google SSO \[Phase 2\], Apple SSO, or Phone Number (OTP for B2B trust validation). The MVP uses Keycloak password plus an email code.  
+\*   \*\*B2B Registration Requirements \[Phase 2\]:\*\* Professionals attempting to bypass this gate must provide Corporate Email, Company Name, and CIF to proceed into the Admin validation queue.  
+\*   \*\*Profile Data (language preference per account is \[Phase 2\]):\*\* Upon registration, the user's active language preference, role, and basic credentials are saved to the backend database to maintain state across web sessions.  
+\*   \*\*Monetization / Quota Strategy \[Phase 2\]:\*\*   
     \*   \*\*Default:\*\* "Freemium" mode (Unlimited text chat, but image generation and Marketplace submission are locked behind a paywall).  
     \*   \*\*Global Quota Feature Flag:\*\* The backend must include a database toggle to globally enforce a "Daily Energy/Token" model. This defines a strict maximum number of LLM calls and Image Generations allowed per day, per user.  
     \*   \*\*Granular Overrides:\*\* The Admin dashboard must allow administrators to override this global quota for specific individual users (e.g., setting a custom, higher daily limit) and manually reset an individual's current individual consumption counter back to zero on-demand.
@@ -344,29 +376,30 @@ While the DevExpert harness might propose various generic roles during discovery
 \*   \*\*Visuals:\*\* ControlNet outputs photorealistic variations fusing the original uploaded photo's layout with the moodboard style.  
 \*   \*\*Budgeting Architecture (The Core LLM Engine):\*\*  
     \*   The LLM pre-calculates 4 generic budget tiers (Luxury, High, Medium, Low) based on the manual room dimensions and the RAG (IKEA catalogs).  
-    \*   \*\*Interactive Chat:\*\* The primary way to adjust the budget is through conversational natural language.  
-    \*   \*\*Invisible Prompt Macros:\*\* Any classic UI elements (like selecting the "Medium" budget button, or using dropdowns to change a material) do not run hardcoded math; they act as hidden shortcuts that inject structured text prompts into the LLM chat engine to recalculate the total.  
-    \*   \*\*Dynamic AI Personas:\*\* The user can change the AI's personality from a dropdown menu at any time. The system prompt swaps dynamically:  
+    \*   \*\*Interactive Chat \[Phase 2\]:\*\* The primary way to adjust the budget is through conversational natural language.  
+    \*   \*\*Invisible Prompt Macros \[Phase 2\]:\*\* Any classic UI elements (like selecting the "Medium" budget button, or using dropdowns to change a material) do not run hardcoded math; they act as hidden shortcuts that inject structured text prompts into the LLM chat engine to recalculate the total.  
+    \*   \*\*Dynamic AI Personas \[Phase 2\]:\*\* The user can change the AI's personality from a dropdown menu at any time. The system prompt swaps dynamically:  
         1\.  \*Strict Foreman (Jefe de Obra):\* Focuses on technical viability and structural costs.  
         2\.  \*Empathetic Designer (Diseñador):\* Focuses on aesthetics, suggests visual alternatives if over budget.  
         3\.  \*Frugal Friend (Amigo Ahorrador):\* Actively looks to cut costs.  
         4\.  \*Neutral/Fast (Crítico):\* Outputs bare numbers without any fluff.
 
 \#\#\# Phase 5: Checkout & Execution  
-\*   \*\*Path A (DIY):\*\* Generates a highly detailed, executable shopping list PDF (exact square meters of tiles, bags of cement, exact IKEA furniture SKUs) for the user to buy and install themselves.  
-\*   \*\*Path B (Marketplace):\*\* Packages the final AI-generated images, user measurements, and chosen materials into a locked, highly specific professional dossier sent to the B2B side.
+\*   \*\*Path A (DIY) \[Phase 2\]:\*\* Generates a highly detailed, executable shopping list PDF (exact square meters of tiles, bags of cement, exact IKEA furniture SKUs) for the user to buy and install themselves.  
+\*   \*\*Path B (Marketplace) \[Phase 2\]:\*\* Packages the final AI-generated images, user measurements, and chosen materials into a locked, highly specific professional dossier sent to the B2B side.
 
-\#\# 6\. Detailed B2B Marketplace Flow & Smart Contracts  
+\#\# 6\. Detailed B2B Marketplace Flow & Smart Contracts \[Phase 2: every requirement in this section moved out of the delivered MVP on 2026-11-15\]  
 \*   \*\*15-Day Anonymous Bidding Window (Anti-Bypass Strategy):\*\* Contractors receive the locked dossier and have 15 days to submit closed bids with a guaranteed installation date. To prevent users from bypassing the platform and contacting professionals directly, \*\*all bids presented to the homeowner are strictly anonymous\*\*. The user sees the price, estimated time, and platform ratings, but the contractor's identity and contact details remain hidden until the contract is officially accepted.  
 \*   \*\*Zero-Chat Policy:\*\* To protect professionals from time-wasting, there is NO chat feature between the homeowner and the contractor prior to bid acceptance. The dossier is comprehensive enough.  
 \*   \*\*Company-Wide Dashboard Visibility:\*\* Professionals logging into their dashboard can view all projects assigned to their validated Company. Projects they personally manage are fully editable/actionable, whereas projects managed by their peers (co-workers) are visible for tracking purposes only (read-only).  
-\*   \*\*Real-Time Push Notifications (MVP):\*\* Implemented strictly via Server-Sent Events (SSE) to maintain a fully local, 100% offline-capable backend without reliance on third-party cloud services like Firebase or Pusher. Homeowners receive live browser alerts as bids arrive or drop in price.  
+\*   \*\*Real-Time Push Notifications (originally MVP, now \[Phase 2\]):\*\* Implemented strictly via Server-Sent Events (SSE) to maintain a fully local, 100% offline-capable backend without reliance on third-party cloud services like Firebase or Pusher. Homeowners receive live browser alerts as bids arrive or drop in price.  
 \*   \*\*Digital Contract, Penalties & Platform Commission:\*\* Once the homeowner accepts a bid, the system auto-generates a binding PDF legal contract.   
     \*   \*\*Commission Model:\*\* The contract triggers a pre-agreed commission fee owed by the Professional to BricoMission for the successful lead/execution.  
     \*   \*\*Dynamic Payment Flow:\*\* The checkout behavior depends entirely on the Admin's configured payment toggle: either a simulated offline transaction (recording a "Pending Commission" in the local DB without internet) or a real checkout redirection using PayPal Sandbox.  
     \*   \*\*Penalties:\*\* This contract must include explicitly written, mathematically calculated delay penalties (e.g., "Discount of 50€ per day of delay beyond the agreed completion date") digitally signed by both parties.
 
 \#\# 7\. Future Scope & Post-MVP (Native iOS & LiDAR)  
+\*Update 2026-11-15:\* Phase 2 also contains the marketplace, the Admin dashboard and the other features tagged \[Phase 2\] in this document (see the scope section at the top).  
 \*   \*\*Platform Pivot:\*\* Transitioning the web frontend into a 100% iOS Native mobile application using SwiftUI, heavily optimized for the iPhone 15 Pro Max.  
 \*   \*\*Native Push Notifications:\*\* Transition from the MVP's SSE architecture to a full native push notification infrastructure (e.g., APNs, FCM) to support upcoming native applications across iOS, Android, Windows, Linux, and macOS.  
 \*   \*\*Native Hardware Integration:\*\* Direct access to Apple's ARKit and the LiDAR scanner to replace manual measurement inputs. The app will instantly scan the room in 3D, extracting exact spatial planimetry, square meters, linear meters for countertops, and room volumes.  
@@ -374,8 +407,8 @@ While the DevExpert harness might propose various generic roles during discovery
 \*   \*\*Backend Readiness:\*\* The agnostic REST API built during the MVP phase is strictly designed to serve this future native client without requiring backend architectural changes.
 
 \#\# 8\. Final Deliverable: Demo Video Production (Last Step After the MVP)  
-This is the final step of the project, executed only once the MVP is complete. The goal is the 15-minute demo video (Section 1) built with a reproducible, versioned pipeline:  
-1\.  \*\*Script:\*\* The agent proposes a two-part narration script: (a) app demonstration (\~5 min, B2C flow plus a look at the B2B and Admin dashboards); (b) how it was built with the course techniques (\~10 min: DevExpert harness and SDD, planner/implementer/validator subagents, GitHub MCP, OpenPencil MCP design workflow, NotebookLM grounding, local AI on the AMD GPU, Docker Compose infrastructure). Each sentence gets a stable id. The developer reviews and approves it. Stored in \`presentation/script/\`.  
+This is the final step of the project, executed only once the MVP is complete (including \`diagnostics-dashboard\`). The goal is the 15-minute demo video (Section 1) built with a reproducible, versioned pipeline:  
+1\.  \*\*Script:\*\* The agent proposes a two-part narration script: (a) app demonstration (\~5 min, updated 2026-11-15: the B2C flow in a portrait browser next to the \`diagnostics-dashboard\` in a desktop browser, with the live graph narrating each step: Capture, Moodboard, Login Gate, Renders, Budget Tiers, Simulations; the B2B and Admin dashboards and the bids scene are \[Phase 2\] and dropped); (b) how it was built with the course techniques (\~10 min: DevExpert harness and SDD, planner/implementer/validator subagents, GitHub MCP, OpenPencil MCP design workflow, NotebookLM grounding, local AI on the AMD GPU, Docker Compose infrastructure; the dashboard doubles as the architecture visual for this part). Each sentence gets a stable id. The developer reviews and approves it. Stored in \`presentation/script/\`.  
 2\.  \*\*Narration:\*\* The developer records the approved script with their own voice. Audio stored in \`presentation/audio/\`.  
 3\.  \*\*Timed Transcript:\*\* A local speech-to-text model (Whisper / faster-whisper, natively or in Docker) transcribes the recording with per-sentence start/end timestamps, aligned to the script sentence ids. Output (JSON + SRT) stored in \`presentation/transcript/\`; this file is the single source of truth for the edit timing.  
 4\.  \*\*Screenshots:\*\* Using the browser MCP connector (Claude in Chrome), the agent drives the locally running app and captures the screenshots that match each sentence or block of the narration. Stored in \`presentation/screenshots/\`, named after the sentence ids.  
@@ -383,6 +416,24 @@ This is the final step of the project, executed only once the MVP is complete. T
 6\.  \*\*Visual Validation:\*\* The developer reviews the composition with \`npx hyperframes preview\` and iterates with the agent until approved.  
 7\.  \*\*Export:\*\* After approval, the agent guides the developer step by step through \`npx hyperframes render\` to MP4, flagging any manual action required.  
 8\.  \*\*Versioning:\*\* The HyperFrames project, script, transcript, audio, and screenshots are committed to this repository. Rendered MP4 files go to \`presentation/out/\` and are git-ignored.
+
+\#\# 9\. Diagnostics Dashboard (MVP, added 2026-11-15; closes the MVP)  
+\*   \*\*Purpose:\*\* A separate, diagnostic-only desktop web app that explains the whole architecture by itself and is shown next to the portrait app in the demo video. It has its own URL and port, binds to localhost only, runs under its own Compose profile and has no login.  
+\*   \*\*Requirements:\*\*  
+    \*   \*\*DD-1 Blueprint graph:\*\* The architecture is drawn as a blueprint-style graph (Unreal Engine Blueprint look). Every frontend and backend component is a node: the containers and the API internal modules. AI nodes name their model.  
+    \*   \*\*DD-2 Live connections:\*\* Connections between modules that are currently working light up and animate in real time; idle connections stay dim.  
+    \*   \*\*DD-3 Narrated log:\*\* A collapsible log panel beside the graph narrates, line by line, which node talks to which node and what it sends or receives (for example the budget prompt, or the visual style prompt built from several images).  
+    \*   \*\*DD-4 Metrics widgets:\*\* Each module has a widget with CPU %, RAM, VRAM and GPU %.  
+    \*   \*\*DD-5 Legend:\*\* One global legend explains node types, connection states and metrics.  
+    \*   \*\*DD-6 Isolation:\*\* Diagnostic only: it never changes application state, never calls a costly AI endpoint on its own, and works fully offline.  
+    \*   \*\*DD-7 Design:\*\* Designed through the OpenPencil MCP in \`design/openpencil/bricomission_diagnostics.fig\` (desktop, dark blueprint look) before any implementation.  
+\*   \*\*Acceptance criteria:\*\*  
+    \*   Given the stack is running with the diagnostics profile, when the developer opens the dashboard URL on its own port, then the graph renders with a node for every container and every API module, with no login.  
+    \*   Given a user runs a flow in the app (for example a Render, a Budget Tier calculation or a Simulation), when the request travels through the system, then the participating connections light up and animate while they work, and go idle afterwards.  
+    \*   Given the same flow, when the log panel is open, then it shows one narrated line per hop (source node, target node, what is sent or received) and it can be collapsed without affecting the graph.  
+    \*   Given any module, when the graph is visible, then its widget shows CPU %, RAM, VRAM and GPU % updating live.  
+    \*   Given the app in a portrait browser and the dashboard in a desktop browser side by side, when a flow runs, then the dashboard alone is enough to explain which components took part.  
+    \*   Given the dashboard port, when it is reached from another host, then it is not reachable (localhost only).  
 
 ## **4\. Ejecución de Skills del Harness (Registro de Progreso)**
 
@@ -400,7 +451,7 @@ Para cada fase del desarrollo, la invocación de las *skills* según el entorno 
 
 ### **4.2. Flujo de Trabajo del Harness Avanzado y Registro de Estado**
 
-El desarrollo se organiza en 6 grandes etapas secuenciales (Fases 0 a 5) según la arquitectura de subagentes:
+El desarrollo se organiza en 6 grandes etapas secuenciales (Fases 0 a 5) según la arquitectura de subagentes. **Nota de corte (2026-11-15):** no confundir estas «Fases 0 a 5» del harness con la «Fase 2» del producto (la siguiente fase, fuera del proyecto presentado). El MVP se corta a las 16 features ya `accepted` más `diagnostics-dashboard`, que cierra la Fase 3 de este plan (ejecución por feature) y es el último trabajo antes de la Fase 5 (vídeo). Las 22 features con `"phase": "phase-2"` no se ejecutan antes del 2026-11-22; el arranque (`AGENTS.md`) elige solo features sin esa marca.
 
 > 0. **Fase 0: Configuración Inicial (Git & GitHub MCP)**  
    * **Objetivo:** Preparar y blindar el control de versiones local antes de generar un solo archivo.  
@@ -433,7 +484,7 @@ El desarrollo se organiza en 6 grandes etapas secuenciales (Fases 0 a 5) según 
         * Si el resultado es revise: emite un *Implementation Repair Brief* y reenvía al implementer.  
         * Si el resultado es accept: confirma que cumple la especificación y los estándares de seguridad.  
      4. **Commit de Aceptación:** El orquestador cambia el estado en feature\_list.json a accepted, registra las evidencias, realiza un commit convencional (feat: complete \<feature-id\>) automatizado por MCP y entrega las instrucciones finales de prueba local (Cómo probarlo).  
-   * **Estado:** *(Pendiente de ejecución)*  
+   * **Estado:** *(En curso; actualizado el 2026-11-15: 16 features `accepted`, falta `diagnostics-dashboard` para cerrar el MVP.)*  
 > 4. **Fase 4: Despliegue Multi-Feature y Gestión de Repositorio (github-flow)**  
    * **Objetivo:** Coordinar la ejecución paralela o entrega continua en GitHub utilizando git worktrees aislados, aprovechando el servidor GitHub MCP para todo el manejo remoto.  
    * **Modos de Invocación:**  
@@ -453,17 +504,17 @@ Resumen de las respuestas dadas durante la entrevista de `/build-brief`. El deta
 | # | Pregunta | Decisión | Motivo / consecuencia |
 | :---- | :---- | :---- | :---- |
 | 1 | Idioma de los documentos | **Inglés** | Coherente con la regla de código y documentación técnica en inglés. La conversación sigue en español. |
-| 2 | Alcance del MVP con 10 días de plazo | **PRD completo** | Es el riesgo principal. `/harness-starter` ordenará las features siguiendo el recorrido de la demo: primero infraestructura, captura, IA, resultados y marketplace; después el panel de administración; y al final la amplitud (11 idiomas, Google SSO, pulido). |
+| 2 | Alcance del MVP con 10 días de plazo | **PRD completo** (histórico; recortado el 2026-11-15, ver «Alcance del MVP») | Es el riesgo principal. `/harness-starter` ordenará las features siguiendo el recorrido de la demo: primero infraestructura, captura, IA, resultados y marketplace; después el panel de administración; y al final la amplitud (11 idiomas, Google SSO, pulido). |
 | 3 | Origen de los precios (NotebookLM no tiene API) | **RAG local sobre los catálogos en PDF** | Los PDF, curados por el desarrollador con NotebookLM fuera de la app, se indexan con *embeddings* en PostgreSQL (pgvector). NotebookLM no forma parte del sistema en ejecución. |
 | 4 | Quién calcula los importes | **El LLM extrae, el código calcula** (ADR 0002) | El LLM devuelve partidas en JSON citando la fuente. El backend comprueba que el precio aparece en el fragmento recuperado y calcula subtotales, niveles, IVA, penalizaciones y comisión con aritmética decimal. Totales reproducibles. |
-| 5 | Demo con o sin internet | **Online, con modo offline** | Con red: Google SSO y PayPal Sandbox reales. Sin red: login con usuario y contraseña de Keycloak, OTP por email a un buzón local (Mailpit en Docker) y pago simulado. Apple SSO y OTP por SMS quedan fuera del MVP. |
+| 5 | Demo con o sin internet | **Online, con modo offline** | Con red: Google SSO y PayPal Sandbox reales (ambos [Fase 2] desde el 2026-11-15). Sin red: login con usuario y contraseña de Keycloak, OTP por email a un buzón local (Mailpit en Docker) y pago simulado. Apple SSO y OTP por SMS quedan fuera del MVP. |
 | 6 | Servidor LLM y modelos | **llama.cpp con un modelo MoE y los expertos en RAM** (ADR 0001) | `llama-server` en Docker (ROCm o Vulkan) con un MoE mediano (objetivo: Qwen3-30B-A3B Q4), usando `--n-cpu-moe`. Ocupa poca VRAM y deja sitio a **SDXL + ControlNet** en ComfyUI. Se descartó **Avalon** como motor principal: es un fork para un solo modelo de 125B, no está medido en RDNA4, exige ROCm nativo y ocupa ~98 GiB. Queda como posible experimento, intercambiable desde el panel. |
 | 7 | Arquitectura frontend/backend | **Monorepo TypeScript: Next.js PWA + API NestJS** (ADR 0003) | Monorepo con pnpm: `apps/web` (Next.js + Tailwind) y `apps/api` (NestJS REST + OpenAPI, Prisma, SSE). Un solo lenguaje, tipos compartidos y una API reutilizable por la futura app iOS. |
-| 8 | Qué profesionales reciben un dossier | **Todas las empresas validadas** | Una sola puja por empresa. La gestiona el profesional que la crea; sus compañeros la ven en solo lectura. Sin filtro por zona en el MVP. |
-| 9 | Ciclo de vida de la ventana de pujas | **Pujas editables y aceptables en cualquier momento** | Cada cambio de una puja avisa al usuario por SSE. Aceptar una puja cierra el dossier, y si en 15 días no se acepta ninguna, caduca. La duración de la ventana la configura el administrador, para poder enseñar el ciclo completo en el vídeo. |
+| 8 | Qué profesionales reciben un dossier [Fase 2] | **Todas las empresas validadas** | Una sola puja por empresa. La gestiona el profesional que la crea; sus compañeros la ven en solo lectura. Sin filtro por zona en el MVP. |
+| 9 | Ciclo de vida de la ventana de pujas [Fase 2] | **Pujas editables y aceptables en cualquier momento** | Cada cambio de una puja avisa al usuario por SSE. Aceptar una puja cierra el dossier, y si en 15 días no se acepta ninguna, caduca. La duración de la ventana la configura el administrador, para poder enseñar el ciclo completo en el vídeo. |
 | 10 | Recursos visuales previos | **Ninguno: dirección inicial definida por el agente** | DESIGN.md recoge tokens y dirección minimalista estilo Apple/IKEA (azul profundo, neutros cálidos, acento naranja, Inter). Cada pantalla se diseña en OpenPencil vía MCP, y una vez aprobada es la fuente de verdad. |
-| 11 | Alta de autónomos (no tienen CIF) | **Empresa de un solo miembro con NIF** | El campo pasa a ser "Tax ID" (CIF o NIF) y se valida su formato. Cada profesional pertenece a una única empresa. |
-| 12 | Firma del contrato | **Aceptación electrónica registrada** | Cada parte se vuelve a autenticar en Keycloak y se guarda quién, cuándo, la IP y el hash SHA-256 del PDF. Se añade una página de evidencias al PDF. Funciona sin red. |
+| 11 | Alta de autónomos (no tienen CIF) [Fase 2] | **Empresa de un solo miembro con NIF** | El campo pasa a ser "Tax ID" (CIF o NIF) y se valida su formato. Cada profesional pertenece a una única empresa. |
+| 12 | Firma del contrato [Fase 2] | **Aceptación electrónica registrada** | Cada parte se vuelve a autenticar en Keycloak y se guarda quién, cuándo, la IP y el hash SHA-256 del PDF. Se añade una página de evidencias al PDF. Funciona sin red. |
 
 **Supuestos adoptados sin pregunta explícita** (todos configurables por el administrador o revisables):
 - Comisión de plataforma del 5 %.
@@ -472,6 +523,8 @@ Resumen de las respuestas dadas durante la entrevista de `/build-brief`. El deta
 - Interfaz traducida a los 11 idiomas, con el inglés como idioma canónico; el chat responde en el idioma del usuario.
 - Los borradores anónimos que no se reclaman se borran a los 7 días.
 - Las valoraciones de las empresas son datos de demostración precargados.
+
+**Nota de actualización (2026-11-15):** la decisión 2 («PRD completo») se mantiene como historia, pero el MVP entregado a los tutores se recorta: lo que depende del marketplace, la administración, el chat de presupuesto y otras 22 features pasa a la Fase 2, y `diagnostics-dashboard` cierra el MVP. Las decisiones marcadas [Fase 2] siguen vigentes como diseño para esa fase. Ver «Alcance del MVP (actualizado el 2026-11-15)».
 
 **Primera tarea técnica:** una prueba en la máquina de desarrollo el primer día, antes de la primera feature con IA. Consiste en ejecutar llama.cpp MoE y ComfyUI SDXL + ControlNet en Docker sobre la RX 9070 XT y medir VRAM, tokens/s y segundos por render.
 
@@ -519,15 +572,17 @@ La skill `/harness-starter` ha convertido los documentos de descubrimiento de la
 2. Se ejecuta `/feature-flow infra-compose-core`.
 3. Justo después, `/feature-flow local-ai-gpu-spike`.
 
+**Nota de actualización (2026-11-15):** el recuento original de 34 features era el del PRD completo. Hoy `feature_list.json` tiene 16 features `accepted` del MVP, la feature nueva `diagnostics-dashboard` (cierra el MVP) y 22 features con `"phase": "phase-2"` (Fase 2, fuera del proyecto presentado a los tutores). Las listas de bloques de arriba se conservan como historia.
+
 ## **5\. Creación de la Presentación (Vídeo Demo de 15 minutos)**
 
-La presentación es el **último punto del proyecto**: se aborda únicamente cuando el MVP esté terminado. El objetivo es que el vídeo se pueda reproducir y modificar fácilmente, por lo que todo el material fuente se versiona en este repositorio, en la carpeta `presentation/`.
+La presentación es el **último punto del proyecto**: se aborda únicamente cuando el MVP esté terminado (es decir, con `diagnostics-dashboard` incluido; actualizado el 2026-11-15). El objetivo es que el vídeo se pueda reproducir y modificar fácilmente, por lo que todo el material fuente se versiona en este repositorio, en la carpeta `presentation/`.
 
 ### **5.1. Guion**
 
 > * El agente propondrá un guion dividido en dos bloques, coherente con la estrategia de demo de la sección 1.1:  
-  1. **Presentación de la app (~5 min):** recorrido narrado del flujo B2C (fotos, medidas, moodboard, generación con IA, chat de presupuesto con personas, marketplace con pujas anónimas) y vistazo a los paneles B2B y de Administración.  
-  2. **Cómo lo hemos hecho (~10 min):** explicación del proceso aplicando lo aprendido en el curso: el *harness* de DevExpert y el *Spec-Driven Development*, la tríada planner/implementer/validator, el MCP de GitHub, el diseño con OpenPencil vía MCP, NotebookLM para basar los precios en catálogos reales, la IA local en la GPU AMD y la infraestructura en Docker Compose.  
+  1. **Presentación de la app (~5 min), actualizada el 2026-11-15:** la app se muestra en un navegador en vertical junto al panel `diagnostics-dashboard` en un navegador de escritorio. Recorrido narrado del flujo B2C (fotos y medidas en cm, moodboard con Style Gallery, Login Gate, renders con ControlNet, cuatro niveles de presupuesto, simulaciones con «Mis simulaciones» y presupuesto por simulación), con el grafo en vivo iluminando los módulos que trabajan y el registro narrando qué prompt se envía. Las escenas de chat con personas, marketplace con pujas anónimas y paneles B2B y de Administración se eliminan por ser [Fase 2] y se sustituyen por la narración del panel de diagnóstico.  
+  2. **Cómo lo hemos hecho (~10 min):** explicación del proceso aplicando lo aprendido en el curso: el *harness* de DevExpert y el *Spec-Driven Development*, la tríada planner/implementer/validator, el MCP de GitHub, el diseño con OpenPencil vía MCP, NotebookLM para basar los precios en catálogos reales, la IA local en la GPU AMD y la infraestructura en Docker Compose. El panel de diagnóstico sirve de apoyo visual de la arquitectura en este bloque; el corte del alcance y la Fase 2 se mencionan al final.  
 > * Cada frase del guion tendrá un identificador estable (por ejemplo `s01-03`) para enlazarla con su audio, su marca de tiempo y su captura.  
 > * El desarrollador revisa y aprueba el guion antes de grabar. Se guarda en `presentation/script/`.
 
@@ -543,7 +598,7 @@ La presentación es el **último punto del proyecto**: se aborda únicamente cua
 
 ### **5.4. Capturas de pantalla sincronizadas con la narración**
 
-> * Con la app funcionando en local, el agente usará el **conector MCP del navegador web** (Claude in Chrome) para recorrer las pantallas y hacer las capturas que correspondan a cada frase o bloque de la narración.  
+> * Con la app (en vertical) y el panel de diagnóstico (en escritorio) funcionando en local, el agente usará el **conector MCP del navegador web** (Claude in Chrome) para recorrer las pantallas y hacer las capturas que correspondan a cada frase o bloque de la narración.  
 > * Las capturas se guardan en `presentation/screenshots/`, nombradas con el identificador de la frase a la que acompañan.
 
 ### **5.5. Montaje con HyperFrames (1080p horizontal)**

@@ -2,6 +2,8 @@
 
 Source of truth for product intent: `Documentación del Proyecto_BricoMission.md` (PRD in section 3). This brief records the decisions taken in discovery on 2026-11-12.
 
+> **Scope update (2026-11-15).** The MVP delivered to the tutors is now the 16 features already `accepted` in `feature_list.json` plus one new feature, `diagnostics-dashboard`, which closes it (a separate localhost-only desktop web with a live blueprint-style graph of the whole architecture, narrated log and per-module CPU/RAM/VRAM/GPU widgets). The other 22 features carry `"phase": "phase-2"` and are out of the delivered MVP (next phase, outside the project presented to the tutors). The original goals, priority order and decisions below are kept as the original plan; items marked **[Phase 2]** are not part of the delivered MVP. The demo video shows the app in a portrait browser next to the dashboard in a desktop browser.
+
 ## Problem
 
 Homeowners cannot estimate the real cost of a kitchen renovation and cannot picture the result. Contractors waste time and money quoting undecided clients ("tire-kickers") who have no clear idea or purchase intent.
@@ -13,12 +15,16 @@ Homeowners visit stores, collect scattered quotes, and guess from magazine photo
 ## Target Users
 
 - **Homeowner** (B2C): plans, visualizes, and budgets a kitchen renovation on a mobile browser.
-- **Professional** (B2B): employee of a Company (or a self-employed contractor) who bids on Dossiers.
-- **Administrator**: internal operator who validates Companies, manages users and quotas, and configures the platform visually.
+- **Professional** (B2B) [Phase 2 functionality]: employee of a Company (or a self-employed contractor) who bids on Dossiers.
+- **Administrator** [Phase 2 functionality]: internal operator who validates Companies, manages users and quotas, and configures the platform visually.
+
+The three roles stay defined and seeded in the Keycloak realm (2026-11-15); only the Professional and Administrator functions are deferred.
 
 Roles and permissions: `docs/user-and-access-model.md`.
 
 ## Goals
+
+Original goals (2026-11-12). Delivered MVP (2026-11-15): goals 1, 2 (four tiers only), 6 and 7, plus the diagnostics dashboard goal added below; goals 2 (chat and Persona part), 3, 4 and 5 are [Phase 2].
 
 1. Turn kitchen photos + measurements into photorealistic Renders that keep the real room geometry.
 2. Produce a Budget in four tiers, grounded on partner Catalogs, refined by chat with a switchable Persona.
@@ -27,8 +33,13 @@ Roles and permissions: `docs/user-and-access-model.md`.
 5. Give the Administrator full visual control: Company validation, users, quotas, AI endpoints, storage, Payment Mode.
 6. Run entirely on the local dev machine, with an offline fallback for every online dependency.
 7. Ship a 15-minute demo video built with the pipeline of doc section 5.
+8. (Added 2026-11-15, MVP) Explain the architecture by itself with the `diagnostics-dashboard`: a live blueprint-style graph of every container and API module, with animated connections, a narrated log and CPU/RAM/VRAM/GPU widgets, shown next to the portrait app in the demo.
 
 ## Non-Goals
+
+Delivered-MVP non-goals added 2026-11-15 (moved to Phase 2): budget chat, Personas and Prompt Macros; DIY Shopping List PDF; Dossier publication and the whole Marketplace (Company registration and validation, Bids, acceptance, live notifications, Contract PDF, Electronic Acceptance, commission checkout with Simulated and PayPal Sandbox); the Administrator panel (users, quotas, service endpoints, marketplace settings); Google SSO; per-account language preference; render declutter.
+
+Original non-goals:
 
 - Native iOS app, LiDAR/ARKit capture, native push notifications (Phase 2).
 - Renovation types other than kitchens (data model may allow it; no UI).
@@ -42,9 +53,11 @@ Roles and permissions: `docs/user-and-access-model.md`.
 
 ## MVP Slice
 
-Scope decision: **the full PRD** is the MVP target (developer's choice, 2026-11-12), delivered by 2026-11-22. This is the main delivery risk (see `docs/risks-and-open-questions.md`); `/harness-starter` must order features so that the end-to-end demo path is done first and breadth comes later.
+**Updated 2026-11-15:** the delivered MVP priority order is: (1) Infrastructure (Compose, AI services, API and PWA skeleton, Keycloak realm with three roles and email-code login, brand and splash); (2) Homeowner capture (photos and measurements in cm, Moodboard with Style Gallery, Login Gate claim); (3) AI (GPU job broker, ControlNet Renders, catalog RAG ingestion, four verified Budget Tiers, Simulations with My simulations and a Budget per simulation); (4) `diagnostics-dashboard`. The list below is the original plan (2026-11-12); its items 3 (Personas and Prompt Macros), 4, 5, 6 and 7 (Google SSO) are [Phase 2].
 
-Priority order of the end-to-end demo path:
+Original scope decision: **the full PRD** is the MVP target (developer's choice, 2026-11-12), delivered by 2026-11-22. This is the main delivery risk (see `docs/risks-and-open-questions.md`); `/harness-starter` must order features so that the end-to-end demo path is done first and breadth comes later.
+
+Original priority order of the end-to-end demo path (superseded 2026-11-15, see above):
 
 1. Infrastructure: Docker Compose stack, Keycloak realm with three roles, API + PWA skeleton, i18n plumbing.
 2. Homeowner capture: anonymous photos + measurements + Moodboard, Login Gate.
@@ -71,6 +84,8 @@ Technical decisions: `docs/technical-discovery.md` and `docs/adr/`.
 - Final rehearsal: run the full demo path on a clean `docker compose up`, once online and once with the network disabled.
 
 ## Success Criteria
+
+Original criteria (2026-11-12). Delivered MVP (2026-11-15): the photo-to-Render-and-Budget part of the first criterion, the Catalog traceability, Render geometry, offline demo and video criteria apply; the Contract, Professional and Administrator criteria are [Phase 2]. Added: the diagnostics dashboard lets a viewer follow which components take part in a flow without reading code.
 
 - A Homeowner goes from photos to an accepted Contract in one continuous session, on a mobile viewport.
 - Every price on screen and in PDFs traces back to a Catalog source; recomputing a Budget gives identical totals.

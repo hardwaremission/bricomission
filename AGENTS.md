@@ -1,11 +1,13 @@
 # Project Agent Instructions
 
-BricoMission is an AI-powered kitchen renovation platform: homeowners turn photos and measurements into photorealistic renders and catalog-grounded budgets, then go DIY or publish a locked dossier to an anonymous marketplace of validated contractors. MVP deadline: 2026-11-22.
+BricoMission is an AI-powered kitchen renovation platform: homeowners turn photos and measurements into photorealistic renders and catalog-grounded budgets, then go DIY or publish a locked dossier to an anonymous marketplace of validated contractors (the DIY list and the marketplace are phase 2). MVP deadline: 2026-11-22.
+
+MVP scope (decision 2026-11-15): the delivered MVP is the features without a `phase` field in `feature_list.json` (the 16 already `accepted` plus `diagnostics-dashboard`). `diagnostics-dashboard` closes the MVP: a separate localhost-only desktop web with a live blueprint-style graph of the whole architecture. Features with `"phase": "phase-2"` (marketplace, bidding, contracts, payments, quotas, Admin panel, budget chat and personas, DIY PDF, Google SSO, language preference, render declutter) are the next phase, outside the project presented to the tutors.
 
 ## Read First
 
 - `CONTEXT.md` — domain language (use these terms in code and docs).
-- `docs/build-brief.md` — goals, non-goals, MVP priority order.
+- `docs/build-brief.md` — goals, non-goals, MVP priority order (with the 2026-11-15 scope update).
 - `docs/domain-model.md` — entities, relationships, lifecycles.
 - `docs/risks-and-open-questions.md` — risks and unresolved questions.
 
@@ -24,7 +26,7 @@ Before writing code:
 
 1. Confirm the working directory with `pwd`.
 2. Read `PROGRESS.md` for current verified state and next step.
-3. Read `feature_list.json` and pick the first ready unfinished feature in list order (all `depends_on` accepted).
+3. Read `feature_list.json` and pick the first ready unfinished feature in list order (all `depends_on` accepted) that does NOT carry `"phase": "phase-2"`. Phase 2 features are skipped unless the developer explicitly asks for one.
 4. Run `./init.sh`. It runs the workspace gate (`pnpm install --frozen-lockfile`, `pnpm -r lint`, `pnpm -r test`), then the compose gate (`docker compose up -d --build --wait` for the 6 core services, then `/health` must report `database: up`, Keycloak must serve realm `BricoMission` with issuer `http://localhost:$KEYCLOAK_PORT/realms/BricoMission`, and the Web step must pass: `/` with `Accept-Language: es` is 200 with `lang="es"`, `/` with `ja` is 307 to `/language`, `/manifest.webmanifest` is 200, `/api/health` through the web proxy reports `database: up`, and the Capture and Moodboard pages plus `/api/style-gallery` (24 images) answer). If it reports Docker missing or the daemon unreachable, ask the developer to run `./scripts/install-host-prereqs.sh` in their own terminal (it uses sudo) and re-login. Agents never run the install mode or `sudo`; they only run `./scripts/install-host-prereqs.sh --check`.
    - pnpm (version pinned in `package.json` `packageManager`) must be resolvable as `pnpm` or `corepack pnpm`. Without sudo: `corepack enable --install-directory "$HOME/.local/bin" pnpm`, or `npx --yes corepack@0.36.0 enable --install-directory "$HOME/.local/bin" pnpm`, or `npm install --prefix "$HOME/.local" pnpm@<pinned>`. Set `COREPACK_ENABLE_DOWNLOAD_PROMPT=0` in headless shells.
    - Baseline commands: `pnpm -r lint` and `pnpm -r test` (no database, Docker or browser needed). A second stack of the repo (not the normal flow, which has one feature and one stack) must set `COMPOSE_PROJECT_NAME` and the port env vars (including `API_PORT`, `KEYCLOAK_PORT` and `WEB_PORT`) before any `docker compose` command.

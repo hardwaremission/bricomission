@@ -1,5 +1,7 @@
 # Risks and Open Questions
 
+> **Scope update (2026-11-15).** The delivered MVP is the 16 `accepted` features plus `diagnostics-dashboard`; the other 22 features carry `"phase": "phase-2"` and are out of it. Open questions, assumptions and risks that only concern Phase 2 features (Bid ratings, Contract wording, Administrator-side items) stay recorded below but do not block the delivered MVP. The original "Full PRD scope" risk was mitigated by this cut.
+
 ## Blocking Next Phase
 
 None. Discovery is sufficient to derive the harness (`/harness-starter`).
@@ -8,7 +10,7 @@ None. Discovery is sufficient to derive the harness (`/harness-starter`).
 
 - Which Catalog PDFs are ingested for the demo, and their licensing for a public video.
 - Contract template legal wording (Spanish). VAT in Budget totals is decided (`budget-tier-computation`: Catalog prices VAT-inclusive, 21 % breakdown); the Contract PDF VAT is still open.
-- Platform rating shown on anonymous Bids: source of ratings in the MVP (seeded demo data).
+- [Phase 2] Platform rating shown on anonymous Bids: source of ratings (seeded demo data).
 
 ## Resolved
 
@@ -29,6 +31,7 @@ None. Discovery is sufficient to derive the harness (`/harness-starter`).
 
 ## Later / Not MVP
 
+- Phase 2 (decision 2026-11-15; next phase outside the project presented to the tutors): the Marketplace (Dossier, Bids, acceptance, live notifications, Contract PDF and Electronic Acceptance, commission checkout), Professional registration and Company validation, quotas and the Administrator panel, budget chat with Personas and Prompt Macros, DIY Shopping List PDF, Google SSO, per-account language preference, render declutter. The 22 features are listed in `feature_list.json` with `"phase": "phase-2"`.
 - Apple SSO, real SMS OTP, advanced e-signature providers.
 - Zone-based Dossier distribution.
 - Professional self-service Company membership changes.
@@ -47,7 +50,8 @@ None. Discovery is sufficient to derive the harness (`/harness-starter`).
 
 | Risk | Impact | Mitigation |
 | --- | --- | --- |
-| Full PRD scope in 10 days | Demo incomplete | Harness orders features by the demo path; breadth (locales, SSO, polish) last |
+| Full PRD scope in 10 days | Demo incomplete | Harness orders features by the demo path; breadth (locales, SSO, polish) last. Resolved 2026-11-15 by cutting the MVP: 22 features moved to Phase 2, `diagnostics-dashboard` added |
+| `diagnostics-dashboard` built late (added 2026-11-15) | The demo lacks its architecture visual, or the dashboard measures break the stack's no-GPU-contention rule | Diagnostic only: read-only metrics, no costly AI calls of its own, own Compose profile and port, localhost only; design in `design/openpencil/bricomission_diagnostics.fig` first; rehearse the portrait app plus desktop dashboard layout before recording |
 | ROCm on RDNA4 inside containers unstable | No local AI | Retired by the 2026-11-12 spike: llama.cpp (ROCm b12316) and ComfyUI (rocm/pytorch ROCm 10.1, torch 2.14) both run natively on gfx1201 in Docker with no `HSA_OVERRIDE_GFX_VERSION`. Vulkan llama.cpp is a tested fallback |
 | SDXL + ControlNet too slow or VRAM-tight with the LLM | Slow Renders in video | Speed is fine (about 8.5 s warm, 17-20 s cold). VRAM is tight: ComfyUI alone peaks at about 15 GB over the desktop baseline. Concurrent LLM + render did not OOM but slowed both by about 25 %, so serialization is required: the `gpu-job-broker` runs renders alone and holds chat in the queue meanwhile. `controlnet-render` (2026-11-14) measured real Renders with llama-server loaded and idle: cold 20.8 s, warm 9.1-10.3 s, VRAM peak 16.26 of 16.3 GB, no OOM, LLM still answering, so `GpuResidencyHook` stayed a no-op then (revised 2026-11-14: with the multimodal model and IP-Adapter the hook unloads the LLM before renders, ADR 0005). The card is nearly full during a Render: anything else on the GPU (desktop apps) can push it over. Pre-generate demo Renders as a backup |
 | RAG returns wrong or no price | Wrong Budget | Cited-price verification; reject unverified Line Items |

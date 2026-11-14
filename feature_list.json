@@ -456,12 +456,32 @@
     "notes": "Developer feedback 2026-11-14 after trying the real stack; one UX-improvement feature (developer decision), inserted before every remaining feature. Decisions: blend with IP-Adapter in ComfyUI AND with a vision model that describes the references, switchable by the Administrator (mode ip_adapter | vlm_text | both); switch the LLM to a multimodal model of the same family (Qwen3-VL-30B-A3B class, ADR 0001 amended) that also inventories the visible elements of a Simulation for the Budget; one current Budget per Simulation; Simulations unlimited for now; the ordering Luxury > High > Medium > Low is enforced in code. Slider position persists when switching Renders; thumbnails and history are responsive (wrap, no horizontal overflow). Open points for the planner to put to the developer: no admin UI exists yet, so the blend mode lives in a stored setting with an API now and the switch UI joins admin-service-endpoints; handling of partial batch failures and the maximum photo count; what happens to existing Renders (dev data only); how daily-quota-enforcement counts a batch. GPU: the ComfyUI peak was 16,217 of 16,304 MiB on 2026-11-14 with the text LLM resident; IP-Adapter (about 2 GB weights, new ComfyUI node) and the multimodal model change that, so co-residency must be re-measured and unloads decided. UI gate."
   },
   {
+    "id": "diagnostics-dashboard",
+    "area": "observability",
+    "title": "Presenter watches a live blueprint-style diagnostics dashboard of the whole architecture",
+    "user_visible_behavior": "A separate web (own URL and port, desktop layout) shows every frontend and backend component as a node of a blueprint-style graph with the AI model named on each AI node. While the app runs, the connections between the modules that are working light up and animate in real time. A log panel beside the graph (collapsible, same visual language) narrates line by line which node starts each communication, towards which node, and what it sends or receives (for example the budget prompt or the visual style prompt built from several images). Each module has its own widget with CPU percent, RAM, VRAM and GPU percent, with one global legend. It is diagnostic only and explains the architecture by itself during the presentation.",
+    "depends_on": ["simulations-ux-overhaul"],
+    "status": "not_started",
+    "verification": [
+      "Unit tests: the diagnostics Event model (id, correlationId, from, to, kind, summary, payload with truncation) and the in-memory ring buffer; the redaction helper never lets tokens, cookies, secrets, passwords or image bytes through (images become thumbnails or sizes only)",
+      "API tests: the events SSE endpoint is disabled unless DIAGNOSTICS_ENABLED is true, rejects a missing or wrong shared token, streams events in order with correlation ids and replays the buffer on connect; every cross-node call of the demo path emits a from-to event (browser to web, web to API, API to Keycloak, PostgreSQL, MinIO, embedder, llama-server and ComfyUI, GPU job broker, Simulation runner, Budget engine) with the real prompt or request summary",
+      "Metrics agent: per-module CPU percent, RAM, VRAM and GPU percent are read from the host (cgroups, docker stats, amdgpu fdinfo per process) inside a read-only container; a unit test with recorded samples proves the per-module mapping and the global totals; during a real-GPU Simulation the llama-server and ComfyUI widgets show non-zero VRAM and GPU percent",
+      "Playwright at 1920x1080 against the fake adapters: run a Simulation and a Budget in the app and assert the edges between the working nodes light up and animate in order, the log lines name the source node, the destination node and the payload, the log panel collapses and expands while the graph keeps updating, AI nodes show their model names, and every module widget plus the global legend render",
+      "Cold start: the diagnostics web (own container and port, localhost only, compose profile) comes up with ./launch-demo.sh and with docker compose --profile diagnostics up, answers without login on 127.0.0.1 and is not reachable from other interfaces",
+      "UI gate: desktop designs (graph, log, collapsed log, node and widget states, legend, empty and disconnected states) approved through OpenPencil in design/openpencil/bricomission_diagnostics.fig before implementation",
+      "Docs: new ADR for the telemetry design, ARCHITECTURE.md, AGENTS.md, README and launch-demo.sh updated, and the demo script in the project documentation shows the side-by-side layout (app in portrait, dashboard in desktop)"
+    ],
+    "evidence": [],
+    "notes": "Developer definition 2026-11-15. This feature closes the MVP: every other not accepted feature is tagged phase-2 and stays out of the MVP delivered to the DevExpert tutors (deadline 2026-11-22). Decisions: two node levels (containers plus the API internal modules), own lightweight event bus with correlation ids and SSE (no OpenTelemetry or Jaeger), events kept in a memory ring buffer; prompts shown in full (expandable), images only as thumbnails, never tokens or secrets; separate container and port, desktop 1920x1080, Unreal-Engine-blueprint look (React Flow class of library, animated edges), enabled only by a Compose profile and bound to 127.0.0.1 without login (developer decision); metrics agent as a read-only container with host pid, /sys and the Docker socket read-only (developer decision, justify in the ADR); design in a new file design/openpencil/bricomission_diagnostics.fig, designed with the developer before any implementation. The presentation shows the app in a portrait browser next to the dashboard in a desktop browser. UI gate."
+  },
+  {
     "id": "budget-chat-personas",
     "area": "ai-budget",
     "title": "Homeowner refines the Budget by chat with a switchable Persona",
     "user_visible_behavior": "The Homeowner chats about materials; answers stream in the selected Persona's voice; switching Persona changes the tone of the next answer; Line Item changes recompute totals in code.",
     "depends_on": ["budget-tier-computation", "simulations-ux-overhaul"],
     "status": "not_started",
+    "phase": "phase-2",
     "verification": [
       "Test: four Persona system prompts selectable; switching does not alter totals",
       "Playwright with fake LLM: send message, see streamed answer, switch Persona, next answer tagged with new Persona",
@@ -477,6 +497,7 @@
     "user_visible_behavior": "Selecting a tier or changing a material in a dropdown sends a structured hidden prompt to the chat, and the Budget updates through the same verified Line Item path.",
     "depends_on": ["budget-chat-personas"],
     "status": "not_started",
+    "phase": "phase-2",
     "verification": [
       "Test: each control emits the expected structured prompt and no client-side math exists",
       "Playwright with fake LLM: change countertop material -> Budget total changes to the code-computed value"
@@ -491,6 +512,7 @@
     "user_visible_behavior": "From a selected tier the Homeowner downloads a PDF with exact products, SKUs, quantities, unit prices, sources and totals; the Kitchen Project moves to diy_completed.",
     "depends_on": ["budget-tier-computation", "simulations-ux-overhaul"],
     "status": "not_started",
+    "phase": "phase-2",
     "verification": [
       "PDF text extraction test: totals and SKUs match the stored Budget",
       "PDF stored in MinIO and downloadable only by its owner"
@@ -505,6 +527,7 @@
     "user_visible_behavior": "The Homeowner publishes the project to the Marketplace; an immutable Dossier snapshot (Renders, Measurements, chosen tier, Line Items) is created with an open Bidding Window.",
     "depends_on": ["budget-tier-computation", "controlnet-render", "simulations-ux-overhaul"],
     "status": "not_started",
+    "phase": "phase-2",
     "verification": [
       "API test: Dossier content cannot be modified after publication",
       "API test: window end = publication time + configured duration; expiry job moves it to expired",
@@ -520,6 +543,7 @@
     "user_visible_behavior": "A Professional signs up with corporate email, Company legal name and Tax ID (CIF or NIF, format-validated); the account is pending_validation and sees a waiting screen.",
     "depends_on": ["homeowner-password-login"],
     "status": "not_started",
+    "phase": "phase-2",
     "verification": [
       "Unit tests: CIF and NIF format/checksum validation",
       "Playwright: registration ends on the pending screen; Dossier routes return 403"
@@ -534,6 +558,7 @@
     "user_visible_behavior": "The Admin Dashboard lists pending Professionals; the Administrator approves (creating or linking a Company by Tax ID) or rejects them, and the Professional's access changes accordingly.",
     "depends_on": ["professional-registration"],
     "status": "not_started",
+    "phase": "phase-2",
     "verification": [
       "Playwright as admin: approve one, reject one; approved user gains Dossier access, rejected does not",
       "API test: a second Professional with an existing Tax ID is linked, not duplicated"
@@ -548,6 +573,7 @@
     "user_visible_behavior": "The Administrator sets Bidding Window duration, Platform Commission %, minimum delay penalty and Payment Mode from the dashboard; new Dossiers and Contracts use the saved values.",
     "depends_on": ["admin-company-validation"],
     "status": "not_started",
+    "phase": "phase-2",
     "verification": [
       "Playwright as admin: change window to 10 minutes, publish a Dossier, its end time reflects 10 minutes",
       "API test: non-admin cannot read or write settings"
@@ -562,6 +588,7 @@
     "user_visible_behavior": "A Professional of a validated Company sees all open Dossiers, plus the Company's Kitchen Projects: own ones editable, co-workers' read-only.",
     "depends_on": ["admin-company-validation", "dossier-publication"],
     "status": "not_started",
+    "phase": "phase-2",
     "verification": [
       "API tests for the permission matrix in docs/user-and-access-model.md",
       "Playwright: two Professionals of one Company see each other's projects with correct edit/read-only state"
@@ -576,6 +603,7 @@
     "user_visible_behavior": "A Professional submits a Bid (price, guaranteed installation date, delay penalty >= minimum) on an open Dossier and can revise it while open; co-workers see it read-only; each revision is versioned.",
     "depends_on": ["b2b-dossier-feed"],
     "status": "not_started",
+    "phase": "phase-2",
     "verification": [
       "API test: second Bid from the same Company rejected; co-worker cannot edit",
       "API test: revision creates a new version; edits refused once the Dossier is not open",
@@ -591,6 +619,7 @@
     "user_visible_behavior": "The Homeowner sees Bids with price, date, penalty and rating but no Company identity, and accepts one; the Dossier closes and other Bids become not_selected.",
     "depends_on": ["bid-submission-revision"],
     "status": "not_started",
+    "phase": "phase-2",
     "verification": [
       "API test: Bid DTO for Homeowners contains no Company identifiers",
       "API test: acceptance binds to the Bid version shown; concurrent revision does not change it",
@@ -606,6 +635,7 @@
     "user_visible_behavior": "While viewing the Dossier, the Homeowner receives an SSE alert and the list updates when a Bid arrives or its price drops.",
     "depends_on": ["homeowner-bid-acceptance"],
     "status": "not_started",
+    "phase": "phase-2",
     "verification": [
       "Playwright with two browser contexts: Professional lowers price, Homeowner sees toast and updated price without reload",
       "SSE reconnect resumes without duplicate alerts"
@@ -620,6 +650,7 @@
     "user_visible_behavior": "On acceptance a Contract PDF is generated with parties, scope, price, installation date, code-computed delay penalty clause and Platform Commission, stored in MinIO with its SHA-256.",
     "depends_on": ["homeowner-bid-acceptance", "admin-marketplace-settings"],
     "status": "not_started",
+    "phase": "phase-2",
     "verification": [
       "Unit tests: penalty and commission amounts computed with decimal arithmetic",
       "PDF text extraction matches stored amounts; stored hash equals file hash"
@@ -634,6 +665,7 @@
     "user_visible_behavior": "The Homeowner and the managing Professional re-authenticate and accept; evidence (who, when, IP, PDF hash) is recorded and appended; the Contract becomes binding and Company identity is revealed to the Homeowner.",
     "depends_on": ["contract-pdf-generation"],
     "status": "not_started",
+    "phase": "phase-2",
     "verification": [
       "Playwright: both acceptances in either order lead to binding",
       "API test: acceptance without recent re-authentication is refused",
@@ -649,6 +681,7 @@
     "user_visible_behavior": "With Payment Mode Simulated, the Professional completes the commission checkout offline and the Contract moves from commission_pending to commission_paid.",
     "depends_on": ["contract-electronic-acceptance"],
     "status": "not_started",
+    "phase": "phase-2",
     "verification": [
       "Playwright with network disabled: checkout completes and status updates",
       "API test: amount equals the Contract commission"
@@ -663,6 +696,7 @@
     "user_visible_behavior": "With Payment Mode PayPal, checkout redirects to PayPal Sandbox and the Contract is marked commission_paid after capture.",
     "depends_on": ["commission-simulated-checkout"],
     "status": "not_started",
+    "phase": "phase-2",
     "verification": [
       "Online run with sandbox buyer account: capture confirmed and status updated",
       "API test with mocked PayPal client covers success and cancel"
@@ -677,6 +711,7 @@
     "user_visible_behavior": "When the Quota Flag is on, each Homeowner's LLM calls and image generations are counted per day and blocked with a clear message once the limit is reached; free actions keep working.",
     "depends_on": ["controlnet-render", "budget-chat-personas"],
     "status": "not_started",
+    "phase": "phase-2",
     "verification": [
       "API tests: counter increments per call type, resets at local midnight, blocks at limit, ignored when the flag is off",
       "Playwright: limit 1 image -> second Render request shows the quota message"
@@ -691,6 +726,7 @@
     "user_visible_behavior": "The Administrator views per-user and per-service usage, sets a custom daily limit for a user, and resets a user's daily counter to zero.",
     "depends_on": ["daily-quota-enforcement", "admin-company-validation"],
     "status": "not_started",
+    "phase": "phase-2",
     "verification": [
       "Playwright as admin: reset a blocked user's counter -> user's next Render succeeds",
       "API test: override takes precedence over the global limit"
@@ -705,6 +741,7 @@
     "user_visible_behavior": "The Administrator lists, searches, creates, edits, disables and deletes users of any role; disabling revokes sessions.",
     "depends_on": ["admin-company-validation"],
     "status": "not_started",
+    "phase": "phase-2",
     "verification": [
       "Playwright as admin: create, edit, disable a user; disabled user's next API call returns 401",
       "API test: Keycloak and local profile stay consistent"
@@ -719,6 +756,7 @@
     "user_visible_behavior": "The Administrator edits LLM, image and embedding endpoint URLs/models and MinIO connection credentials from the dashboard, tests the connection, and the API uses the new values without restart or .env edits.",
     "depends_on": ["gpu-job-broker", "admin-company-validation"],
     "status": "not_started",
+    "phase": "phase-2",
     "verification": [
       "Playwright as admin: switch LLM endpoint to a second server, test connection, next chat uses it",
       "Secrets stored encrypted at rest and never returned in clear to the UI"
@@ -733,6 +771,7 @@
     "user_visible_behavior": "The login screen offers Google sign-in through Keycloak; with no network the password option still works.",
     "depends_on": ["homeowner-password-login"],
     "status": "not_started",
+    "phase": "phase-2",
     "verification": [
       "Online run: Google sign-in completes and creates a Homeowner account",
       "Offline run: Google button degrades gracefully, password login works"
@@ -747,6 +786,7 @@
     "user_visible_behavior": "A signed-in user's language choice is saved on their account and restored at sign-in on any device (account choice wins over the device cookie and the browser language); changing the language while signed in updates the account.",
     "depends_on": ["web-pwa-shell", "homeowner-password-login"],
     "status": "not_started",
+    "phase": "phase-2",
     "verification": [
       "API test: the authenticated user can read and update their language (only the 11 MVP locales accepted)",
       "Playwright: sign in, choose de, sign out, clear cookies, sign in again: German is restored",
@@ -763,6 +803,7 @@
     "user_visible_behavior": "Before a Render, loose objects in the kitchen photo (kettles, dish racks, bottles, small appliances, clutter) are detected and removed by masked inpainting, so the Render shows clean counters while walls, doors, windows, openings and cabinet positions stay exactly as in the photo.",
     "depends_on": ["controlnet-render", "simulations-ux-overhaul"],
     "status": "not_started",
+    "phase": "phase-2",
     "verification": [
       "Real GPU: the landscape and portrait samples render with no kettle, dish racks, bottles or plants on counters, and the tall cabinet stays a cabinet (side-by-side evidence, several seeds)",
       "Detection and inpainting run offline after a one-time weight download; time per Render stays within a measured budget",

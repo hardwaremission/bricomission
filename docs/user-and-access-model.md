@@ -2,6 +2,8 @@
 
 Identity, roles, and sessions are owned by Keycloak (realm `BricoMission`). The API enforces resource-level rules below.
 
+> **Scope update (2026-11-15).** The three roles remain defined and seeded in the realm, and the Administrator can already read the admin-only platform setting API. The Professional and Administrator functions described in this document (Company registration and validation, Dossier feed, Bids, quotas, Administrator panel, user CRUD, payment mode, contracts) are Phase 2 and are not built in the delivered MVP. The access rules are kept as the design for that phase.
+
 ## User Types
 
 | Type | Keycloak role | How they join |
@@ -77,6 +79,6 @@ The API is default-deny. Every route needs a valid Keycloak access token unless 
 
 ## Edge Cases
 
-- Professional leaves a Company: not self-service in MVP; Administrator disables the Account.
+- Professional leaves a Company: not self-service (Phase 2 scope); Administrator disables the Account.
 - Same person as Homeowner and Professional: requires two separate Accounts.
 - A Tax ID matching an existing validated Company: Administrator links the new Professional instead of creating a duplicate Company.
