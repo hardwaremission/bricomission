@@ -227,6 +227,15 @@ except Exception:
     print("none")' 2>/dev/null || echo none)
 [ "$gallery_images" = "24" ] || web_fail "GET /api/style-gallery listed '${gallery_images}' images, expected 24 (assets missing from the api image?)"
 echo "  GET /api/style-gallery -> 200 with 24 images"
+web_generate=$(curl -sS --max-time 10 -o /dev/null -w '%{http_code}' "${web_public}/kitchen-projects/new/generate" 2>/dev/null || true)
+[ "$web_generate" = "200" ] || web_fail "GET /kitchen-projects/new/generate gave '${web_generate:-<none>}', expected 200"
+echo "  GET /kitchen-projects/new/generate -> 200"
+web_claim=$(curl -sS --max-time 10 -o /dev/null -w '%{http_code}' -X POST "${web_public}/api/kitchen-projects/drafts/current/claim" 2>/dev/null || true)
+[ "$web_claim" = "403" ] || web_fail "POST /api/kitchen-projects/drafts/current/claim without Origin gave '${web_claim:-<none>}', expected 403"
+echo "  POST /api/kitchen-projects/drafts/current/claim (no Origin) -> 403"
+api_render=$(curl -sS --max-time 10 -o /dev/null -w '%{http_code}' -X POST "http://127.0.0.1:${api_port}/kitchen-projects/00000000-0000-4000-8000-000000000000/renders" 2>/dev/null || true)
+[ "$api_render" = "401" ] || web_fail "API POST /kitchen-projects/<id>/renders without a token gave '${api_render:-<none>}', expected 401"
+echo "  API POST /kitchen-projects/<id>/renders (no token) -> 401"
 
 echo
 echo "Stack is up and healthy (detached)."

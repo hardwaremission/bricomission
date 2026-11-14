@@ -297,12 +297,23 @@
     "title": "Costly AI action requires login and claims the draft",
     "user_visible_behavior": "When an anonymous visitor requests a Render or a Budget, the Login Gate appears; after signing in, the same draft Kitchen Project now belongs to the new Homeowner.",
     "depends_on": ["moodboard-selection", "homeowner-password-login"],
-    "status": "not_started",
+    "status": "accepted",
     "verification": [
       "Playwright: anonymous draft -> press Generate -> login -> back on the draft, owned by the account",
       "API test: costly endpoints return 401 for anonymous sessions; claim is idempotent and refuses drafts of other sessions"
     ],
-    "evidence": [],
+    "evidence": [
+      "2026-11-14 implementer self-verification (status passing = ready for independent validation, not accepted).",
+      "Spec docs/specs/login-gate-claim.md (OQ-1..OQ-10 recommended); design read-back docs/design/login-gate-claim.md approved 2026-11-14, exports design/openpencil/login-gate-claim/.",
+      "pnpm -r lint: exit 0. pnpm -r test: api 261 (29 files; new claim.http 12, owned-project.http 6, readiness 2, migration +3, draft-cleanup +1), web 457 (27 files; new claim-draft, generate-state, readiness), api-client 3.",
+      "OpenAPI: pnpm --filter @bricomission/api openapi:export; additive only (openapi.json +451/-0, schema.ts +507/-0): claim (security bearer AND draftToken), GET project, 2 owner content routes, renders/budget placeholders (bearer). KitchenDraftView.status stays enum ['draft'].",
+      "Migrations 20261115000000_kitchen_project_claimed_status (ADD VALUE alone) + 20261115000100_login_gate_claim applied on api start; psql \\d kitchen_project shows owner_sub, claimed_at, nullable expires_at, kitchen_project_owner_sub_idx, CHECKs kitchen_project_status_columns and kitchen_project_owner_sub_length; catalog_chunk_embedding_hnsw_idx still present.",
+      "curl with real Keycloak tokens (dev client password grant; second Homeowner e2e-curl-other created via admin API): claim no bearer 401, professional 403, admin 403, homeowner 200, again 200, other homeowner same token 404; draft route after claim 404; GET project owner 200 / other 404 / anonymous 401 / professional 403; renders+budget owner ready 501, other 404; incomplete project renders 409; web claim no Origin 403, no session 401; web proxy anonymous renders 401.",
+      "psql claimed row: status claimed, owner_sub = bm-homeowner sub, expires_at NULL, claimed_at set; after 'docker compose restart api' (start-up sweep) row and MinIO objects full.jpg/thumb.jpg still present.",
+      "pnpm test:e2e: 149 passed, 1 skipped (new e2e/login-gate.spec.ts 6 tests: Scenarios 1-3, 6, wrong role, not-ready/no-draft/offline, layouts en/es 390 and de/fi 360; moodboard.spec Continue now asserts Generate 200 and Step 2 of 3).",
+      "./init.sh exit 0, 6 healthy, new Web lines: GET /kitchen-projects/new/generate -> 200; POST claim (no Origin) -> 403; API POST /kitchen-projects/<id>/renders (no token) -> 401. ./scripts/keycloak-smoke.sh exit 0.",
+      "Accepted 2026-11-15 by /feature-flow after independent validator verdict accept (re-ran pnpm -r lint, pnpm -r test api 261/web 457/api-client 3 incl. OpenAPI drift, ./init.sh 6 healthy + 3 new Web lines, pnpm test:e2e 149 passed 1 skipped, keycloak-smoke, live curl security checks: 401/403/404, idempotent claim, dead draft token after claim, CSRF 403, no open redirect)."
+    ],
     "notes": "docs/domain-model.md Kitchen Project lifecycle draft -> claimed."
   },
   {

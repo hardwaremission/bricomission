@@ -938,6 +938,376 @@
           "kitchen-projects"
         ]
       }
+    },
+    "/kitchen-projects/drafts/current/claim": {
+      "post": {
+        "description": "The same row becomes `claimed`: owner = token `sub`, `claimedAt` set, no expiry; id, photos, measurements and Moodboard are kept. Repeating the claim with the same Account returns the same body. The draft routes no longer accept the token afterwards.",
+        "operationId": "KitchenProjectsController_claim",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClaimKitchenDraftResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid or expired bearer token"
+          },
+          "403": {
+            "description": "Caller lacks the user (Homeowner) realm role"
+          },
+          "404": {
+            "description": "Missing, malformed, unknown or expired draft token, or a project claimed by another Account"
+          },
+          "503": {
+            "description": "Database unreachable"
+          }
+        },
+        "security": [
+          {
+            "bearer": [],
+            "draftToken": []
+          }
+        ],
+        "summary": "Claim the X-Draft-Token's draft for the caller (Login Gate)",
+        "tags": [
+          "kitchen-projects"
+        ]
+      }
+    },
+    "/kitchen-projects/{projectId}": {
+      "get": {
+        "operationId": "KitchenProjectsController_get",
+        "parameters": [
+          {
+            "name": "projectId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Id of a Kitchen Project the caller owns"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KitchenProjectViewDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed project id"
+          },
+          "401": {
+            "description": "Missing, invalid or expired bearer token"
+          },
+          "403": {
+            "description": "Caller lacks the user (Homeowner) realm role"
+          },
+          "404": {
+            "description": "Unknown project, still a draft, or owned by another Account (same generic body)"
+          },
+          "503": {
+            "description": "Database unreachable"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "A claimed Kitchen Project of the caller (read-only)",
+        "tags": [
+          "kitchen-projects"
+        ]
+      }
+    },
+    "/kitchen-projects/{projectId}/photos/{photoId}/content": {
+      "get": {
+        "operationId": "KitchenProjectsController_photoContent",
+        "parameters": [
+          {
+            "name": "photoId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "variant",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "thumb",
+                "full"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "projectId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Id of a Kitchen Project the caller owns"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "JPEG bytes",
+            "content": {
+              "image/jpeg": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed project id"
+          },
+          "401": {
+            "description": "Missing, invalid or expired bearer token"
+          },
+          "403": {
+            "description": "Caller lacks the user (Homeowner) realm role"
+          },
+          "404": {
+            "description": "Unknown project, still a draft, or owned by another Account (same generic body)"
+          },
+          "503": {
+            "description": "`storage_unavailable`, or database unreachable\n\nDatabase unreachable"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "A stored kitchen photo of an owned project (metadata-free JPEG)",
+        "tags": [
+          "kitchen-projects"
+        ]
+      }
+    },
+    "/kitchen-projects/{projectId}/moodboard/items/{itemId}/content": {
+      "get": {
+        "operationId": "KitchenProjectsController_moodboardContent",
+        "parameters": [
+          {
+            "name": "itemId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "variant",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "thumb",
+                "full"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "projectId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Id of a Kitchen Project the caller owns"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "JPEG bytes",
+            "content": {
+              "image/jpeg": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed project id"
+          },
+          "401": {
+            "description": "Missing, invalid or expired bearer token"
+          },
+          "403": {
+            "description": "Caller lacks the user (Homeowner) realm role"
+          },
+          "404": {
+            "description": "Unknown project, still a draft, or owned by another Account (same generic body)"
+          },
+          "503": {
+            "description": "`storage_unavailable`, or database unreachable\n\nDatabase unreachable"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "A Moodboard reference upload of an owned project (gallery items use the public gallery route)",
+        "tags": [
+          "kitchen-projects"
+        ]
+      }
+    },
+    "/kitchen-projects/{projectId}/renders": {
+      "post": {
+        "description": "Placeholder until controlnet-render: it never calls the GPU job broker or an AI adapter. That feature keeps the path, the guards and the 409 rule.",
+        "operationId": "KitchenProjectsController_requestRender",
+        "parameters": [
+          {
+            "name": "projectId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Id of a Kitchen Project the caller owns"
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Malformed project id"
+          },
+          "401": {
+            "description": "Missing, invalid or expired bearer token"
+          },
+          "403": {
+            "description": "Caller lacks the user (Homeowner) realm role"
+          },
+          "404": {
+            "description": "Unknown project, still a draft, or owned by another Account (same generic body)"
+          },
+          "409": {
+            "description": "`project_incomplete`: needs a photo, all three measurements and a Moodboard Item",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KitchenProjectErrorDto"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "`not_available_yet`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KitchenProjectErrorDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Database unreachable"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Generate a Render of the kitchen (costly; placeholder)",
+        "tags": [
+          "kitchen-projects"
+        ]
+      }
+    },
+    "/kitchen-projects/{projectId}/budget": {
+      "post": {
+        "description": "Placeholder until budget-tier-computation: it never calls the GPU job broker or an AI adapter. That feature keeps the path, the guards and the 409 rule.",
+        "operationId": "KitchenProjectsController_requestBudget",
+        "parameters": [
+          {
+            "name": "projectId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Id of a Kitchen Project the caller owns"
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Malformed project id"
+          },
+          "401": {
+            "description": "Missing, invalid or expired bearer token"
+          },
+          "403": {
+            "description": "Caller lacks the user (Homeowner) realm role"
+          },
+          "404": {
+            "description": "Unknown project, still a draft, or owned by another Account (same generic body)"
+          },
+          "409": {
+            "description": "`project_incomplete`: needs a photo, all three measurements and a Moodboard Item",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KitchenProjectErrorDto"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "`not_available_yet`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KitchenProjectErrorDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Database unreachable"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Compute the Budget of the kitchen (costly; placeholder)",
+        "tags": [
+          "kitchen-projects"
+        ]
+      }
     }
   },
   "info": {
@@ -1636,6 +2006,87 @@
         },
         "required": [
           "galleryImageId"
+        ]
+      },
+      "KitchenProjectViewDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Same id as the draft it was claimed from"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "claimed"
+            ]
+          },
+          "measurements": {
+            "$ref": "#/components/schemas/KitchenMeasurementsDto"
+          },
+          "photos": {
+            "description": "Ordered by position; URLs point at GET /kitchen-projects/{projectId}/photos/{photoId}/content",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/KitchenPhotoViewDto"
+            }
+          },
+          "moodboard": {
+            "description": "Ordered by position; upload URLs point at GET /kitchen-projects/{projectId}/moodboard/items/{itemId}/content, gallery URLs at the public gallery route",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MoodboardItemViewDto"
+            }
+          },
+          "claimedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Time of the claim; a repeated claim does not change it"
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "measurements",
+          "photos",
+          "moodboard",
+          "claimedAt"
+        ]
+      },
+      "ClaimKitchenDraftResponseDto": {
+        "type": "object",
+        "properties": {
+          "project": {
+            "$ref": "#/components/schemas/KitchenProjectViewDto"
+          }
+        },
+        "required": [
+          "project"
+        ]
+      },
+      "KitchenProjectErrorDto": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "integer"
+          },
+          "message": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string",
+            "enum": [
+              "project_incomplete",
+              "not_available_yet",
+              "storage_unavailable"
+            ]
+          }
+        },
+        "required": [
+          "statusCode",
+          "message",
+          "code"
         ]
       }
     }

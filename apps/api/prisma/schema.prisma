@@ -48,10 +48,11 @@ model CatalogChunk {
   @@map("catalog_chunk")
 }
 
-/// Lifecycle of a Kitchen Project (feature kitchen-capture-draft adds `draft`; later
-/// features add the other states).
+/// Lifecycle of a Kitchen Project (feature kitchen-capture-draft adds `draft`,
+/// login-gate-claim adds `claimed`; later features add the other states).
 enum KitchenProjectStatus {
   draft
+  claimed
 
   @@map("kitchen_project_status")
 }
@@ -60,20 +61,26 @@ enum KitchenProjectStatus {
 /// draft token and only its SHA-256 (32 bytes) is stored. Measurements are whole centimetres
 /// (CHECK constraints in the migration). `expiresAt` slides 7 days on every change; the API's
 /// DraftCleanupService deletes expired drafts and their stored photos.
+/// A claim (login-gate-claim) binds the draft to an Account: `status = claimed`, `ownerSub` =
+/// the Keycloak `sub`, `claimedAt` set and `expiresAt` NULL (it never expires). The token hash
+/// is kept so a repeated claim is idempotent. A hand-written CHECK ties these columns to `status`.
 model KitchenProject {
   id             String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   status         KitchenProjectStatus @default(draft)
   draftTokenHash Bytes?               @unique @map("draft_token_hash")
+  ownerSub       String?              @map("owner_sub")
+  claimedAt      DateTime?            @map("claimed_at") @db.Timestamptz(3)
   lengthCm       Int?                 @map("length_cm")
   widthCm        Int?                 @map("width_cm")
   heightCm       Int?                 @map("height_cm")
-  expiresAt      DateTime             @map("expires_at") @db.Timestamptz(3)
+  expiresAt      DateTime?            @map("expires_at") @db.Timestamptz(3)
   createdAt      DateTime             @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt      DateTime             @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
   photos         KitchenPhoto[]
   moodboardItems MoodboardItem[]
 
   @@index([expiresAt])
+  @@index([ownerSub])
   @@map("kitchen_project")
 }
 

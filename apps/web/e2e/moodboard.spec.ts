@@ -110,7 +110,7 @@ test('Capture Continue opens the empty Moodboard with the 24-image Style Gallery
   await expect(page.getByTestId('moodboard-screen')).toHaveAttribute('data-phase', 'ready');
   const m = moodboard('en');
   await expect(page.getByRole('heading', { level: 1 })).toHaveText(m.title);
-  await expect(page.getByText(fill(m.step, { current: 2, total: 2 }))).toBeVisible();
+  await expect(page.getByText(fill(m.step, { current: 2, total: 3 }))).toBeVisible();
   await expect(page.getByTestId('moodboard-gallery-image')).toHaveCount(24);
   await expect(page.getByTestId('moodboard-item')).toHaveCount(0);
   await expect(page.getByTestId('moodboard-empty')).toHaveText(m.board.empty);
@@ -304,7 +304,7 @@ test('references: HEIC thumbnail, client pre-check errors, 503 with Retry while 
   expect(await smallTargets(page)).toEqual([]);
 });
 
-test('Continue rules: Capture hint with link when Capture is incomplete; complete goes to /generate', async ({ page }) => {
+test('Continue rules: Capture hint with link when Capture is incomplete; complete opens Generate', async ({ page }) => {
   await seedCapture(page, 'en', false);
   expect((await apiJson(page, `${ITEMS}/gallery-items`, 'POST', { galleryImageId: 'farmhouse-02' })).status).toBe(201);
   await open(page);
@@ -326,8 +326,9 @@ test('Continue rules: Capture hint with link when Capture is incomplete; complet
     page.getByTestId('moodboard-continue').click(),
   ]);
   await page.waitForURL(`${ORIGIN}/kitchen-projects/new/generate`);
-  expect([200, 404]).toContain(response.status());
-  expect((await page.request.get('/kitchen-projects/new/generate')).status()).toBe(404);
+  // login-gate-claim: Continue opens the Generate step.
+  expect(response.status()).toBe(200);
+  await expect(page.getByTestId('generate-render')).toHaveAttribute('aria-disabled', 'false');
 });
 
 test('no draft: the first pick starts one; an expired draft shows the notice', async ({ page }) => {

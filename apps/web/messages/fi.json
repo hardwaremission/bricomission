@@ -168,5 +168,70 @@
       "expired": "Edellinen luonnoksesi vanheni 7 päivän jälkeen ilman muutoksia. Aloita alusta.",
       "dismiss": "Sulje"
     }
+  },
+  "generate": {
+    "backToMoodboard": "Takaisin tyyliisi",
+    "step": "Vaihe {current}/{total}",
+    "title": "Valmis suunnittelemaan",
+    "helper": "Tarkista keittiösi ja valitse, mitä haluat luoda. Pyydämme sinua kirjautumaan sisään, jotta projektisi tallentuu.",
+    "summary": {
+      "kitchenTitle": "Keittiösi",
+      "styleTitle": "Tyylisi",
+      "edit": "Muokkaa",
+      "editKitchen": "Muokkaa keittiötäsi",
+      "editStyle": "Muokkaa tyyliäsi",
+      "more": "+{count}",
+      "measurements": "{length} × {width} m · korkeus {height} m",
+      "missing": "—",
+      "moodboardCount": "{count, plural, one {# kohde} other {# kohdetta}} moodboardissasi"
+    },
+    "cta": {
+      "render": "Luo keittiöni",
+      "budget": "Hae tarjoukseni"
+    },
+    "hints": {
+      "capture": "Keittiöstäsi puuttuu vielä kuva ja kaikki kolme mittaa.",
+      "goToCapture": "Siirry keittiöösi",
+      "items": "Lisää moodboardiisi vähintään yksi keittiö tai kuva.",
+      "goToMoodboard": "Siirry tyyliisi",
+      "start": "Aloita ensin keittiöprojektisi.",
+      "startLink": "Aloita"
+    },
+    "gate": {
+      "title": "Kirjaudu sisään jatkaaksesi",
+      "body": "Suunnitelmien ja tarjousten luominen vaatii ilmaisen tilin. Kuvasi, mittasi ja moodboardisi tallennetaan siihen.",
+      "signIn": "Kirjaudu sisään",
+      "register": "Luo tili",
+      "footnote": "Uudet tilit vahvistavat sähköpostinsa 6-numeroisella koodilla.",
+      "close": "Sulje"
+    },
+    "claiming": "Tallennetaan keittiötäsi tilillesi…",
+    "alerts": {
+      "wrongRole": "Tällä tilillä ei voi tallentaa keittiöprojekteja. Kirjaudu ulos ja käytä yksityisasiakkaan tiliä.",
+      "signOut": "Kirjaudu ulos",
+      "failed": "Emme voineet tallentaa keittiötäsi tilillesi. Luonnoksesi on tallessa; yritä uudelleen.",
+      "retry": "Yritä uudelleen",
+      "offline": "Olet offline-tilassa. Luonnoksesi on tallessa; yhdistä uudelleen tallentaaksesi sen tilillesi.",
+      "expired": "Edellinen luonnoksesi vanheni 7 päivän jälkeen ilman muutoksia. Aloita alusta.",
+      "start": "Aloita",
+      "dismiss": "Sulje"
+    }
+  },
+  "project": {
+    "title": "Keittiöprojektisi",
+    "helper": "Suunnitelmat ja tarjoukset tulevat pian. Projektisi pysyy täällä valmiina niitä varten.",
+    "claimed": "Keittiösi on tallennettu tilillesi.",
+    "dismiss": "Sulje",
+    "newProject": "Aloita uusi keittiöprojekti",
+    "availableSoon": "Tulossa pian",
+    "signedOut": {
+      "title": "Kirjaudu sisään nähdäksesi tämän keittiöprojektin",
+      "signIn": "Kirjaudu sisään"
+    },
+    "notFound": {
+      "title": "Emme löytäneet tätä keittiöprojektia",
+      "home": "Siirry etusivulle"
+    },
+    "offline": "Olet offline-tilassa. Keittiöprojektisi on tallessa; yhdistä uudelleen nähdäksesi sen."
   }
 }

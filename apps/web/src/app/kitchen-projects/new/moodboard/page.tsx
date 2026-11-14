@@ -12,7 +12,7 @@ import { DEFAULT_LOCALE, isLocale } from '../../../../i18n/locales';
 export const dynamic = 'force-dynamic';
 
 /**
- * Moodboard (design: docs/design/moodboard-selection.md): step 2 of 2 of the anonymous draft.
+ * Moodboard (design: docs/design/moodboard-selection.md): step 2 of 3 of the anonymous draft.
  * Pick Style Gallery kitchens and add own reference photos.
  */
 export default async function KitchenMoodboardPage() {

@@ -94,7 +94,7 @@ describe('HTTP /kitchen-projects/drafts/current/moodboard', () => {
       thumbUrl: '/style-gallery/images/scandinavian-02/content?variant=thumb',
       fullUrl: '/style-gallery/images/scandinavian-02/content?variant=full',
     });
-    expect(repo.rows.get(id)?.expiresAt.toISOString()).toBe(new Date(now.getTime() + 7 * DAY).toISOString());
+    expect(repo.rows.get(id)?.expiresAt?.toISOString()).toBe(new Date(now.getTime() + 7 * DAY).toISOString());
 
     const again = await pick(token, 'scandinavian-02');
     expect(again.status).toBe(200);

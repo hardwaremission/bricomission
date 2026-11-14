@@ -101,4 +101,25 @@ describe('DraftCleanupService', () => {
     service.onApplicationBootstrap();
     service.onApplicationShutdown();
   });
+
+  it('never touches claimed projects (login-gate-claim): no expiry, rows and objects stay', async () => {
+    const repo = new MemoryKitchenDraftRepository();
+    const storage = new MemoryObjectStorage();
+    const tokenHash = hashDraftToken(`token-${Math.random()}`);
+    const claimedDraft = await repo.create({ tokenHash, expiresAt: new Date(now.getTime() + 1) });
+    const base = `kitchen-projects/${claimedDraft.id}/photos/c0`;
+    await storage.put(`${base}/full.jpg`, Buffer.from('f'), 'image/jpeg');
+    await storage.put(`${base}/thumb.jpg`, Buffer.from('t'), 'image/jpeg');
+    await repo.addPhoto(claimedDraft.id, { id: 'c0', fullKey: `${base}/full.jpg`, thumbKey: `${base}/thumb.jpg`, width: 1, height: 1, byteSize: 1 }, 8, new Date(now.getTime() + 1));
+    expect(await repo.claimByTokenHash(tokenHash, 'owner-sub', now)).not.toBe('not_found');
+    const expired = await seed(repo, storage, new Date(now.getTime() - 1), 1);
+    const later = new Date(now.getTime() + 400 * 24 * 60 * 60 * 1000);
+    const service = new DraftCleanupService(repo, storage, config, () => later);
+
+    expect(await service.runOnce()).toBe(1);
+    expect(repo.rows.has(expired)).toBe(false);
+    expect(repo.rows.get(claimedDraft.id)).toMatchObject({ status: 'claimed', expiresAt: null });
+    expect(storage.keys().filter((key) => key.includes(claimedDraft.id))).toHaveLength(2);
+    expect(await repo.countOpen(now)).toBe(0);
+  });
 });

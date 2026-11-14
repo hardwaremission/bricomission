@@ -89,7 +89,7 @@ Admin switch for commission checkout: Simulated (offline, records a pending comm
 Per-user daily limit of LLM calls and image generations, enforced only when the global Quota Flag is on. Admin can override it per user or reset a user's daily counter.
 
 ### Login Gate
-The point where an anonymous Homeowner must sign in: right before the first costly AI call (Render or Budget).
+The point where an anonymous Homeowner must sign in: right before the first costly AI call (Render or Budget). It lives on the Generate step: "Generate my kitchen" or "Get my budget" opens a sheet with Sign in / Create account. After the sign-in the browser's draft Kitchen Project is **claimed**: the same project (same id, photos, Measurements, Moodboard) is bound to the Account and stops expiring (`login-gate-claim`).
 
 ## Rejected / Ambiguous Terms
 

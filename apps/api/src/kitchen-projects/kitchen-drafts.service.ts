@@ -27,23 +27,24 @@ export type PhotoVariant = 'thumb' | 'full';
 
 const PHOTOS_PATH = '/kitchen-projects/drafts/current/photos';
 
-export function photoView(photo: KitchenPhotoRecord): KitchenPhotoView {
+/** `photosPath` is the draft photo route by default, the owner route for claimed projects. */
+export function photoView(photo: KitchenPhotoRecord, photosPath = PHOTOS_PATH): KitchenPhotoView {
   return {
     id: photo.id,
     position: photo.position,
     width: photo.width,
     height: photo.height,
-    thumbUrl: `${PHOTOS_PATH}/${photo.id}/content?variant=thumb`,
-    fullUrl: `${PHOTOS_PATH}/${photo.id}/content?variant=full`,
+    thumbUrl: `${photosPath}/${photo.id}/content?variant=thumb`,
+    fullUrl: `${photosPath}/${photo.id}/content?variant=full`,
   };
 }
 
 export function draftView(draft: KitchenDraftRecord, gallery: GalleryLookup): KitchenDraftView {
   return {
     id: draft.id,
-    status: draft.status,
+    status: 'draft',
     measurements: { ...draft.measurements },
-    photos: draft.photos.map(photoView),
+    photos: draft.photos.map((photo) => photoView(photo)),
     moodboard: draft.moodboard.map((item) => moodboardItemView(item, gallery)),
     limits: { maxPhotos: PHOTO_LIMITS.maxPhotos, maxPhotoBytes: PHOTO_LIMITS.maxBytes, maxMoodboardItems: MOODBOARD_LIMITS.maxItems },
     expiresAt: draft.expiresAt.toISOString(),
@@ -136,7 +137,8 @@ export class KitchenDraftsService {
     return photoView(created);
   }
 
-  async photoContent(draft: KitchenDraftRecord, photoId: string, variant: PhotoVariant): Promise<Readable> {
+  /** Also serves the owner content route of claimed projects (only `photos` is read). */
+  async photoContent(draft: Pick<KitchenDraftRecord, 'photos'>, photoId: string, variant: PhotoVariant): Promise<Readable> {
     const photo = draft.photos.find((candidate) => candidate.id === photoId);
     if (!photo) throw new NotFoundException();
     try {

@@ -115,3 +115,10 @@ Structured JSON logs from API (request id, user id, AI call duration, tokens, qu
 - ~14.5 GB free VRAM; 64 GB RAM; RDNA4 (gfx1201) needs ROCm ≥ 6.4 in containers, Vulkan as fallback.
 - Linux host, bash scripts only, Docker Compose v2.
 - English for code and technical docs.
+
+## Login Gate and claim (`login-gate-claim`)
+
+- Owner key: `kitchen_project.owner_sub` = the Keycloak `sub` of the claiming Account (indexed). There is no local Account table yet; the local profile arrives with `language-preference-account`.
+- The claim runs in the web BFF route `POST /api/kitchen-projects/drafts/current/claim` (same-origin Origin required; session token from `web_session`, draft token from the HttpOnly `bm_draft` cookie), which calls the API `POST /kitchen-projects/drafts/current/claim` (Bearer + `X-Draft-Token`) and clears `bm_draft` on 200 and 404. The API locks the draft row (`SELECT ... FOR UPDATE`) so two concurrent claims give exactly one owner.
+- Owner routes `/kitchen-projects/:projectId/...` use `OwnedProjectGuard` (exported for `controlnet-render` and `budget-tier-computation`); the costly routes `POST .../renders` and `POST .../budget` are placeholders (409/501) that never touch the GPU job broker.
+

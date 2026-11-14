@@ -8,7 +8,8 @@ export const MOODBOARD_LIMITS = {
   maxItems: 12,
 } as const;
 
-const ITEMS_PATH = '/kitchen-projects/drafts/current/moodboard/items';
+/** Content route base of upload items on the draft routes. */
+export const DRAFT_MOODBOARD_ITEMS_PATH = '/kitchen-projects/drafts/current/moodboard/items';
 
 /** Resolves a Style Gallery image id (the moodboard view needs its style). */
 export interface GalleryLookup {
@@ -20,8 +21,11 @@ export function moodboardKeys(projectId: string, itemId: string): { fullKey: str
   return { fullKey: `${base}/full.jpg`, thumbKey: `${base}/thumb.jpg` };
 }
 
-/** Gallery items point at the public gallery content route; uploads at the draft item content route. */
-export function moodboardItemView(item: MoodboardItemRecord, gallery: GalleryLookup): MoodboardItemView {
+/**
+ * Gallery items point at the public gallery content route; uploads at `itemsPath` (the draft
+ * item content route by default, the owner route for claimed projects).
+ */
+export function moodboardItemView(item: MoodboardItemRecord, gallery: GalleryLookup, itemsPath = DRAFT_MOODBOARD_ITEMS_PATH): MoodboardItemView {
   const base = { id: item.id, position: item.position, width: item.width, height: item.height };
   if (item.source === 'gallery' && item.galleryImageId !== null) {
     return {
@@ -38,7 +42,7 @@ export function moodboardItemView(item: MoodboardItemRecord, gallery: GalleryLoo
     source: 'upload',
     galleryImageId: null,
     styleId: null,
-    thumbUrl: `${ITEMS_PATH}/${item.id}/content?variant=thumb`,
-    fullUrl: `${ITEMS_PATH}/${item.id}/content?variant=full`,
+    thumbUrl: `${itemsPath}/${item.id}/content?variant=thumb`,
+    fullUrl: `${itemsPath}/${item.id}/content?variant=full`,
   };
 }

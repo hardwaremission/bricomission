@@ -168,5 +168,70 @@
       "expired": "Je vorige concept is verlopen na 7 dagen zonder wijzigingen. Begin opnieuw.",
       "dismiss": "Sluiten"
     }
+  },
+  "generate": {
+    "backToMoodboard": "Terug naar je stijl",
+    "step": "Stap {current} van {total}",
+    "title": "Klaar om te ontwerpen",
+    "helper": "Controleer je keuken en kies wat je wilt maken. We vragen je in te loggen zodat je project wordt bewaard.",
+    "summary": {
+      "kitchenTitle": "Je keuken",
+      "styleTitle": "Jouw stijl",
+      "edit": "Bewerken",
+      "editKitchen": "Je keuken bewerken",
+      "editStyle": "Je stijl bewerken",
+      "more": "+{count}",
+      "measurements": "{length} × {width} m · hoogte {height} m",
+      "missing": "—",
+      "moodboardCount": "{count, plural, one {# item} other {# items}} in je moodboard"
+    },
+    "cta": {
+      "render": "Mijn keuken genereren",
+      "budget": "Mijn offerte krijgen"
+    },
+    "hints": {
+      "capture": "Je keuken heeft nog een foto en alle drie de maten nodig.",
+      "goToCapture": "Naar je keuken",
+      "items": "Voeg minstens één keuken of foto toe aan je moodboard.",
+      "goToMoodboard": "Naar je stijl",
+      "start": "Start eerst je keukenproject.",
+      "startLink": "Starten"
+    },
+    "gate": {
+      "title": "Log in om verder te gaan",
+      "body": "Voor ontwerpen en offertes heb je een gratis account nodig. Je foto's, maten en moodboard worden erin bewaard.",
+      "signIn": "Inloggen",
+      "register": "Account aanmaken",
+      "footnote": "Nieuwe accounts bevestigen hun e-mail met een code van 6 cijfers.",
+      "close": "Sluiten"
+    },
+    "claiming": "Je keuken wordt in je account bewaard…",
+    "alerts": {
+      "wrongRole": "Met dit account kun je geen keukenprojecten bewaren. Log uit en gebruik een account voor particulieren.",
+      "signOut": "Uitloggen",
+      "failed": "We konden je keuken niet in je account bewaren. Je concept is veilig; probeer het opnieuw.",
+      "retry": "Opnieuw proberen",
+      "offline": "Je bent offline. Je concept is veilig; maak opnieuw verbinding om het in je account te bewaren.",
+      "expired": "Je vorige concept is verlopen na 7 dagen zonder wijzigingen. Begin opnieuw.",
+      "start": "Starten",
+      "dismiss": "Sluiten"
+    }
+  },
+  "project": {
+    "title": "Je keukenproject",
+    "helper": "Ontwerpen en offertes komen binnenkort. Je project blijft hier, klaar voor ze.",
+    "claimed": "Je keuken is bewaard in je account.",
+    "dismiss": "Sluiten",
+    "newProject": "Een nieuw keukenproject starten",
+    "availableSoon": "Binnenkort beschikbaar",
+    "signedOut": {
+      "title": "Log in om dit keukenproject te zien",
+      "signIn": "Inloggen"
+    },
+    "notFound": {
+      "title": "We konden dit keukenproject niet vinden",
+      "home": "Naar Home"
+    },
+    "offline": "Je bent offline. Je keukenproject is veilig; maak opnieuw verbinding om het te zien."
   }
 }

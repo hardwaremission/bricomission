@@ -113,7 +113,7 @@ describe('HTTP /kitchen-projects/drafts', () => {
     expect(ok.status).toBe(200);
     expect(ok.body.measurements).toEqual({ lengthCm: 420, widthCm: 310, heightCm: 260 });
     expect(ok.body.expiresAt).toBe(new Date(now.getTime() + 7 * DAY).toISOString());
-    expect(repo.rows.get(id)?.expiresAt.toISOString()).toBe(ok.body.expiresAt);
+    expect(repo.rows.get(id)?.expiresAt?.toISOString()).toBe(ok.body.expiresAt);
 
     const bad = await http().put(`${BASE}/current/measurements`).set('X-Draft-Token', token).send({ lengthCm: 99, widthCm: 3.5, heightCm: '300' });
     expect(bad.status).toBe(400);
@@ -141,7 +141,7 @@ describe('HTTP /kitchen-projects/drafts', () => {
     const prefix = `kitchen-projects/${id}/photos/${res.body.id}`;
     expect(storage.keys().filter((key) => key.startsWith(`kitchen-projects/${id}/`))).toEqual([`${prefix}/full.jpg`, `${prefix}/thumb.jpg`]);
     expect(storage.objects.get(`${prefix}/full.jpg`)?.body.includes(Buffer.from('GPS-Test'))).toBe(false);
-    expect(repo.rows.get(id)?.expiresAt.getTime()).toBe(now.getTime() + 7 * DAY);
+    expect(repo.rows.get(id)?.expiresAt?.getTime()).toBe(now.getTime() + 7 * DAY);
 
     const content = await http().get(res.body.thumbUrl).set('X-Draft-Token', token).buffer(true);
     expect(content.status).toBe(200);

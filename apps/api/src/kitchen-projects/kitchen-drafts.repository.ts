@@ -36,6 +36,25 @@ export interface KitchenDraftRecord {
   moodboard: MoodboardItemRecord[];
 }
 
+/** A claimed Kitchen Project (login-gate-claim): owned by a Keycloak `sub`, never expires. */
+export interface KitchenProjectRecord {
+  id: string;
+  status: 'claimed';
+  ownerSub: string;
+  claimedAt: Date;
+  measurements: KitchenMeasurements;
+  /** Ordered by position. */
+  photos: KitchenPhotoRecord[];
+  /** Ordered by position. */
+  moodboard: MoodboardItemRecord[];
+}
+
+/**
+ * Result of {@link KitchenDraftRepository.claimByTokenHash}: the claimed project and whether
+ * this call claimed it (`created: false` = already claimed by the same `sub`, nothing changed).
+ */
+export type ClaimResult = { record: KitchenProjectRecord; created: boolean } | 'not_found';
+
 export type NewKitchenPhoto = Omit<KitchenPhotoRecord, 'position'>;
 export type NewMoodboardItem = Omit<MoodboardItemRecord, 'position'>;
 
@@ -68,6 +87,15 @@ export interface KitchenDraftRepository {
   /** Up to `limit` drafts with `expiresAt <= now`, with their object keys (photos and Moodboard uploads). */
   findExpired(now: Date, limit: number): Promise<Array<{ id: string; keys: string[] }>>;
   deleteDrafts(ids: readonly string[]): Promise<number>;
+  /**
+   * Claims the draft whose token hash matches for `ownerSub`, under the draft row lock: a live
+   * `draft` becomes `claimed` (owner, `claimedAt = now`, no expiry; same id and content). A
+   * project already claimed by the same `sub` is returned unchanged (`created: false`).
+   * Unknown hash, expired draft or another owner: `not_found`.
+   */
+  claimByTokenHash(tokenHash: Buffer, ownerSub: string, now: Date): Promise<ClaimResult>;
+  /** The claimed project `id` if `ownerSub` owns it; null otherwise (unknown, a draft, another owner). */
+  findOwned(id: string, ownerSub: string): Promise<KitchenProjectRecord | null>;
 }
 
 export const KITCHEN_DRAFT_REPOSITORY = Symbol('KITCHEN_DRAFT_REPOSITORY');
@@ -87,6 +115,8 @@ const MOODBOARD_SELECT = {
 const DRAFT_SELECT = {
   id: true,
   status: true,
+  ownerSub: true,
+  claimedAt: true,
   lengthCm: true,
   widthCm: true,
   heightCm: true,
@@ -95,23 +125,40 @@ const DRAFT_SELECT = {
   moodboardItems: { select: MOODBOARD_SELECT, orderBy: { position: 'asc' } },
 } as const;
 
-interface DraftRow {
+interface ProjectRow {
   id: string;
-  status: 'draft';
+  status: 'draft' | 'claimed';
+  ownerSub: string | null;
+  claimedAt: Date | null;
   lengthCm: number | null;
   widthCm: number | null;
   heightCm: number | null;
-  expiresAt: Date;
+  expiresAt: Date | null;
   photos: KitchenPhotoRecord[];
   moodboardItems: MoodboardItemRecord[];
 }
 
-function toRecord(row: DraftRow): KitchenDraftRecord {
+/** Draft queries filter `status = draft`, whose CHECK guarantees an expiry. */
+function toRecord(row: ProjectRow): KitchenDraftRecord {
+  if (row.status !== 'draft' || row.expiresAt === null) throw new Error('KitchenProjectNotDraft');
   return {
     id: row.id,
-    status: row.status,
+    status: 'draft',
     measurements: { lengthCm: row.lengthCm, widthCm: row.widthCm, heightCm: row.heightCm },
     expiresAt: row.expiresAt,
+    photos: row.photos,
+    moodboard: row.moodboardItems,
+  };
+}
+
+function toProjectRecord(row: ProjectRow): KitchenProjectRecord {
+  if (row.status !== 'claimed' || row.ownerSub === null || row.claimedAt === null) throw new Error('KitchenProjectNotClaimed');
+  return {
+    id: row.id,
+    status: 'claimed',
+    ownerSub: row.ownerSub,
+    claimedAt: row.claimedAt,
+    measurements: { lengthCm: row.lengthCm, widthCm: row.widthCm, heightCm: row.heightCm },
     photos: row.photos,
     moodboard: row.moodboardItems,
   };
@@ -239,5 +286,33 @@ export class PrismaKitchenDraftRepository implements KitchenDraftRepository {
   async deleteDrafts(ids: readonly string[]): Promise<number> {
     const { count } = await this.prisma.kitchenProject.deleteMany({ where: { id: { in: [...ids] }, status: 'draft' } });
     return count;
+  }
+
+  async claimByTokenHash(tokenHash: Buffer, ownerSub: string, now: Date): Promise<ClaimResult> {
+    const candidate = await this.prisma.kitchenProject.findUnique({ where: { draftTokenHash: new Uint8Array(tokenHash) }, select: { id: true } });
+    if (!candidate) return 'not_found';
+    const { id } = candidate;
+    return this.prisma.$transaction(async (tx) => {
+      // Serializes concurrent claims (and draft edits) of this project; the state is read again
+      // after the lock, so the loser of a race sees the winner's claim.
+      await tx.$queryRaw`SELECT id FROM kitchen_project WHERE id = ${id}::uuid FOR UPDATE`;
+      const row = await tx.kitchenProject.findUnique({ where: { id }, select: DRAFT_SELECT });
+      if (!row) return 'not_found' as const;
+      if (row.status === 'claimed') {
+        return row.ownerSub === ownerSub ? { record: toProjectRecord(row), created: false } : ('not_found' as const);
+      }
+      if (row.expiresAt === null || row.expiresAt <= now) return 'not_found' as const;
+      const claimed = await tx.kitchenProject.update({
+        where: { id },
+        data: { status: 'claimed', ownerSub, claimedAt: now, expiresAt: null },
+        select: DRAFT_SELECT,
+      });
+      return { record: toProjectRecord(claimed), created: true };
+    });
+  }
+
+  async findOwned(id: string, ownerSub: string): Promise<KitchenProjectRecord | null> {
+    const row = await this.prisma.kitchenProject.findFirst({ where: { id, status: 'claimed', ownerSub }, select: DRAFT_SELECT });
+    return row ? toProjectRecord(row) : null;
   }
 }
