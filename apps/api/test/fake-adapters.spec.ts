@@ -37,10 +37,17 @@ describe('fake AI adapters', () => {
         expect(chunk).toContain(`${item.sku} `);
         expect(chunk).toContain(`${item.quotedPrice} EUR`);
         expect(item.chunkRef).toBe(1);
-        expect(['1', '2', '3']).toContain(item.quantity);
+        expect(['1', '2', '3', '4']).toContain(item.quantity);
       }
     }
     expect(json.tiers.luxury?.items[0]?.sku).toBe('BM-SYN-WTP-240');
+    // Default mode is strictly ordered on price x quantity (the fake never needs a retry); `misordered` mirrors it.
+    const total = (budget: typeof json, tier: string) => budget.tiers[tier]!.items.reduce((sum, i) => sum + Number(i.quotedPrice) * Number(i.quantity), 0);
+    const ordered = ['luxury', 'high', 'medium', 'low'].map((tier) => total(json, tier));
+    expect(ordered.every((value, i) => i === 0 || (ordered[i - 1] as number) > value)).toBe(true);
+    const mirrored = JSON.parse((await new FakeLlmAdapter({ budgetOrder: 'misordered' }).complete(req, signal())).text) as typeof json;
+    const reversed = ['luxury', 'high', 'medium', 'low'].map((tier) => total(mirrored, tier));
+    expect(reversed.every((value, i) => i === 0 || (reversed[i - 1] as number) < value)).toBe(true);
     // Without a schema it keeps the plain deterministic text.
     expect((await new FakeLlmAdapter().complete({ messages: req.messages }, signal())).text).toMatch(/^fake:/);
   });
@@ -57,6 +64,17 @@ describe('fake AI adapters', () => {
     [41, 104, 236].forEach((channel, i) => expect(Math.abs((data[i] ?? 0) - channel)).toBeLessThanOrEqual(2));
     const other = await new FakeImageAdapter().render(imageRequest({ image: await sharp(TINY_JPEG).negate().jpeg().toBuffer() }), signal());
     expect(other.image.equals(a.image)).toBe(false);
+  });
+
+  it('FakeImageAdapter fails a poison (solid magenta) photo once per seed; the retry and other photos succeed', async () => {
+    const poison = await sharp({ create: { width: 160, height: 120, channels: 3, background: { r: 255, g: 0, b: 255 } } }).jpeg().toBuffer();
+    const adapter = new FakeImageAdapter();
+    await expect(adapter.render(imageRequest({ image: poison, seed: 11 }), signal())).rejects.toThrow(/poison/);
+    expect((await adapter.render(imageRequest({ image: poison, seed: 11 }), signal())).image.length).toBeGreaterThan(0);
+    await expect(adapter.render(imageRequest({ image: poison, seed: 12 }), signal())).rejects.toThrow(/poison/);
+    expect((await adapter.render(imageRequest({ seed: 13 }), signal())).image.length).toBeGreaterThan(0);
+    // echo mode never decodes, so it never fails.
+    expect((await new FakeImageAdapter({ echo: true }).render(imageRequest({ image: poison }), signal())).image.equals(poison)).toBe(true);
   });
 
   it('fakes track concurrent calls and record requests', async () => {

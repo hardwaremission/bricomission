@@ -219,11 +219,10 @@
   },
   "project": {
     "title": "Je keukenproject",
-    "helper": "Maak een ontwerp van je nieuwe keuken of vraag je budget op.",
+    "helper": "Pas je foto's, afmetingen en stijlen op elk moment aan. Kies één simulatie om je budget te krijgen.",
     "claimed": "Je keuken is bewaard in je account.",
     "dismiss": "Sluiten",
     "newProject": "Een nieuw keukenproject starten",
-    "seeDesigns": "Mijn ontwerpen bekijken",
     "signedOut": {
       "title": "Log in om dit keukenproject te zien",
       "signIn": "Inloggen"
@@ -233,15 +232,43 @@
       "home": "Naar Home"
     },
     "offline": "Je bent offline. Je keukenproject is veilig; maak opnieuw verbinding om het te zien.",
-    "seeBudget": "Mijn budget bekijken"
+    "seeBudget": "Mijn budget bekijken",
+    "summary": {
+      "photos": "{count, plural, one {# foto} other {# foto's}}",
+      "styles": "{count, plural, one {# stijl of referentie} other {# stijlen en referenties}}",
+      "missing": "—",
+      "editPhotos": "Foto's aanpassen",
+      "editMeasurements": "Afmetingen aanpassen",
+      "editStyles": "Stijlen aanpassen"
+    },
+    "edit": {
+      "back": "Terug naar mijn keukenproject",
+      "photosTitle": "Pas je foto's aan",
+      "measurementsTitle": "Pas je afmetingen aan",
+      "stylesTitle": "Pas je stijlen aan",
+      "helper": "Wijzigingen worden direct opgeslagen. Je bestaande simulaties behouden de beelden waarmee ze zijn gemaakt.",
+      "save": "Wijzigingen opslaan",
+      "saveHint": "Houd minstens één foto en alle drie de afmetingen om op te slaan.",
+      "blockedSimulation": "Wacht tot de simulatie klaar is om je project aan te passen.",
+      "blockedBudget": "Wacht tot het budget klaar is om je project aan te passen."
+    },
+    "budgetReason": "Selecteer een simulatie om je budget te activeren.",
+    "generateMore": "Meer simulaties maken",
+    "actionFailed": "Dat is niet gelukt. Probeer het zo meteen opnieuw."
   },
   "results": {
     "back": "Terug naar mijn keuken",
-    "titleDone": "Je nieuwe keuken",
     "titleActive": "Je keuken wordt ontworpen",
-    "helperDone": "Stijl {style}, op basis van foto {n}. Sleep de schuif om te vergelijken.",
-    "helperActive": "Stijl {style}, op basis van foto {n}. Dit duurt ongeveer 10 tot 30 seconden.",
-    "helperIdle": "Stijl {style}, op basis van foto {n}.",
+    "titleDone": "Simulatie {n}",
+    "helperActive": "Eén berekende stijl uit {sources}, toegepast op {count, plural, one {je keukenfoto} other {elk van je # keukenfoto's}}.",
+    "helperActiveBare": "Eén berekende stijl, toegepast op {count, plural, one {je keukenfoto} other {elk van je # keukenfoto's}}.",
+    "helperDone": "Berekende stijl uit {sources}. Foto {i} van {count}. Sleep de handgreep om te vergelijken.",
+    "helperDoneBare": "Foto {i} van {count}. Sleep de handgreep om te vergelijken.",
+    "sources": {
+      "gallery": "{count, plural, one {# galeriestijl} other {# galeriestijlen}}",
+      "own": "{count} van je foto's",
+      "join": "{first} en {second}"
+    },
     "slider": {
       "label": "Voor en na vergelijken",
       "before": "Voor",
@@ -250,20 +277,28 @@
       "afterAlt": "Het ontwerp van je nieuwe keuken"
     },
     "status": {
-      "running": "Bezig met maken…",
       "queued": "Wachten op de GPU",
-      "ahead": "{count, plural, one {# taak vóór de jouwe} other {# taken vóór de jouwe}}"
+      "ahead": "{count, plural, one {# taak vóór de jouwe} other {# taken vóór de jouwe}}",
+      "describing": "Je stijlreferenties worden bestudeerd",
+      "rendering": "Render {n} van {count}",
+      "percent": "{percent}%"
     },
-    "note": "Je kunt deze pagina verlaten; de render gaat door en verschijnt hier zodra hij klaar is.",
+    "tile": {
+      "photo": "Foto {n}",
+      "failed": "Foto {n} mislukt",
+      "retry": "Opnieuw",
+      "retryPhoto": "Foto {n} opnieuw proberen"
+    },
+    "note": "Je kunt deze pagina verlaten; de simulatie gaat door en verschijnt hier zodra ze klaar is.",
     "photos": {
-      "title": "Foto voor de volgende render",
-      "helper": "De render behoudt de muren, ramen en leidingen van deze foto.",
+      "title": "Foto's in deze simulatie",
+      "helper": "Elke foto wordt met dezelfde berekende stijl gerenderd.",
       "option": "Foto {n}"
     },
     "history": {
-      "title": "Je renders",
-      "counter": "{count} van {max}",
-      "item": "Render {n}"
+      "title": "Je simulaties",
+      "counter": "{count}",
+      "item": "Simulatie {n}"
     },
     "cta": {
       "again": "Opnieuw maken",
@@ -272,21 +307,22 @@
       "back": "Terug naar mijn keuken"
     },
     "hints": {
-      "oneAtATime": "Eén render tegelijk.",
-      "limit": "Je hebt {max} renders gemaakt, het maximum voor dit project."
+      "oneAtATime": "Eén simulatie tegelijk.",
+      "offline": "Je bent offline. Maak opnieuw verbinding om te genereren."
     },
     "alerts": {
-      "failed": "We konden deze render niet maken. Probeer het zo opnieuw.",
-      "interrupted": "Deze render is onderbroken. Probeer het opnieuw.",
+      "failed": "We konden deze simulatie niet maken. Probeer het zo opnieuw.",
+      "interrupted": "Deze simulatie is onderbroken. Probeer het opnieuw.",
       "queueFull": "De ontwerper is nu bezet. Probeer het over een minuut opnieuw.",
-      "uploadsOnly": "Je eigen foto's kunnen de stijl nog niet sturen, daarom hebben we een neutrale moderne stijl gebruikt.",
-      "offline": "Je bent offline. Je renders zijn veilig; maak opnieuw verbinding om nieuwe te zien."
+      "offline": "Je bent offline. Je simulaties zijn veilig; maak opnieuw verbinding om nieuwe te zien.",
+      "partial": "{failed} van {count} foto's kon niet worden gerenderd. Probeer opnieuw om deze simulatie voor je budget te kunnen kiezen.",
+      "degraded": "We konden niet al je referenties analyseren, dus deze simulatie gebruikt je hoofdstijl."
     }
   },
   "budget": {
     "back": "Terug naar mijn keuken",
     "title": "Het budget voor je keuken",
-    "helper": "Vier opties, van premium tot basis. De prijzen komen uit de productcatalogus; tik op een optie om alle artikelen te zien.",
+    "helper": "Vier opties van premium tot essentieel, op basis van de elementen in je simulatie. Tik op een optie om elk artikel te zien.",
     "titleActive": "Je budget wordt berekend",
     "helperActive": "We stemmen je keuken af op de productcatalogus. Dit duurt ongeveer een minuut.",
     "tiers": {
@@ -304,27 +340,22 @@
       "vat": "Btw {percent}%",
       "total": "Totaal (incl. btw)"
     },
-    "history": {
-      "title": "Je budgetten",
-      "counter": "{count} van {max}",
-      "item": "Budget {n}"
-    },
     "status": {
-      "running": "Berekenen…",
       "queued": "Wachten op de GPU",
-      "ahead": "{count, plural, one {# taak voor de jouwe} other {# taken voor de jouwe}}"
+      "ahead": "{count, plural, one {# taak voor de jouwe} other {# taken voor de jouwe}}",
+      "reading": "Beeld {n} van {count} wordt gelezen",
+      "matching": "Producten uit de catalogus worden gezocht"
     },
     "note": "Je kunt deze pagina verlaten; het budget wordt doorberekend en verschijnt hier zodra het klaar is.",
     "hints": {
-      "oneAtATime": "Eén budget tegelijk.",
-      "limit": "Je hebt {max} budgetten gemaakt, het maximum voor dit project."
+      "oneAtATime": "Eén budget tegelijk."
     },
     "empty": {
       "title": "Nog geen budget",
       "helper": "Vraag vier opties voor je keuken op, van premium tot basis."
     },
     "cta": {
-      "again": "Opnieuw berekenen",
+      "again": "Budget opnieuw berekenen",
       "retry": "Opnieuw proberen",
       "start": "Mijn budget opvragen",
       "back": "Terug naar mijn keuken"
@@ -336,7 +367,42 @@
       "searchDown": "Het zoeken naar prijzen is nu niet beschikbaar. Probeer het over een minuut opnieuw.",
       "queueFull": "De ontwerper is nu bezig. Probeer het over een minuut opnieuw.",
       "incomplete": "Voeg eerst je foto's en maten toe en vraag dan je budget op.",
-      "offline": "Je bent offline. Je budgetten zijn veilig; maak weer verbinding om nieuwe te zien."
+      "offline": "Je bent offline. Je budgetten zijn veilig; maak weer verbinding om nieuwe te zien.",
+      "noSelection": "Selecteer een simulatie in je keukenproject om een budget te krijgen.",
+      "notReady": "Deze simulatie heeft nog foto's die niet zijn gerenderd. Probeer die eerst opnieuw."
+    },
+    "basedOn": "Gebaseerd op simulatie {n}",
+    "change": "Wijzigen",
+    "relabeled": "De opties staan op totaalprijs, van duurste naar goedkoopste.",
+    "recalculating": "Nieuw budget wordt berekend",
+    "goToSimulations": "Naar mijn simulaties"
+  },
+  "simulations": {
+    "title": "Mijn simulaties",
+    "instruction": "Selecteer hieronder één simulatie om je budget te krijgen. Het budget telt elk element dat op de beelden te zien is.",
+    "empty": {
+      "title": "Nog geen simulaties",
+      "helper": "Maak je eerste simulatie om je nieuwe keuken op elke foto te zien."
+    },
+    "name": "Simulatie {n}",
+    "meta": "{date} · {count, plural, one {# foto} other {# foto's}}",
+    "rendering": "Renderen {n} van {count}",
+    "selected": "Geselecteerd",
+    "selectedNamed": "Simulatie {n}, geselecteerd",
+    "select": "Selecteren",
+    "selectNamed": "Simulatie {n} selecteren",
+    "open": "Openen",
+    "openRetry": "Openen en opnieuw proberen",
+    "openNamed": "Simulatie {n} openen",
+    "openRetryNamed": "Simulatie {n} openen en opnieuw proberen",
+    "delete": "Verwijderen",
+    "deleteNamed": "Simulatie {n} verwijderen",
+    "photosFailed": "{count, plural, one {# foto mislukt} other {# foto's mislukt}}",
+    "deleteDialog": {
+      "title": "Simulatie {n} verwijderen?",
+      "message": "De beelden en het budget worden definitief verwijderd. Je foto's en afmetingen blijven bewaard.",
+      "confirm": "Simulatie verwijderen",
+      "cancel": "Annuleren"
     }
   }
 }

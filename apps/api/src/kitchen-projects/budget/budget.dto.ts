@@ -2,6 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import type {
   BudgetErrorCode,
   BudgetLineItemView,
+  BudgetStage,
   BudgetListResponse,
   BudgetStatus,
   BudgetTier,
@@ -12,6 +13,7 @@ import type {
 } from '@bricomission/shared-types';
 
 const STATUSES: BudgetStatus[] = ['queued', 'running', 'succeeded', 'failed'];
+const STAGES: BudgetStage[] = ['inventory', 'pricing'];
 const TIERS: BudgetTier[] = ['luxury', 'high', 'medium', 'low'];
 const KINDS: GpuJobKind[] = ['image', 'llm'];
 const ERROR_CODES: BudgetErrorCode[] = ['adapter_error', 'timeout', 'interrupted', 'verification_failed'];
@@ -63,13 +65,33 @@ export class BudgetTierViewDto implements BudgetTierView {
   items!: BudgetLineItemViewDto[];
 }
 
+export class BudgetProgressDto {
+  @ApiProperty({ type: 'integer', description: 'Images of the Simulation' })
+  total!: number;
+
+  @ApiProperty({ type: 'integer', description: 'Images read so far' })
+  done!: number;
+}
+
 /** A Budget of an owned Kitchen Project. No prompt, token counts, job id or source quotes. */
 export class BudgetViewDto implements BudgetView {
   @ApiProperty({ format: 'uuid' })
   id!: string;
 
+  @ApiProperty({ format: 'uuid', description: 'The Simulation this Budget prices' })
+  simulationId!: string;
+
   @ApiProperty({ enum: STATUSES })
   status!: BudgetStatus;
+
+  @ApiProperty({ enum: STAGES, description: '`inventory` while the images are read ("Reading image n of N"), then `pricing`' })
+  stage!: BudgetStage;
+
+  @ApiProperty({ type: BudgetProgressDto })
+  progress!: BudgetProgressDto;
+
+  @ApiProperty({ description: 'True when the tiers were named by total rank after the last attempt was out of order (names only; no amount changed)' })
+  relabeled!: boolean;
 
   @ApiProperty({ type: 'integer', nullable: true, description: '1-based GPU queue position while queued (when known)' })
   position!: number | null;
@@ -108,9 +130,6 @@ export class CreateBudgetResponseDto implements CreateBudgetResponse {
 }
 
 export class BudgetListResponseDto implements BudgetListResponse {
-  @ApiProperty({ type: [BudgetViewDto], description: 'Newest first' })
+  @ApiProperty({ type: [BudgetViewDto], description: 'Budgets of the selected Simulation, newest first (the current one plus an active or failed recompute)' })
   budgets!: BudgetViewDto[];
-
-  @ApiProperty({ type: 'integer', example: 5, description: 'Non-failed Budgets allowed per project' })
-  maxBudgets!: number;
 }

@@ -219,11 +219,10 @@
   },
   "project": {
     "title": "Kjøkkenprosjektet ditt",
-    "helper": "Lag et design av det nye kjøkkenet ditt eller få budsjettet ditt.",
+    "helper": "Rediger bildene, målene og stilene dine når som helst. Velg én simulering for å få budsjettet ditt.",
     "claimed": "Kjøkkenet ditt er lagret på kontoen din.",
     "dismiss": "Lukk",
     "newProject": "Start et nytt kjøkkenprosjekt",
-    "seeDesigns": "Se designene mine",
     "signedOut": {
       "title": "Logg inn for å se dette kjøkkenprosjektet",
       "signIn": "Logg inn"
@@ -233,15 +232,43 @@
       "home": "Gå til forsiden"
     },
     "offline": "Du er frakoblet. Kjøkkenprosjektet ditt er trygt; koble til igjen for å se det.",
-    "seeBudget": "Se budsjettet mitt"
+    "seeBudget": "Se budsjettet mitt",
+    "summary": {
+      "photos": "{count, plural, one {# bilde} other {# bilder}}",
+      "styles": "{count, plural, one {# stil eller referanse} other {# stiler og referanser}}",
+      "missing": "—",
+      "editPhotos": "Rediger bilder",
+      "editMeasurements": "Rediger mål",
+      "editStyles": "Rediger stiler"
+    },
+    "edit": {
+      "back": "Tilbake til kjøkkenprosjektet mitt",
+      "photosTitle": "Rediger bildene dine",
+      "measurementsTitle": "Rediger målene dine",
+      "stylesTitle": "Rediger stilene dine",
+      "helper": "Endringer lagres med en gang. De eksisterende simuleringene beholder bildene de ble laget fra.",
+      "save": "Lagre endringer",
+      "saveHint": "Behold minst ett bilde og alle tre målene for å lagre.",
+      "blockedSimulation": "Vent til simuleringen er ferdig for å redigere prosjektet ditt.",
+      "blockedBudget": "Vent til budsjettet er ferdig for å redigere prosjektet ditt."
+    },
+    "budgetReason": "Velg en simulering for å aktivere budsjettet ditt.",
+    "generateMore": "Lag flere simuleringer",
+    "actionFailed": "Vi klarte ikke å fullføre dette. Prøv igjen om litt."
   },
   "results": {
     "back": "Tilbake til kjøkkenet mitt",
-    "titleDone": "Det nye kjøkkenet ditt",
     "titleActive": "Kjøkkenet ditt designes",
-    "helperDone": "Stil {style}, fra bilde {n}. Dra i håndtaket for å sammenligne.",
-    "helperActive": "Stil {style}, fra bilde {n}. Dette tar omtrent 10 til 30 sekunder.",
-    "helperIdle": "Stil {style}, fra bilde {n}.",
+    "titleDone": "Simulering {n}",
+    "helperActive": "Én beregnet stil fra {sources}, brukt på {count, plural, one {kjøkkenbildet ditt} other {hvert av dine # kjøkkenbilder}}.",
+    "helperActiveBare": "Én beregnet stil, brukt på {count, plural, one {kjøkkenbildet ditt} other {hvert av dine # kjøkkenbilder}}.",
+    "helperDone": "Beregnet stil fra {sources}. Bilde {i} av {count}. Dra i håndtaket for å sammenligne.",
+    "helperDoneBare": "Bilde {i} av {count}. Dra i håndtaket for å sammenligne.",
+    "sources": {
+      "gallery": "{count, plural, one {# galleristil} other {# galleristiler}}",
+      "own": "{count} av bildene dine",
+      "join": "{first} og {second}"
+    },
     "slider": {
       "label": "Sammenlign før og etter",
       "before": "Før",
@@ -250,20 +277,28 @@
       "afterAlt": "Designet av det nye kjøkkenet ditt"
     },
     "status": {
-      "running": "Lager…",
       "queued": "Venter på GPU-en",
-      "ahead": "{count, plural, one {# jobb foran din} other {# jobber foran din}}"
+      "ahead": "{count, plural, one {# jobb foran din} other {# jobber foran din}}",
+      "describing": "Vi studerer stilreferansene dine",
+      "rendering": "Rendrer {n} av {count}",
+      "percent": "{percent} %"
     },
-    "note": "Du kan forlate siden; renderingen fortsetter og vises her når den er klar.",
+    "tile": {
+      "photo": "Bilde {n}",
+      "failed": "Bilde {n} mislyktes",
+      "retry": "Prøv igjen",
+      "retryPhoto": "Prøv bilde {n} igjen"
+    },
+    "note": "Du kan forlate siden; simuleringen fortsetter og vises her når den er klar.",
     "photos": {
-      "title": "Bilde for neste rendering",
-      "helper": "Renderingen beholder vegger, vinduer og rør fra dette bildet.",
+      "title": "Bilder i denne simuleringen",
+      "helper": "Hvert bilde rendres med den samme beregnede stilen.",
       "option": "Bilde {n}"
     },
     "history": {
-      "title": "Renderingene dine",
-      "counter": "{count} av {max}",
-      "item": "Rendering {n}"
+      "title": "Simuleringene dine",
+      "counter": "{count}",
+      "item": "Simulering {n}"
     },
     "cta": {
       "again": "Lag på nytt",
@@ -272,21 +307,22 @@
       "back": "Tilbake til kjøkkenet mitt"
     },
     "hints": {
-      "oneAtATime": "Én rendering om gangen.",
-      "limit": "Du har laget {max} renderinger, maksimum for dette prosjektet."
+      "oneAtATime": "Én simulering om gangen.",
+      "offline": "Du er frakoblet. Koble til igjen for å generere."
     },
     "alerts": {
-      "failed": "Vi kunne ikke lage denne renderingen. Prøv igjen om litt.",
-      "interrupted": "Denne renderingen ble avbrutt. Prøv igjen.",
+      "failed": "Vi kunne ikke lage denne simuleringen. Prøv igjen om litt.",
+      "interrupted": "Denne simuleringen ble avbrutt. Prøv igjen.",
       "queueFull": "Designeren er opptatt akkurat nå. Prøv igjen om et minutt.",
-      "uploadsOnly": "Dine egne bilder kan ikke styre stilen ennå, så vi brukte en nøytral moderne stil.",
-      "offline": "Du er frakoblet. Renderingene dine er trygge; koble til igjen for å se nye."
+      "offline": "Du er frakoblet. Simuleringene dine er trygge; koble til igjen for å se nye.",
+      "partial": "{failed} av {count} bilder kunne ikke rendres. Prøv igjen for å kunne velge denne simuleringen til budsjettet ditt.",
+      "degraded": "Vi kunne ikke analysere alle referansene dine, så denne simuleringen bruker hovedstilen din."
     }
   },
   "budget": {
     "back": "Tilbake til kjøkkenet mitt",
     "title": "Budsjett for kjøkkenet ditt",
-    "helper": "Fire alternativer, fra premium til grunnleggende. Prisene kommer fra produktkatalogen; trykk på et alternativ for å se alle varene.",
+    "helper": "Fire alternativer fra premium til enkelt, basert på elementene som er synlige i simuleringen din. Trykk på et alternativ for å se hver vare.",
     "titleActive": "Budsjettet beregnes",
     "helperActive": "Vi matcher kjøkkenet ditt mot produktkatalogen. Det tar omtrent ett minutt.",
     "tiers": {
@@ -304,27 +340,22 @@
       "vat": "Mva. {percent} %",
       "total": "Totalt (inkl. mva.)"
     },
-    "history": {
-      "title": "Budsjettene dine",
-      "counter": "{count} av {max}",
-      "item": "Budsjett {n}"
-    },
     "status": {
-      "running": "Beregner…",
       "queued": "Venter på GPU-en",
-      "ahead": "{count, plural, one {# jobb før din} other {# jobber før din}}"
+      "ahead": "{count, plural, one {# jobb før din} other {# jobber før din}}",
+      "reading": "Leser bilde {n} av {count}",
+      "matching": "Finner produkter i katalogen"
     },
     "note": "Du kan forlate siden; budsjettet fortsetter og vises her når det er ferdig.",
     "hints": {
-      "oneAtATime": "Ett budsjett om gangen.",
-      "limit": "Du har laget {max} budsjetter, maksimum for dette prosjektet."
+      "oneAtATime": "Ett budsjett om gangen."
     },
     "empty": {
       "title": "Ingen budsjett ennå",
       "helper": "Få fire alternativer for kjøkkenet ditt, fra premium til grunnleggende."
     },
     "cta": {
-      "again": "Beregn på nytt",
+      "again": "Beregn budsjettet på nytt",
       "retry": "Prøv igjen",
       "start": "Få budsjettet mitt",
       "back": "Tilbake til kjøkkenet mitt"
@@ -336,7 +367,42 @@
       "searchDown": "Prissøket er ikke tilgjengelig akkurat nå. Prøv igjen om ett minutt.",
       "queueFull": "Designeren er opptatt akkurat nå. Prøv igjen om ett minutt.",
       "incomplete": "Legg først til bildene og målene dine, og få deretter budsjettet.",
-      "offline": "Du er frakoblet. Budsjettene dine er trygge; koble til igjen for å se nye."
+      "offline": "Du er frakoblet. Budsjettene dine er trygge; koble til igjen for å se nye.",
+      "noSelection": "Velg en simulering i kjøkkenprosjektet ditt for å få et budsjett.",
+      "notReady": "Denne simuleringen har fortsatt bilder som ikke er rendret. Prøv dem på nytt først."
+    },
+    "basedOn": "Basert på simulering {n}",
+    "change": "Endre",
+    "relabeled": "Alternativene er sortert etter totalpris, fra dyrest til billigst.",
+    "recalculating": "Beregner et nytt budsjett",
+    "goToSimulations": "Gå til mine simuleringer"
+  },
+  "simulations": {
+    "title": "Mine simuleringer",
+    "instruction": "Velg en simulering nedenfor for å få budsjettet ditt. Budsjettet teller hvert element som er synlig i bildene.",
+    "empty": {
+      "title": "Ingen simuleringer ennå",
+      "helper": "Lag din første simulering for å se det nye kjøkkenet fra hvert bilde."
+    },
+    "name": "Simulering {n}",
+    "meta": "{date} · {count, plural, one {# bilde} other {# bilder}}",
+    "rendering": "Rendrer {n} av {count}",
+    "selected": "Valgt",
+    "selectedNamed": "Simulering {n}, valgt",
+    "select": "Velg",
+    "selectNamed": "Velg simulering {n}",
+    "open": "Åpne",
+    "openRetry": "Åpne og prøv igjen",
+    "openNamed": "Åpne simulering {n}",
+    "openRetryNamed": "Åpne simulering {n} og prøv igjen",
+    "delete": "Slett",
+    "deleteNamed": "Slett simulering {n}",
+    "photosFailed": "{count, plural, one {# bilde mislyktes} other {# bilder mislyktes}}",
+    "deleteDialog": {
+      "title": "Slette simulering {n}?",
+      "message": "Bildene og budsjettet fjernes for godt. Bildene og målene dine blir værende.",
+      "confirm": "Slett simuleringen",
+      "cancel": "Avbryt"
     }
   }
 }

@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest';
+import type { SimulationView } from '../src/lib/simulations/simulation-state';
 import {
   activeBudget,
   budgetPhase,
+  computeStage,
+  currentBudget,
+  failedBudget,
+  selectionIssue,
   budgetReducer,
   type BudgetState,
   type BudgetView,
@@ -9,21 +14,21 @@ import {
   failureAlertKey,
   formatMoney,
   formatQuantity,
-  historyBudgets,
   INITIAL_BUDGET_STATE,
   jobsAhead,
-  keptCount,
-  limitReached,
   orderedTiers,
   type PollTimer,
-  shownBudget,
   startPolling,
 } from '../src/lib/budget/budget-state';
 
 function budget(id: string, status: BudgetView['status'], overrides: Partial<BudgetView> = {}): BudgetView {
   return {
     id,
+    simulationId: 's1',
     status,
+    stage: 'pricing',
+    progress: { total: 1, done: 1 },
+    relabeled: false,
     position: null,
     waitingFor: null,
     currency: 'EUR',
@@ -38,54 +43,87 @@ function budget(id: string, status: BudgetView['status'], overrides: Partial<Bud
   };
 }
 
-const loaded = (budgets: BudgetView[], maxBudgets = 5): BudgetState => budgetReducer(INITIAL_BUDGET_STATE, { type: 'loaded', budgets, maxBudgets });
+const simulation = (overrides: Partial<SimulationView> = {}): SimulationView =>
+  ({ id: 's1', ordinal: 2, status: 'succeeded', selected: true, renders: [], budget: null, ...overrides }) as unknown as SimulationView;
 
-describe('budget state (budget-tier-computation)', () => {
-  it('no Budgets: empty phase, start allowed; loading until loaded', () => {
+const loaded = (budgets: BudgetView[], sim: SimulationView | null = simulation()): BudgetState => budgetReducer(INITIAL_BUDGET_STATE, { type: 'loaded', simulation: sim, budgets });
+
+describe('budget state (simulations-ux-overhaul: one Budget per Simulation)', () => {
+  it('loading, then empty for a selected succeeded Simulation without a Budget; start allowed', () => {
     expect(budgetPhase(INITIAL_BUDGET_STATE)).toBe('loading');
     const state = loaded([]);
     expect(budgetPhase(state)).toBe('empty');
     expect(canStart(state)).toBe(true);
   });
 
-  it('an active Budget is shown and blocks starting; the poll update finishes it', () => {
-    let state = loaded([budget('b2', 'succeeded'), budget('b1', 'succeeded')].reverse());
-    state = budgetReducer(state, { type: 'startFinished', budget: budget('b3', 'queued') });
-    expect(budgetPhase(state)).toBe('active');
-    expect(activeBudget(state)?.id).toBe('b3');
+  it('no selected Simulation: noSelection phase, nothing can start; a partial one is notReady', () => {
+    const none = loaded([], null);
+    expect(budgetPhase(none)).toBe('noSelection');
+    expect(selectionIssue(none)).toBe('noSelection');
+    expect(canStart(none)).toBe(false);
+    const partial = loaded([], simulation({ status: 'partial' }));
+    expect(budgetPhase(partial)).toBe('notReady');
+    expect(canStart(partial)).toBe(false);
+  });
+
+  it('a 409 on start flips to the matching alert phase', () => {
+    const state = loaded([]);
+    const noSel = budgetReducer(state, { type: 'startFinished', budget: null, alert: 'noSelection' });
+    expect(budgetPhase(noSel)).toBe('noSelection');
+    const notReady = budgetReducer(state, { type: 'startFinished', budget: null, alert: 'notReady' });
+    expect(budgetPhase(notReady)).toBe('notReady');
+    expect(budgetPhase(budgetReducer(notReady, { type: 'startRequested' }))).toBe('computing');
+  });
+
+  it('first Budget: computing while active, then succeeded', () => {
+    let state = budgetReducer(loaded([]), { type: 'startFinished', budget: budget('b1', 'queued') });
+    expect(budgetPhase(state)).toBe('computing');
+    expect(activeBudget(state)?.id).toBe('b1');
     expect(canStart(state)).toBe(false);
-    expect(state.shownId).toBe('b3');
-    state = budgetReducer(state, { type: 'budgetUpdated', budget: budget('b3', 'succeeded') });
+    state = budgetReducer(state, { type: 'budgetUpdated', budget: budget('b1', 'succeeded') });
     expect(budgetPhase(state)).toBe('succeeded');
-    expect(shownBudget(state)?.id).toBe('b3');
+    expect(currentBudget(state)?.id).toBe('b1');
     expect(canStart(state)).toBe(true);
   });
 
-  it('shows the newest Budget by default; a failed newest one is the failed phase; history lists succeeded ones', () => {
-    const state = loaded([budget('b3', 'failed'), budget('b2', 'succeeded'), budget('b1', 'succeeded')]);
-    expect(budgetPhase(state)).toBe('failed');
-    expect(historyBudgets(state).map((b) => b.id)).toEqual(['b2', 'b1']);
-    const picked = budgetReducer(state, { type: 'budgetShown', budgetId: 'b1' });
-    expect(budgetPhase(picked)).toBe('succeeded');
-    expect(picked.shownId).toBe('b1');
-  });
-
-  it('counts non-failed Budgets for the limit and keeps failed ones out of it', () => {
-    const state = loaded([budget('b5', 'failed'), budget('b4', 'succeeded'), budget('b3', 'succeeded'), budget('b2', 'succeeded'), budget('b1', 'succeeded')], 4);
-    expect(keptCount(state)).toBe(4);
-    expect(limitReached(state)).toBe(true);
+  it('recalculating keeps the previous Budget until the new one succeeds, then only one remains', () => {
+    let state = budgetReducer(loaded([budget('b1', 'succeeded')]), { type: 'startFinished', budget: budget('b2', 'running') });
+    expect(budgetPhase(state)).toBe('recalculating');
+    expect(currentBudget(state)?.id).toBe('b1');
+    expect(activeBudget(state)?.id).toBe('b2');
     expect(canStart(state)).toBe(false);
-    expect(canStart({ ...state, maxBudgets: 5 })).toBe(true);
+    state = budgetReducer(state, { type: 'budgetUpdated', budget: budget('b2', 'succeeded') });
+    expect(state.budgets.map((b) => b.id)).toEqual(['b2']);
+    expect(budgetPhase(state)).toBe('succeeded');
   });
 
-  it('offline and in-flight POST disable the CTA; start clears the alert', () => {
+  it('a failed recalculation keeps the old Budget visible under the failed phase; the next start drops the failed row', () => {
+    let state = loaded([budget('b2', 'failed'), budget('b1', 'succeeded')]);
+    expect(budgetPhase(state)).toBe('failed');
+    expect(currentBudget(state)?.id).toBe('b1');
+    expect(failedBudget(state)?.id).toBe('b2');
+    state = budgetReducer(state, { type: 'startFinished', budget: budget('b3', 'queued') });
+    expect(state.budgets.map((b) => b.id)).toEqual(['b3', 'b1']);
+    expect(failedBudget(state)).toBeNull();
+    expect(budgetPhase(loaded([budget('b1', 'failed')]))).toBe('failed');
+  });
+
+  it('offline and in-flight POST disable the action; start clears the alert', () => {
     const state = loaded([]);
     expect(canStart(budgetReducer(state, { type: 'connectivity', online: false }))).toBe(false);
     const starting = budgetReducer({ ...state, alert: 'queueFull' }, { type: 'startRequested' });
     expect(starting.alert).toBe('none');
     expect(canStart(starting)).toBe(false);
-    expect(budgetPhase(starting)).toBe('active');
+    expect(budgetPhase(starting)).toBe('computing');
     expect(budgetReducer(starting, { type: 'startFinished', budget: null, alert: 'searchDown' })).toMatchObject({ starting: false, alert: 'searchDown' });
+  });
+
+  it('stage line: waiting, reading image n of N (n = done + 1), then matching products', () => {
+    expect(computeStage(null).stage).toBe('queued');
+    expect(computeStage(budget('b1', 'queued')).stage).toBe('queued');
+    expect(computeStage(budget('b1', 'running', { stage: 'inventory', progress: { total: 6, done: 1 } }))).toEqual({ stage: 'inventory', n: 2, count: 6, percent: 33 });
+    expect(computeStage(budget('b1', 'running', { stage: 'inventory', progress: { total: 3, done: 3 } })).n).toBe(3);
+    expect(computeStage(budget('b1', 'running', { stage: 'pricing', progress: { total: 6, done: 6 } })).stage).toBe('pricing');
   });
 
   it('load failures and ordering/format helpers', () => {

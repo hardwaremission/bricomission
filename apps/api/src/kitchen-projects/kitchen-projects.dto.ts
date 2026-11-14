@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import type { ClaimKitchenDraftResponse, KitchenProjectErrorCode, KitchenProjectView } from '@bricomission/shared-types';
+import type { ClaimKitchenDraftResponse, KitchenDraftErrorCode, KitchenProjectErrorCode, KitchenProjectView } from '@bricomission/shared-types';
 import { KitchenMeasurementsDto, KitchenPhotoViewDto, MoodboardItemViewDto } from './kitchen-drafts.dto.js';
 
 /** A claimed Kitchen Project as its owner sees it (feature login-gate-claim). */
@@ -34,15 +34,18 @@ export class ClaimKitchenDraftResponseDto implements ClaimKitchenDraftResponse {
   project!: KitchenProjectViewDto;
 }
 
-const PROJECT_ERROR_CODES: KitchenProjectErrorCode[] = [
+/** Owner edit routes (Decision 14) also answer the draft limit codes. */
+const PROJECT_ERROR_CODES: Array<KitchenProjectErrorCode | KitchenDraftErrorCode> = [
+  'photo_limit_reached',
+  'moodboard_limit_reached',
   'project_incomplete',
   'storage_unavailable',
-  'render_photo_unknown',
-  'render_in_progress',
-  'render_limit_reached',
+  'simulation_in_progress',
+  'simulation_not_ready',
+  'no_simulation_selected',
+  'render_not_failed',
   'gpu_queue_full',
   'budget_in_progress',
-  'budget_limit_reached',
   'catalog_empty',
   'embedding_unavailable',
 ];
@@ -55,5 +58,5 @@ export class KitchenProjectErrorDto {
   message!: string;
 
   @ApiProperty({ enum: PROJECT_ERROR_CODES })
-  code!: KitchenProjectErrorCode;
+  code!: KitchenProjectErrorCode | KitchenDraftErrorCode;
 }

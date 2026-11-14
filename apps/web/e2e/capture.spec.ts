@@ -36,6 +36,13 @@ async function open(page: Page, locale: Locale = 'en') {
   await expect(page.getByTestId('capture-screen')).toHaveAttribute('data-phase', 'ready');
 }
 
+/** Capture starts in cm (simulations-ux-overhaul S1); most specs below type metres. */
+async function metres(page: Page) {
+  const toggle = page.getByTestId('capture-unit-m');
+  if ((await toggle.getAttribute('aria-checked')) !== 'true') await toggle.click();
+  await expect(toggle).toHaveAttribute('aria-checked', 'true');
+}
+
 async function upload(page: Page, files: Parameters<Page['setInputFiles']>[1]) {
   await page.getByTestId('capture-file-input').setInputFiles(files);
 }
@@ -58,6 +65,7 @@ async function keys(page: Page, sequence: string) {
 }
 
 async function enterMeasurements(page: Page, length: string, width: string, height: string) {
+  await metres(page);
   await page.getByTestId('capture-length').click();
   await expect(page.getByTestId('keypad-sheet')).toBeVisible();
   for (const value of [length, width, height]) {
@@ -91,7 +99,13 @@ test('Home CTA opens the empty Capture screen; no draft is created before the fi
   await expect(page.getByTestId('capture-continue')).toHaveAttribute('aria-disabled', 'true');
   await expect(page.getByTestId('capture-continue')).toHaveAttribute('aria-describedby', 'capture-continue-hint');
   await expect(page.getByTestId('capture-continue-hint')).toHaveText(m.continueHint);
-  await expect(page.getByTestId('capture-length')).toContainText('0.00');
+  // Measurements default to cm; the empty fields show cm placeholders (never saved).
+  await expect(page.getByTestId('capture-unit-cm')).toHaveAttribute('aria-checked', 'true');
+  await expect(page.getByTestId('capture-unit-m')).toHaveAttribute('aria-checked', 'false');
+  await expect(page.getByTestId('capture-length')).toContainText('400');
+  await expect(page.getByTestId('capture-length')).toContainText('cm');
+  await expect(page.getByTestId('capture-length')).toHaveAttribute('data-empty', 'true');
+  await expect(page.getByTestId('capture-height')).toContainText('250');
   await page.screenshot({ path: 'test-results/capture/1-empty.png' });
   expect(posts).toEqual([]);
   expect((await page.context().cookies()).some((cookie) => cookie.name === 'bm_draft')).toBe(false);
@@ -117,6 +131,7 @@ test('two photos and es measurements survive a reload; the draft identity is pri
   await page.reload();
   await expect(page.getByTestId('capture-screen')).toHaveAttribute('data-phase', 'ready');
   await readyTiles(page, 2);
+  await metres(page);
   const after = await page.locator('[data-testid="capture-photo-tile"]').evaluateAll((tiles) => tiles.map((tile) => tile.getAttribute('data-photo-id')));
   expect(after).toEqual(before);
   await expect(page.getByTestId('capture-length')).toContainText('4,20');
@@ -141,7 +156,7 @@ test('two photos and es measurements survive a reload; the draft identity is pri
   try {
     await open(second, 'en');
     await expect(second.getByTestId('capture-photo-tile')).toHaveCount(0);
-    await expect(second.getByTestId('capture-length')).toContainText('0.00');
+    await expect(second.getByTestId('capture-length')).toHaveAttribute('data-empty', 'true');
     // A forged X-Draft-Token is dropped by the proxy.
     expect((await pageFetch(second, CURRENT, { headers: { 'x-draft-token': token } })).status).toBe(404);
     // Foreign photo ids give 404 (content and DELETE), also once this browser has its own draft.
@@ -232,8 +247,32 @@ test('photo errors: client pre-check (too large, unsupported) and server 422, wi
   expect(await smallTargets(page)).toEqual([]);
 });
 
+test('cm is the default unit: whole-number keypad, no separator, stored metric; the toggle switches to m', async ({ page }) => {
+  await open(page);
+  await page.getByTestId('capture-length').click();
+  await expect(page.getByTestId('keypad-sheet')).toBeVisible();
+  await expect(page.getByTestId('keypad-key-separator')).toHaveAttribute('aria-disabled', 'true');
+  await keys(page, '4205');
+  await expect(page.getByTestId('keypad-value')).toHaveText('4205');
+  await page.getByTestId('keypad-key-backspace').click();
+  await expect(page.getByTestId('keypad-value')).toHaveText('420');
+  await page.getByTestId('keypad-next').click();
+  for (const value of ['310', '260']) {
+    await page.getByTestId('keypad-clear').click();
+    await keys(page, value);
+    await page.getByTestId('keypad-next').click();
+  }
+  await expect(page.getByTestId('keypad-sheet')).toBeHidden();
+  await expect(page.getByTestId('capture-length')).toHaveAttribute('data-value-cm', '420');
+  await expect(page.getByTestId('capture-length')).toContainText('420');
+  await metres(page);
+  await expect(page.getByTestId('capture-length')).toContainText('4.20');
+  await expect(page.getByTestId('capture-length')).toHaveAttribute('data-value-cm', '420');
+});
+
 test('measurement keypad: rules, keyboard, and no system keyboard', async ({ page }) => {
   await open(page);
+  await metres(page);
   const m = capture('en');
   expect(await noTextInputs(page)).toMatchObject({ inputs: 0 });
   for (const id of ['capture-length', 'capture-width', 'capture-height']) {
@@ -309,7 +348,7 @@ test('measurement keypad: rules, keyboard, and no system keyboard', async ({ pag
   await expect(sheet).toBeHidden();
   await expect(page.getByTestId('capture-width')).toContainText('3.10');
   await expect(page.getByTestId('capture-length')).toContainText('4.00');
-  await expect(page.getByTestId('capture-height')).toContainText('0.00');
+  await expect(page.getByTestId('capture-height')).toHaveAttribute('data-empty', 'true');
   // Without photos Continue stays disabled, so the bar shows the hint (design frame 1), not "Saved".
   await expect(page.getByTestId('capture-continue-hint')).toHaveText(m.continueHint);
   await expect.poll(async () => JSON.parse((await pageFetch(page, CURRENT)).body).measurements).toEqual({ lengthCm: 400, widthCm: 310, heightCm: null });

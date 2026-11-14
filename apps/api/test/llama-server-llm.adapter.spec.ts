@@ -62,6 +62,36 @@ describe('LlamaServerLlmAdapter', () => {
     });
   });
 
+  it('router mode: every request names the model (default qwen3-vl, LLM_MODEL override)', async () => {
+    captured = [];
+    reply = { status: 200, body: JSON.stringify({ choices: [{ message: { content: 'OK' } }] }) };
+    await adapter().complete({ messages: [{ role: 'user', content: 'hi' }] }, new AbortController().signal);
+    await new LlamaServerLlmAdapter(new EnvAiEndpointsProvider({ LLM_BASE_URL: baseUrl }), 'other-model').complete({ messages: [{ role: 'user', content: 'hi' }] }, new AbortController().signal);
+    expect(captured.map((c) => c.body.model)).toEqual(['qwen3-vl', 'other-model']);
+  });
+
+  it('sends image parts as image_url data URIs next to the text and keeps plain strings as they are', async () => {
+    captured = [];
+    reply = { status: 200, body: JSON.stringify({ choices: [{ message: { content: '{}' } }] }) };
+    const image = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 1, 2, 3]);
+    await adapter().complete(
+      {
+        task: 'style_traits',
+        messages: [
+          { role: 'system', content: 'sys' },
+          { role: 'user', content: [{ type: 'image', data: image, mime: 'image/jpeg' }, { type: 'text', text: 'Describe' }] },
+        ],
+      },
+      new AbortController().signal,
+    );
+    expect(captured[0].body.messages).toEqual([
+      { role: 'system', content: 'sys' },
+      { role: 'user', content: [{ type: 'image_url', image_url: { url: `data:image/jpeg;base64,${image.toString('base64')}` } }, { type: 'text', text: 'Describe' }] },
+    ]);
+    // `task` is for the fake adapter only: it never reaches the backend.
+    expect(captured[0].body).not.toHaveProperty('task');
+  });
+
   it('omits response_format without a schema', async () => {
     captured = [];
     reply = { status: 200, body: JSON.stringify({ choices: [{ message: { content: 'OK' } }] }) };

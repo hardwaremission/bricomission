@@ -24,6 +24,13 @@ export const DEFAULT_RENDER_CONTROL: RenderControl = {
   depthAssist: { strength: 0.7, endPercent: 1 },
 };
 
+/** One style reference for IP-Adapter: a JPEG (<= 768 px long edge) and its blend weight. */
+export interface ImageReference {
+  image: Buffer;
+  /** Per-reference IP-Adapter weight in (0, 1]: `min(1, base * n * w_i)`; the caller computes it. */
+  weight: number;
+}
+
 /**
  * ControlNet render request (feature controlnet-render). The geometry comes from `image`
  * through canny edges or a depth map. Storage stays with the caller: adapters never touch MinIO.
@@ -38,6 +45,8 @@ export interface ImageRequest {
   negativePrompt: string;
   seed: number;
   control: RenderControl;
+  /** Style references for IP-Adapter (blend modes `ip_adapter` and `both`); absent or empty: none. */
+  references?: ImageReference[];
 }
 
 export interface ImageResult {

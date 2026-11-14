@@ -219,11 +219,10 @@
   },
   "project": {
     "title": "Your kitchen project",
-    "helper": "Generate a design of your new kitchen or get your budget.",
+    "helper": "Edit your photos, measurements and styles at any time. Pick one simulation to get your budget.",
     "claimed": "Your kitchen is saved to your account.",
     "dismiss": "Close",
     "newProject": "Start a new kitchen project",
-    "seeDesigns": "See my designs",
     "signedOut": {
       "title": "Sign in to see this kitchen project",
       "signIn": "Sign in"
@@ -233,15 +232,43 @@
       "home": "Go to Home"
     },
     "offline": "You're offline. Your kitchen project is safe; reconnect to see it.",
-    "seeBudget": "See my budget"
+    "seeBudget": "See my budget",
+    "summary": {
+      "photos": "{count, plural, one {# photo} other {# photos}}",
+      "styles": "{count, plural, one {# style or reference} other {# styles and references}}",
+      "missing": "—",
+      "editPhotos": "Edit photos",
+      "editMeasurements": "Edit measurements",
+      "editStyles": "Edit styles"
+    },
+    "edit": {
+      "back": "Back to my kitchen project",
+      "photosTitle": "Edit your photos",
+      "measurementsTitle": "Edit your measurements",
+      "stylesTitle": "Edit your styles",
+      "helper": "Changes are saved as you make them. Your existing simulations keep the images they were made from.",
+      "save": "Save changes",
+      "saveHint": "Keep at least one photo and all three measurements to save.",
+      "blockedSimulation": "Wait for the simulation to finish to edit your project.",
+      "blockedBudget": "Wait for the budget to finish to edit your project."
+    },
+    "budgetReason": "Select a simulation to enable your budget.",
+    "generateMore": "Generate more simulations",
+    "actionFailed": "We couldn't complete that. Try again in a moment."
   },
   "results": {
     "back": "Back to my kitchen",
-    "titleDone": "Your new kitchen",
     "titleActive": "Designing your kitchen",
-    "helperDone": "{style} style, from photo {n}. Drag the handle to compare.",
-    "helperActive": "{style} style, from photo {n}. This takes about 10 to 30 seconds.",
-    "helperIdle": "{style} style, from photo {n}.",
+    "titleDone": "Simulation {n}",
+    "helperActive": "One calculated style from {sources}, applied to each of your {count, plural, one {# kitchen photo} other {# kitchen photos}}.",
+    "helperActiveBare": "One calculated style, applied to each of your {count, plural, one {# kitchen photo} other {# kitchen photos}}.",
+    "helperDone": "Calculated style from {sources}. Photo {i} of {count}. Drag the handle to compare.",
+    "helperDoneBare": "Photo {i} of {count}. Drag the handle to compare.",
+    "sources": {
+      "gallery": "{count, plural, one {# gallery style} other {# gallery styles}}",
+      "own": "{count} of your photos",
+      "join": "{first} and {second}"
+    },
     "slider": {
       "label": "Compare before and after",
       "before": "Before",
@@ -250,20 +277,28 @@
       "afterAlt": "Your new kitchen design"
     },
     "status": {
-      "running": "Generating…",
       "queued": "Waiting for the GPU",
-      "ahead": "{count, plural, one {# job ahead of yours} other {# jobs ahead of yours}}"
+      "ahead": "{count, plural, one {# job ahead of yours} other {# jobs ahead of yours}}",
+      "describing": "Studying your style references",
+      "rendering": "Rendering {n} of {count}",
+      "percent": "{percent}%"
     },
-    "note": "You can leave this page; the render keeps going and appears here when it's ready.",
+    "tile": {
+      "photo": "Photo {n}",
+      "failed": "Photo {n} failed",
+      "retry": "Retry",
+      "retryPhoto": "Retry photo {n}"
+    },
+    "note": "You can leave this page; the simulation keeps going and appears here when it's ready.",
     "photos": {
-      "title": "Photo for the next render",
-      "helper": "The render keeps the walls, windows and plumbing of this photo.",
+      "title": "Photos in this simulation",
+      "helper": "Every photo is rendered with the same calculated style.",
       "option": "Photo {n}"
     },
     "history": {
-      "title": "Your renders",
-      "counter": "{count} of {max}",
-      "item": "Render {n}"
+      "title": "Your simulations",
+      "counter": "{count}",
+      "item": "Simulation {n}"
     },
     "cta": {
       "again": "Generate again",
@@ -272,21 +307,22 @@
       "back": "Back to my kitchen"
     },
     "hints": {
-      "oneAtATime": "One render at a time.",
-      "limit": "You've created {max} renders, the maximum for this project."
+      "oneAtATime": "One simulation at a time.",
+      "offline": "You're offline. Reconnect to generate."
     },
     "alerts": {
-      "failed": "We couldn't create this render. Try again in a moment.",
-      "interrupted": "This render was interrupted. Try again.",
+      "failed": "We couldn't create this simulation. Try again in a moment.",
+      "interrupted": "This simulation was interrupted. Try again.",
       "queueFull": "The designer is busy right now. Try again in a minute.",
-      "uploadsOnly": "Your own photos can't guide the style yet, so we used a neutral modern style.",
-      "offline": "You're offline. Your renders are safe; reconnect to see new ones."
+      "offline": "You're offline. Your simulations are safe; reconnect to see new ones.",
+      "partial": "{failed} of {count} photos could not be rendered. Retry it to be able to choose this simulation for your budget.",
+      "degraded": "We couldn't analyse all your references, so this simulation uses your main style."
     }
   },
   "budget": {
     "back": "Back to my kitchen",
     "title": "Your kitchen budget",
-    "helper": "Four options, from premium to essential. Prices come from the product catalog; tap an option to see every item.",
+    "helper": "Four options from premium to essential, from the elements visible in your simulation. Tap an option to see every item.",
     "titleActive": "Calculating your budget",
     "helperActive": "Matching your kitchen with the product catalog. This takes about a minute.",
     "tiers": {
@@ -304,27 +340,22 @@
       "vat": "VAT {percent}%",
       "total": "Total (VAT included)"
     },
-    "history": {
-      "title": "Your budgets",
-      "counter": "{count} of {max}",
-      "item": "Budget {n}"
-    },
     "status": {
-      "running": "Calculating…",
       "queued": "Waiting for the GPU",
-      "ahead": "{count, plural, one {# job ahead of yours} other {# jobs ahead of yours}}"
+      "ahead": "{count, plural, one {# job ahead of yours} other {# jobs ahead of yours}}",
+      "reading": "Reading image {n} of {count}",
+      "matching": "Matching products in the catalog"
     },
     "note": "You can leave this page; the budget keeps going and appears here when it's ready.",
     "hints": {
-      "oneAtATime": "One budget at a time.",
-      "limit": "You've created {max} budgets, the maximum for this project."
+      "oneAtATime": "One budget at a time."
     },
     "empty": {
       "title": "No budget yet",
       "helper": "Get four options for your kitchen, from premium to essential."
     },
     "cta": {
-      "again": "Calculate again",
+      "again": "Recalculate budget",
       "retry": "Try again",
       "start": "Get my budget",
       "back": "Back to my kitchen"
@@ -336,7 +367,42 @@
       "searchDown": "The price search is unavailable right now. Try again in a minute.",
       "queueFull": "The designer is busy right now. Try again in a minute.",
       "incomplete": "Add your photos and measurements first, then get your budget.",
-      "offline": "You're offline. Your budgets are safe; reconnect to see new ones."
+      "offline": "You're offline. Your budgets are safe; reconnect to see new ones.",
+      "noSelection": "Select a simulation in your kitchen project to get a budget.",
+      "notReady": "This simulation still has photos that were not rendered. Retry them first."
+    },
+    "basedOn": "Based on Simulation {n}",
+    "change": "Change",
+    "relabeled": "The options are ordered by total price, from the most to the least expensive.",
+    "recalculating": "Calculating a new budget",
+    "goToSimulations": "Go to my simulations"
+  },
+  "simulations": {
+    "title": "My simulations",
+    "instruction": "To get your budget, select one simulation below. The budget counts every element visible in its images.",
+    "empty": {
+      "title": "No simulations yet",
+      "helper": "Generate your first simulation to see your new kitchen from every photo."
+    },
+    "name": "Simulation {n}",
+    "meta": "{date} · {count, plural, one {# photo} other {# photos}}",
+    "rendering": "Rendering {n} of {count}",
+    "selected": "Selected",
+    "selectedNamed": "Simulation {n}, selected",
+    "select": "Select",
+    "selectNamed": "Select Simulation {n}",
+    "open": "Open",
+    "openRetry": "Open and retry",
+    "openNamed": "Open Simulation {n}",
+    "openRetryNamed": "Open Simulation {n} and retry",
+    "delete": "Delete",
+    "deleteNamed": "Delete Simulation {n}",
+    "photosFailed": "{count, plural, one {# photo failed} other {# photos failed}}",
+    "deleteDialog": {
+      "title": "Delete Simulation {n}?",
+      "message": "Its images and its budget will be removed for good. Your photos and measurements stay.",
+      "confirm": "Delete simulation",
+      "cancel": "Cancel"
     }
   }
 }

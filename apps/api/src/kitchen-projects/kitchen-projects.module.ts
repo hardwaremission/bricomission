@@ -9,6 +9,7 @@ import { KITCHEN_DRAFT_REPOSITORY, PrismaKitchenDraftRepository } from './kitche
 import { KitchenDraftsService } from './kitchen-drafts.service.js';
 import { KitchenProjectsController } from './kitchen-projects.controller.js';
 import { KitchenProjectsService } from './kitchen-projects.service.js';
+import { ProjectEditsService } from './project-edits.service.js';
 import { MoodboardController } from './moodboard/moodboard.controller.js';
 import { MoodboardService } from './moodboard/moodboard.service.js';
 import { BUDGET_CONFIG, readBudgetConfig } from './budget/budget.config.js';
@@ -19,17 +20,23 @@ import { OwnedProjectGuard } from './owned-project.guard.js';
 import { PhotoUploadInterceptor } from './photo-upload.interceptor.js';
 import { RENDER_CONFIG, readRenderConfig } from './renders/render.config.js';
 import { PrismaRenderRepository, RENDER_REPOSITORY } from './renders/render.repository.js';
-import { RenderRecoveryService } from './renders/render-recovery.service.js';
+import { PlatformSettingsModule } from '../platform-settings/platform-settings.module.js';
+import { PrismaReferenceTraitRepository, REFERENCE_TRAIT_REPOSITORY } from './simulations/reference-traits.repository.js';
+import { SimulationRecoveryService } from './simulations/simulation-recovery.service.js';
+import { SimulationRunner } from './simulations/simulation-runner.js';
+import { readSimulationConfig, SIMULATION_CONFIG } from './simulations/simulation.config.js';
+import { PrismaSimulationRepository, SIMULATION_REPOSITORY } from './simulations/simulations.repository.js';
+import { SimulationsService } from './simulations/simulations.service.js';
 import { RendersService } from './renders/renders.service.js';
 
 /**
  * Anonymous kitchen capture drafts (kitchen-capture-draft), their Moodboard (moodboard-selection)
- * claimed, owned Kitchen Projects (login-gate-claim) and their Renders (controlnet-render) and Budgets (budget-tier-computation).
+ * claimed, owned Kitchen Projects (login-gate-claim) their Simulations of Renders (controlnet-render, simulations-ux-overhaul) and Budgets (budget-tier-computation).
  * Needs StorageModule and the global AiModule (GPU job broker, image adapter). Exports
  * OwnedProjectGuard and KitchenProjectsService for the costly features.
  */
 @Module({
-  imports: [StyleGalleryModule, CatalogModule],
+  imports: [StyleGalleryModule, CatalogModule, PlatformSettingsModule],
   controllers: [KitchenDraftsController, MoodboardController, KitchenProjectsController],
   providers: [
     { provide: KITCHEN_DRAFT_CONFIG, useFactory: () => readKitchenDraftConfig() },
@@ -38,6 +45,7 @@ import { RendersService } from './renders/renders.service.js';
     KitchenDraftsService,
     MoodboardService,
     KitchenProjectsService,
+    ProjectEditsService,
     DraftTokenGuard,
     OwnedProjectGuard,
     PhotoUploadInterceptor,
@@ -45,7 +53,12 @@ import { RendersService } from './renders/renders.service.js';
     { provide: RENDER_CONFIG, useFactory: () => readRenderConfig() },
     { provide: RENDER_REPOSITORY, useClass: PrismaRenderRepository },
     RendersService,
-    RenderRecoveryService,
+    { provide: SIMULATION_CONFIG, useFactory: () => readSimulationConfig() },
+    { provide: SIMULATION_REPOSITORY, useClass: PrismaSimulationRepository },
+    { provide: REFERENCE_TRAIT_REPOSITORY, useClass: PrismaReferenceTraitRepository },
+    SimulationRunner,
+    SimulationsService,
+    SimulationRecoveryService,
     { provide: BUDGET_CONFIG, useFactory: () => readBudgetConfig() },
     { provide: BUDGET_REPOSITORY, useClass: PrismaBudgetRepository },
     BudgetService,

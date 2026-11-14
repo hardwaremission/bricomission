@@ -1,20 +1,25 @@
 #!/usr/bin/env bash
-# Budget smoke test against the running stack (feature budget-tier-computation, spec Scenario 7).
+# Budget smoke test against the running stack (feature budget-tier-computation, spec Scenario 7;
+# per Simulation since simulations-ux-overhaul phase C).
 #
 # Usage: bash scripts/ai/budget-smoke.sh [--no-gpu]
-#   default   real LLM: the api must run with AI_ADAPTERS=local. Holds /tmp/bricomission-gpu.lock
-#             (flock), stops ComfyUI, starts llama-server alone (`--profile ai`) and waits for it.
-#             Afterwards stop it yourself: docker compose --profile ai stop llama-server
-#   --no-gpu  fake LLM (AI_ADAPTERS=fake): same API flow, no lock, no GPU service.
+#   default   real AI: the api must run with AI_ADAPTERS=local. Holds /tmp/bricomission-gpu.lock
+#             (flock) and starts llama-server and comfyui (`--profile ai`; the Simulation needs the
+#             renders, the Budget needs the vision and text model; the API broker serializes them).
+#             Afterwards stop them yourself: docker compose --profile ai stop llama-server comfyui
+#   --no-gpu  fake adapters (AI_ADAPTERS=fake): same API flow, no lock, no GPU service.
 #
 # Flow: anonymous draft through the API (sample photo, measurements, Style Gallery item
-# modern-01), password-grant token of bm-homeowner on the dev-only client, claim, then POST
-# /budget timed from POST to terminal status. When the Catalog index is empty (409 catalog_empty)
-# it ingests infra/catalog/samples with scripts/catalog/ingest.sh (needs the CPU embedder:
-# docker compose --profile rag up -d --wait embedder) and retries once. Checks 401/403, the
-# one-active 409, four tiers with citations, the tier totals recomputed from the Line Item rows
-# with psql, and prints the four totals, token counts (internal, read from the database) and seconds.
-# Never prints tokens. Honours COMPOSE_PROJECT_NAME and the seed password env vars.
+# modern-01), password-grant token of bm-homeowner on the dev-only client, claim, a Simulation
+# (POST /simulations, polled until finished) that is selected (PUT /selected-simulation), then POST
+# /budget timed from POST to terminal status with the stage and "image n of N" progress. Before the
+# selection the POST is 409 no_simulation_selected. When the Catalog index is empty (409
+# catalog_empty) it ingests infra/catalog/samples with scripts/catalog/ingest.sh (needs the CPU
+# embedder: docker compose --profile rag up -d --wait embedder) and retries once. Checks 401/403,
+# the one-active 409, four tiers with citations in the order Luxury > High > Medium > Low, the
+# relabeled flag, the tier totals recomputed from the Line Item rows with psql, and a recompute that
+# keeps one current Budget; prints the totals, token counts (internal, read from the database) and
+# seconds. Never prints tokens. Honours COMPOSE_PROJECT_NAME and the seed password env vars.
 set -euo pipefail
 
 cd "$(dirname "$0")/../.."
@@ -23,7 +28,7 @@ gpu=1
 while [ $# -gt 0 ]; do
   case "$1" in
     --no-gpu) gpu=0 ;;
-    -h|--help) sed -n '2,17p' "$0"; exit 0 ;;
+    -h|--help) sed -n '2,21p' "$0"; exit 0 ;;
     *) echo "unknown argument: $1" >&2; exit 2 ;;
   esac
   shift
@@ -65,9 +70,8 @@ password_token() {
 if [ "$gpu" = 1 ]; then
   exec 9>/tmp/bricomission-gpu.lock
   flock -w 900 9 || { echo "ERROR: GPU lock busy" >&2; exit 1; }
-  docker compose stop comfyui >/dev/null 2>&1 || true
-  docker compose --profile ai up -d --wait llama-server
-  echo "llama-server up, comfyui stopped (LLM alone on the GPU)"
+  docker compose --profile ai up -d --wait llama-server comfyui
+  echo "llama-server and comfyui up (the API broker serializes the GPU loads)"
 fi
 
 echo "Setup: draft, photo, measurements, Moodboard, claim"
@@ -90,6 +94,22 @@ expect "POST budget anonymous -> 401" "$(curl -s -o /dev/null -w '%{http_code}' 
 expect "GET budgets anonymous -> 401" "$(curl -s -o /dev/null -w '%{http_code}' --max-time 10 "$BS")" 401
 expect "POST budget professional -> 403" "$(curl -s -o /dev/null -w '%{http_code}' --max-time 10 -X POST -H "Authorization: Bearer $pro" "$B")" 403
 
+S="$API/kitchen-projects/$project/simulations"
+nosel=$(curl -s --max-time 10 -X POST -H "Authorization: Bearer $token" "$B" | json "d['code']")
+expect "POST budget without a selected Simulation -> 409 no_simulation_selected" "$nosel" no_simulation_selected
+echo "Simulation: create, wait, select"
+sim_resp=$(curl -s --max-time 60 -X POST -H "Authorization: Bearer $token" "$S" -w '\n%{http_code}')
+expect "POST simulations -> 202" "$(printf '%s' "$sim_resp" | tail -n1)" 202
+sim=$(printf '%s' "$sim_resp" | sed '$d' | json "d['simulation']['id']")
+[ -n "$sim" ] || { echo "ERROR: no simulation created" >&2; exit 1; }
+for _ in $(seq 1 1200); do
+  sim_body=$(curl -s --max-time 10 -H "Authorization: Bearer $token" "$S/$sim")
+  [ "$(printf '%s' "$sim_body" | json "d['stage']")" = finished ] && break
+  sleep 0.25
+done
+expect "simulation succeeded" "$(printf '%s' "$sim_body" | json "d['status']")" succeeded
+expect "PUT selected-simulation -> 200" "$(curl -s -o /dev/null -w '%{http_code}' --max-time 10 -X PUT -H "Authorization: Bearer $token" -H 'content-type: application/json' -d "{\"simulationId\":\"$sim\"}" "$API/kitchen-projects/$project/selected-simulation")" 200
+
 post_budget() { curl -s --max-time 60 -X POST -H "Authorization: Bearer $token" "$B" -w '\n%{http_code}'; }
 t0=$(now)
 resp=$(post_budget)
@@ -108,12 +128,18 @@ busy=$(curl -s --max-time 10 -X POST -H "Authorization: Bearer $token" "$B" | js
 expect "second POST while active -> 409 budget_in_progress" "$busy" budget_in_progress
 
 status=queued
-for _ in $(seq 1 1200); do
-  body=$(curl -s --max-time 10 -H "Authorization: Bearer $token" "$BS/$id")
-  status=$(printf '%s' "$body" | json "d['status']")
-  case "$status" in succeeded|failed) break ;; esac
-  sleep 0.25
-done
+last_progress=''
+poll_budget() {
+  for _ in $(seq 1 2400); do
+    body=$(curl -s --max-time 10 -H "Authorization: Bearer $token" "$BS/$1")
+    status=$(printf '%s' "$body" | json "d['status']")
+    progress=$(printf '%s' "$body" | json "d['stage'] + ' ' + str(d['progress']['done']) + '/' + str(d['progress']['total'])")
+    if [ "$progress" != "$last_progress" ]; then echo "  stage/progress: $progress ($(secs "$t0" "$(now)")s)"; last_progress=$progress; fi
+    case "$status" in succeeded|failed) return ;; esac
+    sleep 0.25
+  done
+}
+poll_budget "$id"
 t1=$(now)
 seconds=$(secs "$t0" "$t1")
 expect "budget ${seconds}s -> succeeded" "$status" succeeded
@@ -122,6 +148,9 @@ if [ "$status" = failed ]; then echo "  error code: $(printf '%s' "$body" | json
 if [ "$status" = succeeded ]; then
   tiers=$(printf '%s' "$body" | json "','.join(t['tier'] for t in d['tiers'])")
   expect "four tiers in order" "$tiers" luxury,high,medium,low
+  expect "budget belongs to the selected Simulation" "$(printf '%s' "$body" | json "d['simulationId']")" "$sim"
+  expect "totals strictly ordered Luxury > High > Medium > Low" "$(printf '%s' "$body" | json "all(d['tiers'][i]['totalCents'] > d['tiers'][i+1]['totalCents'] for i in range(3))")" True
+  echo "  relabeled: $(printf '%s' "$body" | json "d['relabeled']")"
   uncited=$(printf '%s' "$body" | json "sum(1 for t in d['tiers'] for i in t['items'] if not i['catalogName'] or i['pageNumber']<1)")
   expect "every Line Item cites a catalog page" "$uncited" 0
   leak=$(printf '%s' "$body" | python3 -I -c "import sys,re; print('yes' if re.search(r'prompt|gpuJob|tokens|sourceQuote', sys.stdin.read(), re.I) else 'no')")
@@ -145,8 +174,23 @@ echo "  attempts|prompt_tokens|completion_tokens: $row"
 listed=$(curl -s --max-time 10 -H "Authorization: Bearer $token" "$BS" | json "len(d['budgets'])")
 expect "GET budgets lists 1 Budget" "$listed" 1
 
-echo "summary: mode=$([ "$gpu" = 1 ] && echo gpu || echo fake) seconds=${seconds} tokens=${row} project=$project budget=$id"
-[ "$gpu" = 1 ] && echo "reminder: docker compose --profile ai stop llama-server; docker compose up -d --wait api (back on fake)"
+if [ "$status" = succeeded ]; then
+  echo "Recompute: the old Budget stays until the new one succeeds, then only one remains"
+  t0=$(now)
+  last_progress=''
+  id2=$(curl -s --max-time 60 -X POST -H "Authorization: Bearer $token" "$B" | json "d['budget']['id']")
+  [ -n "$id2" ] || { echo "ERROR: recompute not accepted" >&2; exit 1; }
+  during=$(curl -s --max-time 10 -H "Authorization: Bearer $token" "$BS" | json "len(d['budgets'])")
+  [ "$during" -ge 1 ] && ok "GET budgets during the recompute still lists the old Budget ($during)" || fail "no Budget listed during the recompute"
+  poll_budget "$id2"
+  expect "recompute succeeded" "$status" succeeded
+  expect "one current Budget after the recompute" "$(curl -s --max-time 10 -H "Authorization: Bearer $token" "$BS" | json "','.join(b['id'] for b in d['budgets'])")" "$id2"
+  expect "the old Budget is gone (404)" "$(curl -s -o /dev/null -w '%{http_code}' --max-time 10 -H "Authorization: Bearer $token" "$BS/$id")" 404
+  id=$id2
+fi
+
+echo "summary: mode=$([ "$gpu" = 1 ] && echo gpu || echo fake) seconds=${seconds} tokens=${row} project=$project simulation=$sim budget=$id"
+[ "$gpu" = 1 ] && echo "reminder: docker compose --profile ai stop llama-server comfyui; docker compose up -d --wait api (back on fake)"
 if [ "$failures" -gt 0 ]; then
   echo "budget smoke: $failures check(s) failed"
   exit 1

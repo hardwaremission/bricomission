@@ -219,11 +219,10 @@
   },
   "project": {
     "title": "Ditt köksprojekt",
-    "helper": "Skapa en design av ditt nya kök eller få din budget.",
+    "helper": "Redigera dina foton, mått och stilar när som helst. Välj en simulering för att få din budget.",
     "claimed": "Ditt kök är sparat i ditt konto.",
     "dismiss": "Stäng",
     "newProject": "Starta ett nytt köksprojekt",
-    "seeDesigns": "Se mina designer",
     "signedOut": {
       "title": "Logga in för att se det här köksprojektet",
       "signIn": "Logga in"
@@ -233,15 +232,43 @@
       "home": "Gå till startsidan"
     },
     "offline": "Du är offline. Ditt köksprojekt är säkert; anslut igen för att se det.",
-    "seeBudget": "Visa min budget"
+    "seeBudget": "Visa min budget",
+    "summary": {
+      "photos": "{count, plural, one {# foto} other {# foton}}",
+      "styles": "{count, plural, one {# stil eller referens} other {# stilar och referenser}}",
+      "missing": "—",
+      "editPhotos": "Redigera foton",
+      "editMeasurements": "Redigera mått",
+      "editStyles": "Redigera stilar"
+    },
+    "edit": {
+      "back": "Tillbaka till mitt köksprojekt",
+      "photosTitle": "Redigera dina foton",
+      "measurementsTitle": "Redigera dina mått",
+      "stylesTitle": "Redigera dina stilar",
+      "helper": "Ändringar sparas direkt. Dina befintliga simuleringar behåller bilderna de skapades från.",
+      "save": "Spara ändringar",
+      "saveHint": "Behåll minst ett foto och alla tre måtten för att spara.",
+      "blockedSimulation": "Vänta tills simuleringen är klar för att redigera ditt projekt.",
+      "blockedBudget": "Vänta tills budgeten är klar för att redigera ditt projekt."
+    },
+    "budgetReason": "Välj en simulering för att aktivera din budget.",
+    "generateMore": "Skapa fler simuleringar",
+    "actionFailed": "Det gick inte att slutföra. Försök igen om en stund."
   },
   "results": {
     "back": "Tillbaka till mitt kök",
-    "titleDone": "Ditt nya kök",
     "titleActive": "Ditt kök designas",
-    "helperDone": "Stil {style}, från foto {n}. Dra i reglaget för att jämföra.",
-    "helperActive": "Stil {style}, från foto {n}. Det tar ungefär 10 till 30 sekunder.",
-    "helperIdle": "Stil {style}, från foto {n}.",
+    "titleDone": "Simulering {n}",
+    "helperActive": "En beräknad stil från {sources}, tillämpad på {count, plural, one {ditt kökfoto} other {vart och ett av dina # kökfoton}}.",
+    "helperActiveBare": "En beräknad stil, tillämpad på {count, plural, one {ditt kökfoto} other {vart och ett av dina # kökfoton}}.",
+    "helperDone": "Beräknad stil från {sources}. Foto {i} av {count}. Dra i handtaget för att jämföra.",
+    "helperDoneBare": "Foto {i} av {count}. Dra i handtaget för att jämföra.",
+    "sources": {
+      "gallery": "{count, plural, one {# galleristil} other {# galleristilar}}",
+      "own": "{count} av dina foton",
+      "join": "{first} och {second}"
+    },
     "slider": {
       "label": "Jämför före och efter",
       "before": "Före",
@@ -250,20 +277,28 @@
       "afterAlt": "Designen av ditt nya kök"
     },
     "status": {
-      "running": "Skapar…",
       "queued": "Väntar på GPU:n",
-      "ahead": "{count, plural, one {# jobb före ditt} other {# jobb före ditt}}"
+      "ahead": "{count, plural, one {# jobb före ditt} other {# jobb före ditt}}",
+      "describing": "Vi studerar dina stilreferenser",
+      "rendering": "Renderar {n} av {count}",
+      "percent": "{percent} %"
     },
-    "note": "Du kan lämna sidan; renderingen fortsätter och visas här när den är klar.",
+    "tile": {
+      "photo": "Foto {n}",
+      "failed": "Foto {n} misslyckades",
+      "retry": "Försök igen",
+      "retryPhoto": "Försök igen med foto {n}"
+    },
+    "note": "Du kan lämna sidan; simuleringen fortsätter och visas här när den är klar.",
     "photos": {
-      "title": "Foto för nästa rendering",
-      "helper": "Renderingen behåller väggar, fönster och rör från det här fotot.",
+      "title": "Foton i den här simuleringen",
+      "helper": "Varje foto renderas med samma beräknade stil.",
       "option": "Foto {n}"
     },
     "history": {
-      "title": "Dina renderingar",
-      "counter": "{count} av {max}",
-      "item": "Rendering {n}"
+      "title": "Dina simuleringar",
+      "counter": "{count}",
+      "item": "Simulering {n}"
     },
     "cta": {
       "again": "Skapa igen",
@@ -272,21 +307,22 @@
       "back": "Tillbaka till mitt kök"
     },
     "hints": {
-      "oneAtATime": "En rendering i taget.",
-      "limit": "Du har skapat {max} renderingar, maxantalet för det här projektet."
+      "oneAtATime": "En simulering i taget.",
+      "offline": "Du är offline. Anslut igen för att skapa."
     },
     "alerts": {
-      "failed": "Vi kunde inte skapa den här renderingen. Försök igen om en stund.",
-      "interrupted": "Renderingen avbröts. Försök igen.",
+      "failed": "Vi kunde inte skapa den här simuleringen. Försök igen om en stund.",
+      "interrupted": "Simuleringen avbröts. Försök igen.",
       "queueFull": "Designern är upptagen just nu. Försök igen om en minut.",
-      "uploadsOnly": "Dina egna foton kan inte styra stilen ännu, så vi använde en neutral modern stil.",
-      "offline": "Du är offline. Dina renderingar är säkra; anslut igen för att se nya."
+      "offline": "Du är offline. Dina simuleringar är säkra; anslut igen för att se nya.",
+      "partial": "{failed} av {count} foton kunde inte renderas. Försök igen för att kunna välja den här simuleringen till din budget.",
+      "degraded": "Vi kunde inte analysera alla dina referenser, så den här simuleringen använder din huvudstil."
     }
   },
   "budget": {
     "back": "Tillbaka till mitt kök",
     "title": "Budget för ditt kök",
-    "helper": "Fyra alternativ, från premium till grundläggande. Priserna kommer från produktkatalogen; tryck på ett alternativ för att se alla artiklar.",
+    "helper": "Fyra alternativ från premium till enkelt, utifrån elementen som syns i din simulering. Tryck på ett alternativ för att se varje artikel.",
     "titleActive": "Din budget beräknas",
     "helperActive": "Vi matchar ditt kök mot produktkatalogen. Det tar ungefär en minut.",
     "tiers": {
@@ -304,27 +340,22 @@
       "vat": "Moms {percent} %",
       "total": "Totalt (inkl. moms)"
     },
-    "history": {
-      "title": "Dina budgetar",
-      "counter": "{count} av {max}",
-      "item": "Budget {n}"
-    },
     "status": {
-      "running": "Beräknar…",
       "queued": "Väntar på GPU:n",
-      "ahead": "{count, plural, one {# jobb före ditt} other {# jobb före ditt}}"
+      "ahead": "{count, plural, one {# jobb före ditt} other {# jobb före ditt}}",
+      "reading": "Läser bild {n} av {count}",
+      "matching": "Matchar produkter i katalogen"
     },
     "note": "Du kan lämna sidan; budgeten fortsätter och visas här när den är klar.",
     "hints": {
-      "oneAtATime": "En budget åt gången.",
-      "limit": "Du har skapat {max} budgetar, det maximala för det här projektet."
+      "oneAtATime": "En budget åt gången."
     },
     "empty": {
       "title": "Ingen budget än",
       "helper": "Få fyra alternativ för ditt kök, från premium till grundläggande."
     },
     "cta": {
-      "again": "Beräkna igen",
+      "again": "Beräkna budgeten igen",
       "retry": "Försök igen",
       "start": "Få min budget",
       "back": "Tillbaka till mitt kök"
@@ -336,7 +367,42 @@
       "searchDown": "Prissökningen är inte tillgänglig just nu. Försök igen om en minut.",
       "queueFull": "Designern är upptagen just nu. Försök igen om en minut.",
       "incomplete": "Lägg först till dina foton och mått och få sedan din budget.",
-      "offline": "Du är offline. Dina budgetar är säkra; anslut igen för att se nya."
+      "offline": "Du är offline. Dina budgetar är säkra; anslut igen för att se nya.",
+      "noSelection": "Välj en simulering i ditt köksprojekt för att få en budget.",
+      "notReady": "Den här simuleringen har fortfarande foton som inte renderats. Försök med dem igen först."
+    },
+    "basedOn": "Baserad på simulering {n}",
+    "change": "Ändra",
+    "relabeled": "Alternativen är ordnade efter totalpris, från dyrast till billigast.",
+    "recalculating": "Beräknar en ny budget",
+    "goToSimulations": "Gå till mina simuleringar"
+  },
+  "simulations": {
+    "title": "Mina simuleringar",
+    "instruction": "Välj en simulering nedan för att få din budget. Budgeten räknar varje element som syns i dess bilder.",
+    "empty": {
+      "title": "Inga simuleringar än",
+      "helper": "Skapa din första simulering för att se ditt nya kök från varje foto."
+    },
+    "name": "Simulering {n}",
+    "meta": "{date} · {count, plural, one {# foto} other {# foton}}",
+    "rendering": "Renderar {n} av {count}",
+    "selected": "Vald",
+    "selectedNamed": "Simulering {n}, vald",
+    "select": "Välj",
+    "selectNamed": "Välj simulering {n}",
+    "open": "Öppna",
+    "openRetry": "Öppna och försök igen",
+    "openNamed": "Öppna simulering {n}",
+    "openRetryNamed": "Öppna simulering {n} och försök igen",
+    "delete": "Ta bort",
+    "deleteNamed": "Ta bort simulering {n}",
+    "photosFailed": "{count, plural, one {# foto misslyckades} other {# foton misslyckades}}",
+    "deleteDialog": {
+      "title": "Ta bort simulering {n}?",
+      "message": "Dess bilder och budget tas bort för gott. Dina foton och mått finns kvar.",
+      "confirm": "Ta bort simuleringen",
+      "cancel": "Avbryt"
     }
   }
 }

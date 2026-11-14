@@ -17,7 +17,7 @@ interface HistoryEntry {
 
 /**
  * ComfyUI (SDXL + ControlNet) over its HTTP API (feature controlnet-render): upload the input
- * as `bm-<random uuid>.jpg` (no project or user data), queue the workflow, poll the history,
+ * as `bm-<random uuid>.jpg` (no project or user data; style references too), queue the workflow, poll the history,
  * then download the `PreviewImage` output from the temp dir. The base URL is read per call so a
  * hot-swapped endpoint provider takes effect at once. Aborting sends a best-effort
  * `POST /interrupt`. Errors are {@link AiBackendError}s that never carry a URL or backend body.
@@ -39,8 +39,10 @@ export class ComfyUiImageAdapter implements ImageAdapter {
     signal.addEventListener('abort', onAbort, { once: true });
     try {
       const inputImage = await this.upload(base, req.image, signal);
+      const references: Array<{ inputImage: string; weight: number }> = [];
+      for (const reference of req.references ?? []) references.push({ inputImage: await this.upload(base, reference.image, signal), weight: reference.weight });
       const started = Date.now();
-      const promptId = await this.queue(base, req, inputImage, signal);
+      const promptId = await this.queue(base, req, inputImage, references, signal);
       const entry = await this.waitFor(base, promptId, signal);
       const image = await this.download(base, entry, signal);
       return { image, seconds: (Date.now() - started) / 1000 };
@@ -58,7 +60,7 @@ export class ComfyUiImageAdapter implements ImageAdapter {
     return typeof body.subfolder === 'string' && body.subfolder !== '' ? `${body.subfolder}/${body.name}` : body.name;
   }
 
-  private async queue(base: string, req: ImageRequest, inputImage: string, signal: AbortSignal): Promise<string> {
+  private async queue(base: string, req: ImageRequest, inputImage: string, references: Array<{ inputImage: string; weight: number }>, signal: AbortSignal): Promise<string> {
     const workflow = buildRenderWorkflow({
       mode: req.mode,
       inputImage,
@@ -68,6 +70,7 @@ export class ComfyUiImageAdapter implements ImageAdapter {
       negativePrompt: req.negativePrompt,
       seed: req.seed,
       control: req.control,
+      references,
     });
     const res = await fetch(`${base}/prompt`, {
       method: 'POST',

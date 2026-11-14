@@ -17,6 +17,8 @@ export type UploadErrorCode =
   | 'storage_unavailable'
   /** 404: the draft is gone (expired or never created); the caller starts one and retries. */
   | 'draft_missing'
+  /** 409 `simulation_in_progress` / `budget_in_progress` on an owner edit route (edit pages only). */
+  | 'edit_blocked'
   /** Network error or proxy 502: offline or the API is unreachable. */
   | 'network'
   | 'failed';
@@ -41,6 +43,7 @@ export function errorCodeForStatus(status: number, code?: unknown): UploadErrorC
     'moodboard_limit_reached',
     'storage_unavailable',
   ];
+  if (code === 'simulation_in_progress' || code === 'budget_in_progress') return 'edit_blocked';
   if (typeof code === 'string' && (known as string[]).includes(code)) return code as UploadErrorCode;
   switch (status) {
     case 0:

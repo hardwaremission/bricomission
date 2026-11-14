@@ -7,15 +7,13 @@ export { DEFAULT_RENDER_CONTROL };
 export interface RenderConfig {
   /** ControlNet that keeps the geometry (`RENDER_CONTROL_MODE`, default canny: OQ-4). */
   mode: RenderMode;
-  /** Non-failed Renders per project (`RENDER_MAX_PER_PROJECT`, default 10: OQ-7). */
-  maxPerProject: number;
   /** ControlNet tuning (`RENDER_CONTROL_*`, `RENDER_CANNY_*`, `RENDER_DEPTH_ASSIST_*`). */
   control: RenderControl;
 }
 
 export const RENDER_CONFIG = Symbol('RENDER_CONFIG');
 
-export const DEFAULT_RENDER_CONFIG: RenderConfig = { mode: 'canny', maxPerProject: 10, control: DEFAULT_RENDER_CONTROL };
+export const DEFAULT_RENDER_CONFIG: RenderConfig = { mode: 'canny', control: DEFAULT_RENDER_CONTROL };
 
 /** A number in [min, max] from env, else the fallback. */
 function unit(raw: string | undefined, fallback: number, min = 0, max = 1): number {
@@ -26,14 +24,12 @@ function unit(raw: string | undefined, fallback: number, min = 0, max = 1): numb
 
 export function readRenderConfig(env: NodeJS.ProcessEnv = process.env): RenderConfig {
   const mode = env.RENDER_CONTROL_MODE?.trim();
-  const max = Number(env.RENDER_MAX_PER_PROJECT?.trim() ?? '');
   const d = DEFAULT_RENDER_CONTROL;
   const cannyLow = unit(env.RENDER_CANNY_LOW, d.cannyLow);
   const cannyHigh = unit(env.RENDER_CANNY_HIGH, d.cannyHigh);
   const assistStrength = unit(env.RENDER_DEPTH_ASSIST_STRENGTH, d.depthAssist?.strength ?? 0, 0, 2);
   return {
     mode: mode === 'depth' || mode === 'canny' ? mode : DEFAULT_RENDER_CONFIG.mode,
-    maxPerProject: env.RENDER_MAX_PER_PROJECT !== undefined && Number.isSafeInteger(max) && max >= 1 ? max : DEFAULT_RENDER_CONFIG.maxPerProject,
     control: {
       strength: unit(env.RENDER_CONTROL_STRENGTH, d.strength, 0, 2),
       endPercent: unit(env.RENDER_CONTROL_END, d.endPercent),

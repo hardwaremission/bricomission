@@ -11,24 +11,28 @@ export function BudgetStatusCard({
   status,
   label,
   detail,
+  percent = null,
+  stage,
 }: {
   status: 'queued' | 'running' | 'empty';
   label: string;
+  /** Determinate bar (reading image n of N); null = indeterminate (matching products). */
+  percent?: number | null;
+  /** `inventory` | `pricing` | `queued` for tests and styling hooks. */
+  stage?: string;
   /** Jobs-ahead line (queued) or the helper (empty); null hides it. */
   detail: string | null;
 }) {
   const busy = status !== 'empty';
   return (
-    <div
-      aria-busy={busy}
-      data-testid={busy ? 'budget-placeholder' : 'budget-empty'}
-      className="flex w-full items-center justify-center rounded-lg bg-surface-muted p-md"
-    >
+    <div aria-busy={busy} data-testid={busy ? 'budget-placeholder' : 'budget-empty'} className="flex w-full items-center justify-center rounded-lg bg-surface-muted p-md">
       <div
         role={busy ? 'status' : undefined}
         aria-live={busy ? 'polite' : undefined}
         data-testid="budget-status"
         data-status={status}
+        data-stage={stage}
+        data-percent={percent ?? undefined}
         className="flex w-full max-w-[320px] flex-col items-center gap-3 rounded-[16px] bg-surface p-md shadow-card"
       >
         {status === 'running' ? (
@@ -40,8 +44,12 @@ export function BudgetStatusCard({
         )}
         <p className="w-full text-center text-body font-semibold text-text">{label}</p>
         {status === 'running' ? (
-          <span aria-hidden="true" className="flex h-1.5 w-full overflow-hidden rounded-pill bg-border">
-            <span className="bm-indeterminate h-1.5 w-20 shrink-0 rounded-pill bg-primary" />
+          <span aria-hidden="true" data-testid="budget-progress-bar" className="flex h-1.5 w-full overflow-hidden rounded-pill bg-border">
+            {percent === null ? (
+              <span className="bm-indeterminate h-1.5 w-20 shrink-0 rounded-pill bg-primary" />
+            ) : (
+              <span className="h-1.5 shrink-0 rounded-pill bg-primary" style={{ width: `${percent}%` }} />
+            )}
           </span>
         ) : detail ? (
           <p data-testid={status === 'queued' ? 'budget-position' : 'budget-empty-helper'} className="w-full text-center text-small leading-5 text-text-muted">

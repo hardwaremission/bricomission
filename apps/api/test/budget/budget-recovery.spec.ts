@@ -12,7 +12,12 @@ function row(id: string, status: BudgetRecord['status']): BudgetRecord {
   return {
     id,
     kitchenProjectId: PROJECT,
+    simulationId: '00000000-0000-4000-8000-0000000000aa',
     status,
+    stage: 'pricing',
+    progressDone: 0,
+    progressTotal: 0,
+    relabeled: false,
     errorCode: status === 'failed' ? 'timeout' : null,
     currency: 'EUR',
     vatBps: 2100,
@@ -61,6 +66,7 @@ describe('BudgetRecoveryService (Scenario 5: restart)', () => {
     // The project of the first app does not exist in the second one: a fresh claimed project takes the POST.
     const seeded2 = await second.seedDraft();
     const claimed2 = await second.claim(await second.token(), seeded2.draftToken);
+    second.seedReadySimulation(claimed2.body.project.id);
     const post = await second.http().post(`/kitchen-projects/${claimed2.body.project.id}/budget`).set('Authorization', `Bearer ${await second.token()}`);
     expect(post.status).toBe(202);
     await second.app.close();

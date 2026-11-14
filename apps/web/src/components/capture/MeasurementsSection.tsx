@@ -5,6 +5,7 @@ import {
   formatMeasurement,
   MEASUREMENT_FIELDS,
   MEASUREMENT_LIMITS_CM,
+  MEASUREMENT_PLACEHOLDERS_CM,
   type MeasurementField,
   type Measurements,
   type MeasurementUnit,
@@ -39,7 +40,7 @@ export function MeasurementsSection({ values, unit, onUnitChange, onOpen, active
           {t('measurements.title')}
         </h2>
         <div role="radiogroup" aria-label={t('measurements.unit')} data-testid="capture-unit-toggle" className="flex shrink-0 rounded-pill bg-surface-muted">
-          {(['m', 'cm'] as const).map((option) => {
+          {(['cm', 'm'] as const).map((option) => {
             const selected = option === unit;
             return (
               <button
@@ -77,13 +78,14 @@ export function MeasurementsSection({ values, unit, onUnitChange, onOpen, active
                 disabled={disabled}
                 data-testid={TEST_IDS[field]}
                 data-value-cm={value ?? ''}
+                data-empty={value === null ? 'true' : undefined}
                 onClick={() => onOpen(field)}
                 className={`flex h-[52px] w-full min-w-0 items-center justify-between gap-1 rounded-md border border-border bg-surface-muted px-3 text-left disabled:opacity-60 ${
                   activeField === field ? 'outline-2 outline-offset-2 outline-focus' : ''
                 }`}
               >
                 <span id={valueId} className={`truncate text-body tabular-nums ${value === null ? 'text-text-muted' : 'text-text'}`}>
-                  {value === null ? bound(0) : bound(value)}
+                  {bound(value ?? MEASUREMENT_PLACEHOLDERS_CM[field])}
                 </span>
                 <span className="shrink-0 text-small leading-5 text-text-muted">{unitLabel}</span>
               </button>

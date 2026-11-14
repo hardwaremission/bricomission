@@ -9,8 +9,8 @@ export type BudgetListResult = { kind: 'ok'; value: BudgetListResponse } | Budge
 export type BudgetResult = { kind: 'ok'; value: BudgetView } | BudgetCallFailure;
 export type CreateBudgetResult =
   | { kind: 'ok'; value: BudgetView }
-  /** 409: a Budget is already active or the limit is reached (reload the list), or a rule of the page alerts. */
-  | { kind: 'conflict'; code: 'budget_in_progress' | 'budget_limit_reached' | 'project_incomplete' | 'catalog_empty' | 'other' }
+  /** 409: a Budget is already active (reload the list), no Simulation is selected or it is not ready, or a rule of the page alerts. */
+  | { kind: 'conflict'; code: 'budget_in_progress' | 'no_simulation_selected' | 'simulation_not_ready' | 'project_incomplete' | 'catalog_empty' | 'other' }
   /** 429 gpu_queue_full: nothing was created. */
   | { kind: 'queueFull' }
   /** 503 embedding_unavailable: the price search is down, nothing was created. */
@@ -50,7 +50,7 @@ export async function loadBudget(client: ApiClient, projectId: string, budgetId:
   }
 }
 
-const CONFLICTS = ['budget_in_progress', 'budget_limit_reached', 'project_incomplete', 'catalog_empty'] as const;
+const CONFLICTS = ['budget_in_progress', 'no_simulation_selected', 'simulation_not_ready', 'project_incomplete', 'catalog_empty'] as const;
 
 /** Starts a Budget. Never throws. */
 export async function createBudget(client: ApiClient, projectId: string): Promise<CreateBudgetResult> {

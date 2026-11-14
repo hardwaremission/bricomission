@@ -79,6 +79,7 @@ model KitchenProject {
   photos         KitchenPhoto[]
   moodboardItems MoodboardItem[]
   renders        KitchenRender[]
+  simulations    Simulation[]
   budgets        Budget[]
 
   @@index([expiresAt])
@@ -154,7 +155,7 @@ enum KitchenRenderMode {
 }
 
 /// A Render of a claimed Kitchen Project (feature controlnet-render): SDXL + ControlNet from one
-/// Photo and the dominant Moodboard style. Objects in MinIO: `before` (centre crop of the Photo,
+/// Photo and the calculated style of its Simulation (simulations-ux-overhaul). Objects in MinIO: `before` (centre crop of the Photo,
 /// the model input), `full` and `thumb` (metadata-free JPEGs; `full` has the size of `before`).
 /// `prompt`, `seed` and `gpuJobId` are internal provenance, never returned by a route.
 /// Hand-written CHECKs in the migration tie the keys and codes to `status`.
@@ -164,6 +165,14 @@ model KitchenRender {
   kitchenProject   KitchenProject      @relation(fields: [kitchenProjectId], references: [id], onDelete: Cascade)
   photoId          String?             @map("photo_id") @db.Uuid
   photo            KitchenPhoto?       @relation(fields: [photoId], references: [id], onDelete: SetNull)
+  simulationId     String              @map("simulation_id") @db.Uuid
+  simulation       Simulation          @relation(fields: [simulationId], references: [id], onDelete: Cascade)
+  /// 0-based position of the source Photo when the Simulation was created (stays when the Photo is deleted).
+  photoPosition    Int                 @default(0) @map("photo_position")
+  /// 1 for the first run; `Retry` of a failed Render adds 1.
+  attempts         Int                 @default(1)
+  /// Vision-model element inventory of `full` (phase C), cached for Budget recomputes. Internal.
+  inventory        Json?
   status           KitchenRenderStatus @default(queued)
   mode             KitchenRenderMode
   styleId          String?             @map("style_id")
@@ -182,7 +191,74 @@ model KitchenRender {
   seconds          Float?              @db.Real
 
   @@index([kitchenProjectId, createdAt])
+  @@index([simulationId, photoPosition])
   @@map("kitchen_render")
+}
+
+enum SimulationBlendMode {
+  ip_adapter
+  vlm_text
+  both
+
+  @@map("simulation_blend_mode")
+}
+
+enum SimulationStage {
+  describing
+  rendering
+  finished
+
+  @@map("simulation_stage")
+}
+
+/// A Simulation (feature simulations-ux-overhaul): one Render per Photo, all sharing one calculated
+/// style blended from every Moodboard item. `styleSeed` and `styleWeights` are internal provenance
+/// (never returned by a route): `styleWeights` is `[{kind, refId, weight}]` (weights sum to 1), null
+/// for Simulations migrated from the single-Render model. `ordinal` is per project and never reused.
+/// At most one Simulation per project is `selected` (partial unique index in the migration).
+/// Hand-written CHECKs: ordinal >= 1, seed >= 0, `selected` only when `finished`.
+model Simulation {
+  id               String              @id @db.Uuid
+  kitchenProjectId String              @map("kitchen_project_id") @db.Uuid
+  kitchenProject   KitchenProject      @relation(fields: [kitchenProjectId], references: [id], onDelete: Cascade)
+  ordinal          Int
+  styleSeed        Int                 @map("style_seed")
+  blendMode        SimulationBlendMode @map("blend_mode")
+  styleWeights     Json?               @map("style_weights")
+  styleText        String              @default("") @map("style_text")
+  styleKeywords    Json                @default("[]") @map("style_keywords")
+  styleDegraded    Boolean             @default(false) @map("style_degraded")
+  stage            SimulationStage     @default(describing)
+  selected         Boolean             @default(false)
+  createdAt        DateTime            @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt        DateTime            @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+  renders          KitchenRender[]
+  budgets          Budget[]
+
+  @@unique([kitchenProjectId, ordinal])
+  @@map("simulation")
+}
+
+/// Vision description of one reference image, cached by the SHA-256 of the scaled JPEG and the
+/// model id, so "Generate again" needs no GPU work. `traits` is the validated JSON of the model.
+model ReferenceStyleTrait {
+  imageHash String   @map("image_hash")
+  model     String
+  traits    Json
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@id([imageHash, model])
+  @@map("reference_style_trait")
+}
+
+/// Platform-wide settings (key/value). First key: `style_blend_mode` (admin-only API).
+model PlatformSetting {
+  key       String   @id
+  value     Json
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+  updatedBy String?  @map("updated_by")
+
+  @@map("platform_setting")
 }
 
 enum BudgetStatus {
@@ -192,6 +268,13 @@ enum BudgetStatus {
   failed
 
   @@map("budget_status")
+}
+
+enum BudgetStage {
+  inventory
+  pricing
+
+  @@map("budget_stage")
 }
 
 enum BudgetTierName {
@@ -211,6 +294,14 @@ model Budget {
   id               String           @id @db.Uuid
   kitchenProjectId String           @map("kitchen_project_id") @db.Uuid
   kitchenProject   KitchenProject   @relation(fields: [kitchenProjectId], references: [id], onDelete: Cascade)
+  simulationId     String           @map("simulation_id") @db.Uuid
+  simulation       Simulation       @relation(fields: [simulationId], references: [id], onDelete: Cascade)
+  /// Phase C: inventory reading then pricing, with image progress. Unused by phase B code.
+  stage            BudgetStage      @default(pricing)
+  progressDone     Int              @default(0) @map("progress_done")
+  progressTotal    Int              @default(0) @map("progress_total")
+  /// Phase C: tier names were reassigned by total rank after the last attempt (names only).
+  relabeled        Boolean          @default(false)
   status           BudgetStatus     @default(queued)
   errorCode        String?          @map("error_code")
   currency         String           @db.Char(3)
@@ -228,6 +319,7 @@ model Budget {
   lineItems        BudgetLineItem[]
 
   @@index([kitchenProjectId, createdAt])
+  @@index([simulationId])
   @@map("budget")
 }
 

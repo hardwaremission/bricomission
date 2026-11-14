@@ -18,12 +18,24 @@ import {
   type KitchenDraftRecord,
   type KitchenDraftRepository,
   type KitchenPhotoRecord,
+  type KitchenProjectRecord,
 } from './kitchen-drafts.repository.js';
 import { validateMeasurements } from './measurements.js';
 import { type GalleryLookup, MOODBOARD_LIMITS, moodboardItemView } from './moodboard/moodboard.js';
 import { PHOTO_LIMITS, PhotoRejectedError, processPhoto } from './photo-processor.js';
 
 export type PhotoVariant = 'thumb' | 'full';
+
+/**
+ * What a photo mutation acts on: an anonymous draft (default; slides its expiry, draft content URLs)
+ * or a claimed project's owner edit (simulations-ux-overhaul, Decision 14; no expiry, owner content URLs).
+ */
+export type EditTarget = Pick<KitchenDraftRecord, 'id' | 'photos'>;
+export type EditMode = 'draft' | 'owner';
+
+export function photosPathOf(mode: EditMode, projectId: string): string {
+  return mode === 'owner' ? `/kitchen-projects/${projectId}/photos` : PHOTOS_PATH;
+}
 
 const PHOTOS_PATH = '/kitchen-projects/drafts/current/photos';
 
@@ -94,7 +106,14 @@ export class KitchenDraftsService {
     return this.view(updated);
   }
 
-  async addPhoto(draft: KitchenDraftRecord, file: Buffer): Promise<KitchenPhotoView> {
+  /** Owner edit of a claimed project: the same validation, then the stored measurements are replaced. */
+  async updateProjectMeasurements(project: { id: string }, body: unknown): Promise<KitchenProjectRecord> {
+    const result = validateMeasurements(body);
+    if (!result.ok) throw draftError(HttpStatus.BAD_REQUEST, 'invalid_measurements', { fields: result.fields });
+    return this.db(() => this.repo.updateProjectMeasurements(project.id, result.value));
+  }
+
+  async addPhoto(draft: EditTarget, file: Buffer, mode: EditMode = 'draft'): Promise<KitchenPhotoView> {
     // Cheap check before decoding; re-checked under the row lock on insert.
     if (draft.photos.length >= PHOTO_LIMITS.maxPhotos) throw draftError(HttpStatus.CONFLICT, 'photo_limit_reached');
     let processed;
@@ -123,7 +142,7 @@ export class KitchenDraftsService {
         draft.id,
         { id: photoId, ...keys, width: processed.width, height: processed.height, byteSize: processed.full.length },
         PHOTO_LIMITS.maxPhotos,
-        this.expiry(this.clock()),
+        this.expiryFor(mode),
       );
     } catch (error) {
       this.logger.warn(`Photo insert failed (${error instanceof Error ? error.name : 'unknown'})`);
@@ -134,7 +153,7 @@ export class KitchenDraftsService {
       await this.deleteObjectsQuietly([keys.fullKey, keys.thumbKey]);
       throw draftError(HttpStatus.CONFLICT, 'photo_limit_reached');
     }
-    return photoView(created);
+    return photoView(created, photosPathOf(mode, draft.id));
   }
 
   /** Also serves the owner content route of claimed projects (only `photos` is read). */
@@ -151,7 +170,7 @@ export class KitchenDraftsService {
     }
   }
 
-  async deletePhoto(draft: KitchenDraftRecord, photoId: string): Promise<void> {
+  async deletePhoto(draft: EditTarget, photoId: string, mode: EditMode = 'draft'): Promise<void> {
     const photo = draft.photos.find((candidate) => candidate.id === photoId);
     if (!photo) throw new NotFoundException();
     // Objects first (idempotent): a storage failure leaves the row, so a retry can finish.
@@ -161,8 +180,12 @@ export class KitchenDraftsService {
       this.logger.warn(`Photo object delete failed (${error instanceof Error ? error.name : 'unknown'})`);
       throw draftError(HttpStatus.SERVICE_UNAVAILABLE, 'storage_unavailable');
     }
-    const deleted = await this.db(() => this.repo.deletePhoto(draft.id, photoId, this.expiry(this.clock())));
+    const deleted = await this.db(() => this.repo.deletePhoto(draft.id, photoId, this.expiryFor(mode)));
     if (!deleted) throw new NotFoundException();
+  }
+
+  private expiryFor(mode: EditMode): Date | null {
+    return mode === 'owner' ? null : this.expiry(this.clock());
   }
 
   private expiry(now: Date): Date {

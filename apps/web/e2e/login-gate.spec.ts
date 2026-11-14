@@ -29,12 +29,11 @@ const DRAFTS = '/api/kitchen-projects/drafts';
 const CURRENT = `${DRAFTS}/current`;
 const CLAIM = `${CURRENT}/claim`;
 // Since controlnet-render the render intent lands on AI Results (the page strips ?claimed=1&start=1).
-const BUDGET_URL = /\/kitchen-projects\/([0-9a-f-]{36})\/budget$/;
+const PROJECT_URL = /\/kitchen-projects\/([0-9a-f-]{36})$/;
 const RESULTS_URL = /\/kitchen-projects\/([0-9a-f-]{36})\/results$/;
 const PROFESSIONAL = 'bm-professional';
 const PROFESSIONAL_EMAIL = 'professional@bricomission.local';
 const professionalPassword = () => process.env.E2E_SEED_PROFESSIONAL_PASSWORD ?? 'bm-professional-dev';
-const escape = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const fixture = (name: string) => fileURLToPath(new URL(`./fixtures/${name}`, import.meta.url));
 
 interface GenerateMessages {
@@ -50,7 +49,6 @@ interface ProjectMessages {
   title: string;
   claimed: string;
   seeBudget: string;
-  seeDesigns: string;
   signedOut: { title: string };
   notFound: { title: string };
 }
@@ -122,10 +120,10 @@ async function keycloakSignIn(page: Page, request: APIRequestContext, username =
   await page.locator('#kc-login').click();
 }
 
-/** The budget intent lands on the Budget page and starts the first Budget (budget-tier-computation); returns the project id. */
-async function waitForBudgetPage(page: Page): Promise<string> {
-  await page.waitForURL(BUDGET_URL, { timeout: 30_000 });
-  return BUDGET_URL.exec(new URL(page.url()).pathname)?.[1] ?? '';
+/** The budget intent lands on the project page (simulations-ux-overhaul: no Simulation is selected yet); returns the project id. */
+async function waitForProjectPage(page: Page): Promise<string> {
+  await page.waitForURL(PROJECT_URL, { timeout: 30_000 });
+  return PROJECT_URL.exec(new URL(page.url()).pathname)?.[1] ?? '';
 }
 
 async function waitForResults(page: Page): Promise<string> {
@@ -155,7 +153,7 @@ test.describe.serial('login gate and claim', () => {
     const costly: string[] = [];
     page.on('request', (req) => {
       const path = new URL(req.url()).pathname;
-      if (path.endsWith('/claim') || /\/renders$|\/budget$/.test(path) || /^\/api\/kitchen-projects\/[0-9a-f-]{36}/.test(path)) costly.push(path);
+      if (path.endsWith('/claim') || /\/simulations$|\/budget$/.test(path) || /^\/api\/kitchen-projects\/[0-9a-f-]{36}/.test(path)) costly.push(path);
     });
     await seedDraft(page, 'en');
     await page.goto(GENERATE);
@@ -191,7 +189,7 @@ test.describe.serial('login gate and claim', () => {
 
     // Through the web proxy, anonymous costly and owner calls are 401.
     const fakeId = '00000000-0000-4000-8000-000000000000';
-    expect((await pageFetch(page, `/api/kitchen-projects/${fakeId}/renders`, { method: 'POST' })).status).toBe(401);
+    expect((await pageFetch(page, `/api/kitchen-projects/${fakeId}/simulations`, { method: 'POST' })).status).toBe(401);
     expect((await pageFetch(page, `/api/kitchen-projects/${fakeId}`)).status).toBe(401);
     // Claim without a session: 401 and the draft is kept.
     expect((await pageFetch(page, CLAIM, { method: 'POST' })).status).toBe(401);
@@ -217,31 +215,30 @@ test.describe.serial('login gate and claim', () => {
     expect(cookieBefore).toBeDefined();
     homeownerDraftToken = cookieBefore!.value;
     await page.goto(GENERATE);
-    // Budget intent: the claim lands on the Budget page (e2e/budget.spec.ts; the render intent opens AI Results:
-    // e2e/results.spec.ts); the owned page is opened with the "saved" banner by URL.
+    // Budget intent: the claim lands on the project page with the "saved" banner (e2e/budget.spec.ts continues from there;
+    // the render intent opens AI Results: e2e/results.spec.ts).
     await page.getByTestId('generate-budget').click();
     await page.getByTestId('login-gate-sign-in').click();
     await keycloakSignIn(page, request);
-    ownedId = await waitForBudgetPage(page);
+    ownedId = await waitForProjectPage(page);
     expect(ownedId).toBe(draftId);
-    await page.goto(`/kitchen-projects/${ownedId}?claimed=1`);
 
     const p = pm('en');
     await expect(page.getByTestId('project-claimed')).toHaveText(p.claimed);
     await expect(page.getByRole('heading', { level: 1 })).toHaveText(p.title);
-    await expect(page.getByTestId('summary-photos-thumb')).toHaveCount(2);
-    await expect(page.getByTestId('summary-moodboard-thumb')).toHaveCount(2);
-    expect(await imagesLoaded(page, 'summary-photos-thumb')).toBe(true);
-    expect(await imagesLoaded(page, 'summary-moodboard-thumb')).toBe(true);
-    await expect(page.getByTestId('summary-measurements')).toHaveText(fill(gm('en').summary.measurements, { length: '4.20', width: '3.10', height: '2.60' }));
-    await expect(page.getByTestId('summary-edit-kitchen')).toHaveCount(0);
-    // controlnet-render: "Generate my kitchen" opens AI Results and starts a Render; budget stays disabled.
+    // simulations-ux-overhaul: the summary card has three rows with edit links (cm, no thumbnails); no Simulation yet.
+    await expect(page.getByTestId('summary-photos')).toContainText('2 photos');
+    await expect(page.getByTestId('summary-measurements')).toContainText('420 x 310 x 260 cm');
+    await expect(page.getByTestId('summary-styles')).toContainText('3 styles and references');
+    await expect(page.getByTestId('project-edit-photos')).toHaveAttribute('href', `/kitchen-projects/${ownedId}/edit/photos`);
+    await expect(page.getByTestId('project-edit-measurements')).toHaveAttribute('href', `/kitchen-projects/${ownedId}/edit/measurements`);
+    await expect(page.getByTestId('project-edit-styles')).toHaveAttribute('href', `/kitchen-projects/${ownedId}/edit/styles`);
+    await expect(page.getByTestId('simulations-empty')).toBeVisible();
+    // "Generate my kitchen" opens AI Results and starts a Simulation; the budget button stays disabled until one is selected.
     await expect(page.getByTestId('project-render')).toHaveText(gm('en').cta.render);
     await expect(page.getByTestId('project-render')).toHaveAttribute('href', `/kitchen-projects/${ownedId}/results?start=1`);
-    // budget-tier-computation: "Get my budget" (or "See my budget" once the auto-started Budget succeeded) opens the Budget page.
-    await expect(page.getByTestId('project-budget')).toHaveAttribute('href', `/kitchen-projects/${ownedId}/budget`);
-    await expect(page.getByTestId('project-budget')).toHaveText(new RegExp(`^(${escape(gm('en').cta.budget)}|${escape(p.seeBudget)})$`));
-    await expect(page.getByTestId('project-budgets-soon')).toHaveCount(0);
+    await expect(page.getByTestId('project-budget')).toHaveAttribute('aria-disabled', 'true');
+    await expect(page.getByTestId('project-budget')).toHaveText(gm('en').cta.budget);
     await expect(page.getByTestId('project-new')).toHaveAttribute('href', '/kitchen-projects/new');
     await checkLayout(page);
     await page.screenshot({ path: 'test-results/login-gate/5-owned-en.png' });
@@ -253,10 +250,12 @@ test.describe.serial('login gate and claim', () => {
     expect((await pageFetch(page, CURRENT)).status).toBe(404);
     expect(await draftCookie(page)).toBeUndefined();
     expect(await page.evaluate(() => window.localStorage.getItem('bm_draft_started'))).toBeNull();
-    // Costly actions on the owned, ready project are real: Renders (controlnet-render) and Budgets (budget-tier-computation).
-    expect((await apiJson(page, `/api/kitchen-projects/${ownedId}/renders`, 'POST', {})).status).toBe(202);
-    // The Budget started by the claim landing may still be running (409 budget_in_progress) or be done (202).
-    expect([202, 409]).toContain((await pageFetch(page, `/api/kitchen-projects/${ownedId}/budget`, { method: 'POST' })).status);
+    // Costly actions on the owned, ready project are real: Simulations (simulations-ux-overhaul) and Budgets (budget-tier-computation).
+    // A Budget needs a selected Simulation: none yet, so the API answers 409 no_simulation_selected.
+    const noSelection = await pageFetch(page, `/api/kitchen-projects/${ownedId}/budget`, { method: 'POST' });
+    expect(noSelection.status).toBe(409);
+    expect(JSON.parse(noSelection.body)).toMatchObject({ code: 'no_simulation_selected' });
+    expect((await apiJson(page, `/api/kitchen-projects/${ownedId}/simulations`, 'POST')).status).toBe(202);
 
     // Idempotent: the same draft token again with the same Account gives the same project.
     await page.context().addCookies([{ name: 'bm_draft', value: cookieBefore!.value, url: WEB, httpOnly: true, sameSite: 'Lax' }]);
@@ -272,7 +271,7 @@ test.describe.serial('login gate and claim', () => {
       await setLocaleCookie(page.context(), locale);
       await page.goto(`/kitchen-projects/${ownedId}`);
       await expect(page.getByRole('heading', { level: 1 })).toHaveText(pm(locale).title);
-      await expect(page.getByTestId('summary-photos-thumb')).toHaveCount(2);
+      await expect(page.getByTestId('summary-photos')).toBeVisible();
       await checkLayout(page);
       await page.screenshot({ path: `test-results/login-gate/owned-${locale}-360.png` });
     }
@@ -291,7 +290,7 @@ test.describe.serial('login gate and claim', () => {
     await page.getByTestId('project-sign-in').click();
     await keycloakSignIn(page, request);
     await page.waitForURL(`${WEB}/kitchen-projects/${ownedId}`);
-    await expect(page.getByTestId('summary-photos-thumb')).toHaveCount(2);
+    await expect(page.getByTestId('summary-photos')).toContainText('2 photos');
     await expect(page.getByTestId('project-claimed')).toHaveCount(0);
   });
 
@@ -314,7 +313,7 @@ test.describe.serial('login gate and claim', () => {
     const mail = await mailpitCode(request, email, () => page.locator('#kc-register').click());
     await page.locator('#emailCode').fill(mail.code);
     await page.locator('#kc-login').click();
-    expect(await waitForBudgetPage(page)).toBe(draftId);
+    expect(await waitForProjectPage(page)).toBe(draftId);
     await page.goto(`/kitchen-projects/${draftId}?claimed=1`);
     await expect(page.getByTestId('project-claimed')).toBeVisible();
     const me = JSON.parse((await pageFetch(page, '/api/me')).body) as { username: string; roles: string[] };

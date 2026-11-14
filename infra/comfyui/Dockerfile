@@ -6,6 +6,8 @@ FROM rocm/pytorch:rocm10.1.0_ubuntu24.04_py3.12_pytorch_release_2.14.0
 
 ARG COMFYUI_REF=v0.45.3
 ARG CONTROLNET_AUX_SHA=a587a4c1594524c1d2de5cd1a86cd868ff448e1c
+# Style references (feature simulations-ux-overhaul): IPAdapter, CLIP vision and combine nodes.
+ARG IPADAPTER_PLUS_SHA=a0f451a5113cf9becb0847b92884cb10cbdec0ef
 
 ENV DEBIAN_FRONTEND=noninteractive \
     PIP_NO_CACHE_DIR=1 \
@@ -21,7 +23,9 @@ RUN apt-get update \
 
 RUN git clone --depth 1 --branch "${COMFYUI_REF}" https://github.com/comfyanonymous/ComfyUI.git /opt/ComfyUI \
  && git -C /opt/ComfyUI/custom_nodes clone https://github.com/Fannovel16/comfyui_controlnet_aux.git \
- && git -C /opt/ComfyUI/custom_nodes/comfyui_controlnet_aux checkout "${CONTROLNET_AUX_SHA}"
+ && git -C /opt/ComfyUI/custom_nodes/comfyui_controlnet_aux checkout "${CONTROLNET_AUX_SHA}" \
+ && git -C /opt/ComfyUI/custom_nodes clone https://github.com/cubiq/ComfyUI_IPAdapter_plus.git \
+ && git -C /opt/ComfyUI/custom_nodes/ComfyUI_IPAdapter_plus checkout "${IPADAPTER_PLUS_SHA}"
 
 WORKDIR /opt/ComfyUI
 

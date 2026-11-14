@@ -11,20 +11,21 @@ import {
   budgetPhase,
   budgetReducer,
   canStart,
+  computeStage,
   consumeStartParam,
+  currentBudget,
+  failedBudget,
   failureAlertKey,
-  historyBudgets,
   INITIAL_BUDGET_STATE,
   jobsAhead,
-  keptCount,
-  limitReached,
   orderedTiers,
-  shownBudget,
+  selectionIssue,
   startPolling,
   type BudgetView,
 } from '../../lib/budget/budget-state';
+import { loadSimulations } from '../../lib/simulations/simulation-client';
+import { selectedSimulation } from '../../lib/simulations/project-simulations';
 import { GenerateAlert } from '../generate/GenerateAlert';
-import { BudgetHistory } from './BudgetHistory';
 import { BudgetStatusCard } from './BudgetStatusCard';
 import { TierCard } from './TierCard';
 
@@ -67,11 +68,14 @@ function TierList({ budget, locale }: { budget: BudgetView; locale: string }) {
 }
 
 /**
- * Budget Tier Overview (docs/design/budget-tier-computation.md): the four tier cards with
- * expandable verified Line Items and citations, the queued/running placeholder with the 2 s poll,
- * the history strip and the "Calculate again" / "Try again" / "Get my budget" CTA. `?start=1`
- * (after the Generate claim with intent budget) starts one Budget on load; the server's one-active
- * rule prevents a double start. The HTML is the same for everyone: Budgets load on the client via /api.
+ * Budget Tier Overview for the selected Simulation (docs/design/simulations-ux-overhaul.md, S9
+ * and S10, extending docs/design/budget-tier-computation.md): the "Based on Simulation n" card,
+ * the four tier cards with expandable verified Line Items and citations, the computing card
+ * (reading image n of N, matching products, waiting for the GPU) with the 2 s poll, a recalculation
+ * that keeps the previous Budget visible until the new one succeeds, and the no-selection and
+ * not-ready alerts. `?start=1` (from `Get my budget` on the project page) starts one Budget on
+ * load; the server's one-active rule prevents a double start. The HTML is the same for everyone:
+ * the Simulations and Budgets load on the client via /api.
  */
 export function BudgetScreen({ projectId }: { projectId: string }) {
   const t = useTranslations('budget');
@@ -82,9 +86,16 @@ export function BudgetScreen({ projectId }: { projectId: string }) {
   const client = useCallback(() => (clientRef.current ??= createApiClient(`${window.location.origin}/api`)), []);
   const autoStart = useRef(false);
 
-  const refresh = useCallback(async () => {
-    const list = await loadBudgets(client(), projectId);
-    if (list.kind === 'ok') dispatch({ type: 'budgetsLoaded', budgets: list.value.budgets, maxBudgets: list.value.maxBudgets });
+  /** Reads the selected Simulation and its Budgets; false when the screen cannot be shown. */
+  const fetchState = useCallback(async () => {
+    const [simulations, budgets] = await Promise.all([loadSimulations(client(), projectId), loadBudgets(client(), projectId)]);
+    if (simulations.kind === 'signedOut' || budgets.kind === 'signedOut') return dispatch({ type: 'loadFailed', kind: 'signedOut' });
+    if (simulations.kind === 'notFound' || budgets.kind === 'notFound') return dispatch({ type: 'loadFailed', kind: 'notFound' });
+    if (simulations.kind !== 'ok' || budgets.kind !== 'ok') return dispatch({ type: 'connectivity', online: false });
+    dispatch({ type: 'connectivity', online: true });
+    const simulation = selectedSimulation(simulations.value);
+    dispatch({ type: 'loaded', simulation, budgets: budgets.value.budgets });
+    return { simulation, budgets: budgets.value.budgets };
   }, [client, projectId]);
 
   const start = useCallback(async () => {
@@ -97,13 +108,25 @@ export function BudgetScreen({ projectId }: { projectId: string }) {
         return dispatch({ type: 'startFinished', budget: null, alert: 'queueFull' });
       case 'searchDown':
         return dispatch({ type: 'startFinished', budget: null, alert: 'searchDown' });
-      case 'conflict':
-        dispatch({
-          type: 'startFinished',
-          budget: null,
-          alert: result.code === 'catalog_empty' ? 'catalogEmpty' : result.code === 'project_incomplete' ? 'incomplete' : result.code === 'other' ? 'startFailed' : 'none',
-        });
-        return refresh();
+      case 'conflict': {
+        const alert =
+          result.code === 'catalog_empty'
+            ? 'catalogEmpty'
+            : result.code === 'project_incomplete'
+              ? 'incomplete'
+              : result.code === 'no_simulation_selected'
+                ? 'noSelection'
+                : result.code === 'simulation_not_ready'
+                  ? 'notReady'
+                  : result.code === 'other'
+                    ? 'startFailed'
+                    : 'none';
+        dispatch({ type: 'startFinished', budget: null, alert });
+        // Show what the server says (another tab may have started one, or the selection changed).
+        const list = await loadBudgets(client(), projectId);
+        if (list.kind === 'ok') dispatch({ type: 'budgetsLoaded', budgets: list.value.budgets });
+        return;
+      }
       case 'signedOut':
         return dispatch({ type: 'loadFailed', kind: 'signedOut' });
       case 'notFound':
@@ -114,21 +137,18 @@ export function BudgetScreen({ projectId }: { projectId: string }) {
       default:
         return dispatch({ type: 'startFinished', budget: null, alert: 'startFailed' });
     }
-  }, [client, projectId, refresh]);
+  }, [client, projectId]);
 
   const load = useCallback(async () => {
     if (!navigator.onLine) return dispatch({ type: 'connectivity', online: false });
-    const budgets = await loadBudgets(client(), projectId);
-    if (budgets.kind === 'signedOut') return dispatch({ type: 'loadFailed', kind: 'signedOut' });
-    if (budgets.kind === 'notFound') return dispatch({ type: 'loadFailed', kind: 'notFound' });
-    if (budgets.kind !== 'ok') return dispatch({ type: 'connectivity', online: false });
-    dispatch({ type: 'connectivity', online: true });
-    dispatch({ type: 'loaded', budgets: budgets.value.budgets, maxBudgets: budgets.value.maxBudgets });
-    if (autoStart.current) {
+    const loaded = await fetchState();
+    if (loaded && autoStart.current) {
       autoStart.current = false;
-      if (!budgets.value.budgets.some((budget) => budget.status === 'queued' || budget.status === 'running')) void start();
+      const { simulation, budgets } = loaded;
+      const busy = budgets.some((budget) => budget.status === 'queued' || budget.status === 'running' || budget.status === 'succeeded');
+      if (simulation?.status === 'succeeded' && !busy) void start();
     }
-  }, [client, projectId, start]);
+  }, [fetchState, start]);
 
   // Initial load, `?start=1`, and connectivity.
   useEffect(() => {
@@ -191,72 +211,118 @@ export function BudgetScreen({ projectId }: { projectId: string }) {
 
   const phase = budgetPhase(state);
   const active = activeBudget(state);
-  const shown = shownBudget(state);
-  const busy = phase === 'active';
-  const limit = limitReached(state) && !busy;
+  const current = currentBudget(state);
+  const failed = failedBudget(state);
+  const issue = selectionIssue(state);
+  const busy = phase === 'computing' || phase === 'recalculating';
   const enabled = canStart(state);
-  const history = historyBudgets(state);
-  const chronological = [...state.budgets].reverse();
+  const stage = computeStage(active);
   const ahead = jobsAhead(active);
-  const hint = busy ? t('hints.oneAtATime') : limit ? t('hints.limit', { max: state.maxBudgets }) : null;
+  const simulation = state.simulation;
+  const hint = busy ? t('hints.oneAtATime') : null;
   const ctaLabel = phase === 'failed' ? t('cta.retry') : phase === 'empty' ? t('cta.start') : t('cta.again');
   const CtaIcon = phase === 'empty' ? ReceiptText : RefreshCw;
   const ctaTestId = phase === 'failed' ? 'budget-retry' : phase === 'empty' ? 'budget-start' : 'budget-again';
-  const alertTone: Record<Exclude<typeof state.alert, 'none'>, 'warning' | 'danger' | 'info'> = {
+  const stageLabel = stage.stage === 'queued' ? t('status.queued') : stage.stage === 'inventory' ? t('status.reading', { n: stage.n, count: stage.count }) : t('status.matching');
+  const projectLink = (
+    <Link
+      href={`/kitchen-projects/${projectId}`}
+      prefetch={false}
+      data-testid="budget-go-simulations"
+      className="flex h-11 items-center text-small leading-5 font-semibold text-primary underline"
+    >
+      {t('goToSimulations')}
+    </Link>
+  );
+  const alertTone: Record<'queueFull' | 'searchDown' | 'catalogEmpty' | 'incomplete' | 'startFailed', 'warning' | 'danger' | 'info'> = {
     queueFull: 'warning',
     searchDown: 'warning',
     catalogEmpty: 'warning',
     incomplete: 'info',
     startFailed: 'danger',
   };
-  const alertMessage: Record<Exclude<typeof state.alert, 'none'>, string> = {
+  const alertMessage: Record<keyof typeof alertTone, string> = {
     queueFull: t('alerts.queueFull'),
     searchDown: t('alerts.searchDown'),
     catalogEmpty: t('alerts.catalogEmpty'),
     incomplete: t('alerts.incomplete'),
     startFailed: t('alerts.failed'),
   };
+  const pageAlert = state.alert in alertTone ? (state.alert as keyof typeof alertTone) : null;
+  const thumbs = (simulation?.renders ?? []).filter((render) => render.status === 'succeeded' && render.thumbUrl);
 
   return (
     <>
-      <main className={MAIN_CLASS} data-testid="budget-screen" data-phase={phase}>
+      <main className={MAIN_CLASS} data-testid="budget-screen" data-phase={phase} data-simulation={simulation?.ordinal}>
         {!state.online ? <GenerateAlert tone="warning" message={t('alerts.offline')} testId="budget-offline" /> : null}
-        {state.online && state.alert !== 'none' ? <GenerateAlert tone={alertTone[state.alert]} message={alertMessage[state.alert]} testId={`budget-alert-${state.alert}`} /> : null}
-        {phase === 'failed' && state.alert === 'none' ? (
-          <GenerateAlert tone="danger" message={t(`alerts.${failureAlertKey(shown)}`)} testId="budget-failed" />
-        ) : null}
+        {state.online && pageAlert ? <GenerateAlert tone={alertTone[pageAlert]} message={alertMessage[pageAlert]} testId={`budget-alert-${pageAlert}`} /> : null}
+        {state.online && issue === 'noSelection' ? <GenerateAlert tone="info" message={t('alerts.noSelection')} action={projectLink} testId="budget-alert-noSelection" /> : null}
+        {state.online && issue === 'notReady' ? <GenerateAlert tone="warning" message={t('alerts.notReady')} action={projectLink} testId="budget-alert-notReady" /> : null}
+        {phase === 'failed' && state.alert === 'none' ? <GenerateAlert tone="danger" message={t(`alerts.${failureAlertKey(failed)}`)} testId="budget-failed" /> : null}
 
         <section className="flex flex-col gap-sm">
-          <h1 className="text-h1 font-bold text-text">{phase === 'active' ? t('titleActive') : t('title')}</h1>
-          {phase === 'loading' || phase === 'empty' ? null : (
+          <h1 className="text-h1 font-bold text-text">{phase === 'computing' ? t('titleActive') : t('title')}</h1>
+          {phase === 'loading' || phase === 'empty' || issue ? null : (
             <p className="text-body text-text-muted" data-testid="budget-helper">
-              {busy ? t('helperActive') : t('helper')}
+              {phase === 'computing' ? t('helperActive') : t('helper')}
             </p>
           )}
         </section>
 
-        {phase === 'succeeded' && shown ? <TierList key={shown.id} budget={shown} locale={locale} /> : null}
-        {phase === 'active' ? (
+        {simulation && phase !== 'loading' ? (
+          <section data-testid="budget-simulation" className="flex flex-col gap-3 rounded-[16px] bg-surface p-3 shadow-card">
+            <div className="flex items-center justify-between gap-sm">
+              <p className="min-w-0 text-small leading-5 font-semibold text-text">{t('basedOn', { n: simulation.ordinal })}</p>
+              <Link
+                href={`/kitchen-projects/${projectId}`}
+                prefetch={false}
+                data-testid="budget-change-simulation"
+                className="flex h-11 shrink-0 items-center text-small leading-5 font-semibold text-primary underline"
+              >
+                {t('change')}
+              </Link>
+            </div>
+            {thumbs.length > 0 ? (
+              <div className="-mt-2 flex flex-wrap gap-2" data-testid="budget-simulation-thumbs">
+                {thumbs.map((render) => (
+                  <span key={render.id} className="h-9 w-12 overflow-hidden rounded-sm bg-surface-muted">
+                    <img src={`/api${render.thumbUrl}`} alt="" className="size-full object-cover" />
+                  </span>
+                ))}
+              </div>
+            ) : null}
+          </section>
+        ) : null}
+
+        {phase === 'recalculating' ? (
+          <div
+            role="status"
+            aria-live="polite"
+            data-testid="budget-recalculating"
+            data-stage={stage.stage}
+            className="flex flex-col gap-1 rounded-[16px] border border-primary bg-surface p-md"
+          >
+            <p className="text-body font-semibold text-text">{t('recalculating')}</p>
+            <p className="text-small leading-5 text-text-muted">{stageLabel}</p>
+          </div>
+        ) : null}
+        {current?.relabeled && (phase === 'succeeded' || phase === 'recalculating' || phase === 'failed') ? (
+          <p className="text-small leading-5 text-text-muted" data-testid="budget-relabeled">
+            {t('relabeled')}
+          </p>
+        ) : null}
+        {current && (phase === 'succeeded' || phase === 'recalculating' || phase === 'failed') ? <TierList key={current.id} budget={current} locale={locale} /> : null}
+        {phase === 'computing' ? (
           <BudgetStatusCard
-            status={active?.status === 'queued' ? 'queued' : 'running'}
-            label={active?.status === 'queued' ? t('status.queued') : t('status.running')}
+            status={stage.stage === 'queued' ? 'queued' : 'running'}
+            stage={stage.stage}
+            label={stageLabel}
+            percent={stage.stage === 'inventory' ? stage.percent : null}
             detail={ahead !== null ? t('status.ahead', { count: ahead }) : null}
           />
         ) : null}
         {phase === 'empty' ? <BudgetStatusCard status="empty" label={t('empty.title')} detail={t('empty.helper')} /> : null}
         {busy ? <p className="text-small leading-5 text-text-muted">{t('note')}</p> : null}
-
-        {history.length >= 2 ? (
-          <BudgetHistory
-            budgets={history.map((budget) => ({ id: budget.id, number: chronological.findIndex((candidate) => candidate.id === budget.id) + 1 }))}
-            shownId={phase === 'succeeded' ? state.shownId : null}
-            disabled={busy}
-            onShow={(budgetId) => dispatch({ type: 'budgetShown', budgetId })}
-            title={t('history.title')}
-            counter={t('history.counter', { count: keptCount(state), max: state.maxBudgets })}
-            itemLabel={(n) => t('history.item', { n })}
-          />
-        ) : null}
       </main>
 
       <footer className="flex shrink-0 flex-col gap-3 bg-surface px-md pt-3 pb-[calc(var(--spacing-lg)+env(safe-area-inset-bottom))] shadow-sheet">
@@ -265,26 +331,26 @@ export function BudgetScreen({ projectId }: { projectId: string }) {
             {hint}
           </p>
         ) : null}
-        <button
-          type="button"
-          data-testid={ctaTestId}
-          aria-disabled={!enabled}
-          aria-describedby={hint ? 'budget-hint' : undefined}
-          onClick={() => enabled && void start()}
-          className={`flex min-h-[52px] w-full items-center justify-center gap-sm rounded-pill px-md py-[13px] text-center text-body font-semibold ${enabled ? PRIMARY : DISABLED}`}
+        <Link
+          href={`/kitchen-projects/${projectId}`}
+          prefetch={false}
+          data-testid="budget-back-project"
+          className={`flex min-h-[52px] w-full items-center justify-center rounded-pill px-md py-[13px] text-center text-body font-semibold ${PRIMARY}`}
         >
-          <CtaIcon size={20} aria-hidden="true" className="shrink-0" />
-          <span>{ctaLabel}</span>
-        </button>
-        {busy ? null : (
-          <Link
-            href={`/kitchen-projects/${projectId}`}
-            prefetch={false}
-            data-testid="budget-back-project"
-            className="flex min-h-[52px] w-full items-center justify-center rounded-pill border border-border bg-surface px-md py-[13px] text-center text-body font-semibold text-primary"
+          {t('cta.back')}
+        </Link>
+        {issue || phase === 'loading' ? null : (
+          <button
+            type="button"
+            data-testid={ctaTestId}
+            aria-disabled={!enabled}
+            aria-describedby={hint ? 'budget-hint' : undefined}
+            onClick={() => enabled && void start()}
+            className={`flex min-h-[52px] w-full items-center justify-center gap-sm rounded-pill px-md py-[13px] text-center text-body font-semibold ${enabled ? 'border border-border bg-surface text-primary' : DISABLED}`}
           >
-            {t('cta.back')}
-          </Link>
+            <CtaIcon size={20} aria-hidden="true" className="shrink-0" />
+            <span>{ctaLabel}</span>
+          </button>
         )}
       </footer>
     </>

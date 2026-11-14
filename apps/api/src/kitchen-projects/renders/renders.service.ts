@@ -1,26 +1,20 @@
-import { randomInt, randomUUID } from 'node:crypto';
 import type { Readable } from 'node:stream';
 import { HttpException, HttpStatus, Inject, Injectable, Logger, NotFoundException, ServiceUnavailableException } from '@nestjs/common';
-import type { CreateRenderResponse, RenderErrorCode, RenderListResponse, RenderView } from '@bricomission/shared-types';
+import type { RenderErrorCode, RenderView } from '@bricomission/shared-types';
 import { IMAGE_ADAPTER } from '../../ai/ai.tokens.js';
-import type { ImageAdapter } from '../../ai/adapters/image-adapter.js';
-import { GpuJobFailedError, GpuQueueFullError } from '../../ai/jobs/gpu-job-broker.errors.js';
+import type { ImageAdapter, ImageReference } from '../../ai/adapters/image-adapter.js';
+import { GpuJobFailedError } from '../../ai/jobs/gpu-job-broker.errors.js';
 import { GpuJobBrokerService } from '../../ai/jobs/gpu-job-broker.service.js';
 import { OBJECT_STORAGE, ObjectNotFoundError, type ObjectStorage } from '../../storage/object-storage.js';
-import { StyleGalleryService } from '../../style-gallery/style-gallery.service.js';
 import { draftError } from '../kitchen-draft.errors.js';
 import { type Clock, KITCHEN_CLOCK } from '../kitchen-projects.config.js';
-import type { KitchenPhotoRecord, KitchenProjectRecord } from '../kitchen-drafts.repository.js';
-import { isReadyForGeneration } from '../readiness.js';
+import type { KitchenProjectRecord } from '../kitchen-drafts.repository.js';
 import { RENDER_CONFIG, type RenderConfig } from './render.config.js';
-import { cropBefore, encodeRender, renderBucket } from './render-geometry.js';
-import { buildRenderPrompt } from './render-prompt.js';
+import { encodeRender } from './render-geometry.js';
 import { RENDER_REPOSITORY, type RenderRecord, type RenderRepository } from './render.repository.js';
 
 export type RenderVariant = 'before' | 'full' | 'thumb';
 export const RENDER_VARIANTS: readonly RenderVariant[] = ['before', 'full', 'thumb'];
-
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export function renderKeys(projectId: string, renderId: string): Record<RenderVariant, string> {
   const base = `kitchen-projects/${projectId}/renders/${renderId}`;
@@ -32,13 +26,21 @@ class RenderStorageError extends Error {
   override readonly name = 'RenderStorageError';
 }
 
+/** Inputs of one Render job that the Simulation runner supplies. */
+export interface RenderJobInput {
+  negativePrompt: string;
+  /** IP-Adapter style references at their weights; empty for blend mode `vlm_text`. */
+  references: ImageReference[];
+  ownerSub: string;
+}
+
 /**
- * Renders of claimed Kitchen Projects (feature controlnet-render). The POST runs outside the GPU
- * slot: readiness, photo pick, the active/limit checks with the `queued` insert under the project
- * row lock, the "before" crop, then `broker.submit('image', ...)`. The job marks the row
- * `running`, calls the image adapter, stores `full`/`thumb` and marks it `succeeded`. Failures
- * mark it `failed` with a public code and remove any result objects. Logs carry error class
- * names only: never a prompt, seed, job id, URL or backend body.
+ * Single Render execution (features controlnet-render and simulations-ux-overhaul). The Simulation
+ * runner creates the rows and submits one job per Render with {@link RendersService.submit}: the job
+ * reads the stored "before" crop, marks the row `running`, calls the image adapter, stores
+ * `full`/`thumb` and marks it `succeeded`. Failures mark it `failed` with a public code and
+ * remove any result objects. Logs carry error class names only: never a prompt, seed, job id,
+ * URL or backend body.
  */
 @Injectable()
 export class RendersService {
@@ -51,72 +53,24 @@ export class RendersService {
     @Inject(RENDER_CONFIG) private readonly config: RenderConfig,
     @Inject(KITCHEN_CLOCK) private readonly clock: Clock,
     private readonly broker: GpuJobBrokerService,
-    private readonly gallery: StyleGalleryService,
   ) {}
 
-  async create(project: KitchenProjectRecord, body: unknown, ownerSub: string): Promise<CreateRenderResponse> {
-    if (!isReadyForGeneration(project)) throw draftError(HttpStatus.CONFLICT, 'project_incomplete');
-    const photo = this.pickPhoto(project, body);
-    const size = renderBucket(photo.width, photo.height);
-    const prompt = buildRenderPrompt(project.moodboard, this.gallery);
-    const id = randomUUID();
-    const keys = renderKeys(project.id, id);
-
-    const created = await this.db(() =>
-      this.repo.createQueued(
-        {
-          id,
-          kitchenProjectId: project.id,
-          photoId: photo.id,
-          mode: this.config.mode,
-          styleId: prompt.styleId,
-          prompt: prompt.positive,
-          seed: randomInt(0, 2 ** 31),
-          width: size.width,
-          height: size.height,
-          beforeKey: keys.before,
-          createdAt: this.clock(),
-        },
-        this.config.maxPerProject,
-      ),
-    );
-    if (created === 'in_progress') throw draftError(HttpStatus.CONFLICT, 'render_in_progress');
-    if (created === 'limit_reached') throw draftError(HttpStatus.CONFLICT, 'render_limit_reached');
-
-    let before: Buffer;
-    try {
-      const source = await this.readObject(photo.fullKey);
-      before = await cropBefore(source, size);
-      await this.storage.put(keys.before, before, 'image/jpeg');
-    } catch (error) {
-      this.logger.warn(`Render before image failed (${error instanceof Error ? error.name : 'unknown'})`);
-      await this.discard(created, [keys.before]);
-      throw draftError(HttpStatus.SERVICE_UNAVAILABLE, 'storage_unavailable');
-    }
-
+  /**
+   * Submits the image job of one `queued` Render. Throws `GpuQueueFullError` when the broker queue
+   * is full (nothing changed). `done` settles once the Render is `succeeded` or `failed` (it never rejects).
+   */
+  submit(render: RenderRecord, input: RenderJobInput): { done: Promise<void> } {
     const storageFailed = { value: false };
-    let handle;
-    try {
-      handle = this.broker.submit('image', ({ signal }) => this.run(created, before, prompt.negative, signal, storageFailed), { ownerRef: ownerSub });
-    } catch (error) {
-      await this.discard(created, [keys.before]);
-      if (error instanceof GpuQueueFullError) throw draftError(HttpStatus.TOO_MANY_REQUESTS, 'gpu_queue_full');
-      throw error;
-    }
-    created.gpuJobId = handle.jobId;
-    handle.result.catch((error: unknown) => this.onFailed(created, error, storageFailed.value));
-    try {
-      await this.repo.setGpuJob(id, handle.jobId);
-    } catch (error) {
+    const handle = this.broker.submit('image', ({ signal }) => this.run(render, input, signal, storageFailed), { ownerRef: input.ownerSub });
+    const done = handle.result.then(
+      () => undefined,
+      (error: unknown) => this.onFailed(render, error, storageFailed.value),
+    );
+    void this.repo.setGpuJob(render.id, handle.jobId).catch((error: unknown) => {
       // Provenance only: the job runs anyway.
       this.logger.warn(`Render job id not stored (${error instanceof Error ? error.name : 'unknown'})`);
-    }
-    return { render: this.view(created) };
-  }
-
-  async list(project: KitchenProjectRecord): Promise<RenderListResponse> {
-    const renders = await this.db(() => this.repo.listByProject(project.id));
-    return { renders: renders.map((render) => this.view(render)), maxRenders: this.config.maxPerProject };
+    });
+    return { done };
   }
 
   async get(project: KitchenProjectRecord, renderId: string): Promise<RenderView> {
@@ -143,9 +97,11 @@ export class RendersService {
     const succeeded = render.status === 'succeeded';
     return {
       id: render.id,
+      simulationId: render.simulationId,
       status: render.status,
       photoId: render.photoId,
-      styleId: render.styleId,
+      photoPosition: render.photoPosition,
+      attempts: render.attempts,
       mode: render.mode,
       width: render.width,
       height: render.height,
@@ -161,12 +117,29 @@ export class RendersService {
     };
   }
 
-  /** The GPU job: `running`, the adapter call, the result objects, `succeeded`. */
-  private async run(render: RenderRecord, before: Buffer, negativePrompt: string, signal: AbortSignal, storageFailed: { value: boolean }): Promise<void> {
+  /** The GPU job: the stored "before" crop, `running`, the adapter call, the result objects, `succeeded`. */
+  private async run(render: RenderRecord, input: RenderJobInput, signal: AbortSignal, storageFailed: { value: boolean }): Promise<void> {
     const keys = renderKeys(render.kitchenProjectId, render.id);
+    let before: Buffer;
+    try {
+      before = await this.readObject(render.beforeKey);
+    } catch (error) {
+      storageFailed.value = true;
+      throw new RenderStorageError(error instanceof Error ? error.name : 'unknown');
+    }
     await this.repo.markRunning(render.id, this.clock());
     const result = await this.image.render(
-      { mode: render.mode, image: before, width: render.width, height: render.height, prompt: render.prompt, negativePrompt, seed: render.seed, control: this.config.control },
+      {
+        mode: render.mode,
+        image: before,
+        width: render.width,
+        height: render.height,
+        prompt: render.prompt,
+        negativePrompt: input.negativePrompt,
+        seed: render.seed,
+        control: this.config.control,
+        references: input.references,
+      },
       signal,
     );
     const encoded = await encodeRender(result.image, { width: render.width, height: render.height });
@@ -199,19 +172,6 @@ export class RendersService {
     await this.deleteQuietly([keys.full, keys.thumb]);
   }
 
-  private pickPhoto(project: KitchenProjectRecord, body: unknown): KitchenPhotoRecord {
-    if (body !== undefined && body !== null && (typeof body !== 'object' || Array.isArray(body))) throw draftError(HttpStatus.BAD_REQUEST, 'render_photo_unknown');
-    const photoId = (body as { photoId?: unknown } | null | undefined)?.photoId;
-    if (photoId === undefined || photoId === null) {
-      const first = project.photos.find((photo) => photo.position === 0) ?? project.photos[0];
-      if (!first) throw draftError(HttpStatus.CONFLICT, 'project_incomplete');
-      return first;
-    }
-    const photo = typeof photoId === 'string' && UUID.test(photoId) ? project.photos.find((candidate) => candidate.id === photoId.toLowerCase()) : undefined;
-    if (!photo) throw draftError(HttpStatus.BAD_REQUEST, 'render_photo_unknown');
-    return photo;
-  }
-
   private async findOr404(project: KitchenProjectRecord, renderId: string): Promise<RenderRecord> {
     const render = await this.db(() => this.repo.find(project.id, renderId.toLowerCase()));
     if (!render) throw new NotFoundException();
@@ -223,16 +183,6 @@ export class RendersService {
     const chunks: Buffer[] = [];
     for await (const chunk of body) chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk as Uint8Array));
     return Buffer.concat(chunks);
-  }
-
-  /** Removes a Render that never reached the GPU (no row, no objects). */
-  private async discard(render: RenderRecord, keys: string[]): Promise<void> {
-    await this.deleteQuietly(keys);
-    try {
-      await this.repo.delete(render.id);
-    } catch (error) {
-      this.logger.warn(`Render row not removed (${error instanceof Error ? error.name : 'unknown'})`);
-    }
   }
 
   private async deleteQuietly(keys: string[]): Promise<void> {

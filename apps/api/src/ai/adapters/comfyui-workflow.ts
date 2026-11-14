@@ -20,6 +20,8 @@ export interface RenderWorkflowParams {
   negativePrompt: string;
   seed: number;
   control: RenderControl;
+  /** IP-Adapter style references (names returned by `POST /upload/image`) with their weights; none: no IP-Adapter nodes. */
+  references?: Array<{ inputImage: string; weight: number }>;
 }
 
 export const RENDER_WORKFLOW = {
@@ -31,7 +33,12 @@ export const RENDER_WORKFLOW = {
   sampler: 'dpmpp_2m',
   scheduler: 'karras',
   depthResolution: 1024,
+  ipAdapter: 'ip-adapter-plus_sdxl_vit-h.safetensors',
+  clipVision: 'CLIP-ViT-H-14-laion2B-s32B-b79K.safetensors',
 } as const;
+
+/** `IPAdapterCombineEmbeds` has inputs `embed1..embed5` only (spike A2): more are chained in groups of this size. */
+export const COMBINE_GROUP_SIZE = 5;
 
 /** Id of the node whose output is the Render. */
 export const RENDER_OUTPUT_NODE = '12';
@@ -82,6 +89,10 @@ export function buildRenderWorkflow(p: RenderWorkflowParams): Record<string, Nod
     '11': { class_type: 'VAEDecode', inputs: { samples: ['10', 0], vae: ['1', 2] } },
     [RENDER_OUTPUT_NODE]: { class_type: 'PreviewImage', inputs: { images: ['11', 0] } },
   };
+  if (p.references && p.references.length > 0) {
+    addIpAdapter(workflow, p.references);
+    (workflow['10'] as Node).inputs.model = ['60', 0];
+  }
   if (assist) {
     workflow['13'] = depthNode();
     workflow['14'] = { class_type: 'ControlNetLoader', inputs: { control_net_name: w.controlNets.depth } };
@@ -91,4 +102,42 @@ export function buildRenderWorkflow(p: RenderWorkflowParams): Record<string, Nod
     };
   }
   return workflow;
+}
+
+/**
+ * IP-Adapter nodes (spike A2): one `IPAdapterEncoder` per reference at its weight, merged by
+ * `IPAdapterCombineEmbeds` in groups of {@link COMBINE_GROUP_SIZE} whose partial results are
+ * combined again (12 references work), applied by `IPAdapterEmbeds` on the checkpoint model
+ * (node 60, which the sampler reads). The Plus model also needs `clip_vision`.
+ */
+function addIpAdapter(workflow: Record<string, Node>, references: Array<{ inputImage: string; weight: number }>): void {
+  const w = RENDER_WORKFLOW;
+  workflow['20'] = { class_type: 'IPAdapterModelLoader', inputs: { ipadapter_file: w.ipAdapter } };
+  workflow['21'] = { class_type: 'CLIPVisionLoader', inputs: { clip_name: w.clipVision } };
+  const encoders = references.map((reference, index) => {
+    const load = `3${String(index).padStart(2, '0')}`;
+    const encode = `4${String(index).padStart(2, '0')}`;
+    workflow[load] = { class_type: 'LoadImage', inputs: { image: reference.inputImage } };
+    workflow[encode] = { class_type: 'IPAdapterEncoder', inputs: { ipadapter: ['20', 0], image: [load, 0], weight: reference.weight, clip_vision: ['21', 0] } };
+    return encode;
+  });
+  const combine = (ids: string[], tag: string): string => {
+    if (ids.length === 1) return ids[0] as string;
+    const id = `5${tag}`;
+    const inputs: Record<string, unknown> = { method: 'concat' };
+    ids.forEach((embed, index) => {
+      inputs[`embed${index + 1}`] = [embed, 0];
+    });
+    workflow[id] = { class_type: 'IPAdapterCombineEmbeds', inputs };
+    return id;
+  };
+  const parts: string[] = [];
+  for (let start = 0; start < encoders.length; start += COMBINE_GROUP_SIZE) {
+    parts.push(combine(encoders.slice(start, start + COMBINE_GROUP_SIZE), String(parts.length).padStart(2, '0')));
+  }
+  const final = parts.length > 1 ? combine(parts, '99') : (parts[0] as string);
+  workflow['60'] = {
+    class_type: 'IPAdapterEmbeds',
+    inputs: { model: ['1', 0], ipadapter: ['20', 0], pos_embed: [final, 0], weight: 1, weight_type: 'linear', start_at: 0, end_at: 1, embeds_scaling: 'V only', clip_vision: ['21', 0] },
+  };
 }

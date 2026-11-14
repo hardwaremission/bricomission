@@ -7,6 +7,9 @@ import { MAX_PHOTOS, type UploadErrorCode } from './upload';
  * upload tiles, committed and saved measurements, connectivity, and the derived Continue
  * eligibility. The CaptureScreen component owns the side effects.
  */
+/** What the Capture state reads from a draft or a claimed project (edit pages). */
+export type CaptureSourceView = Pick<KitchenDraftView, 'photos' | 'measurements'>;
+
 export type UploadStatus = 'queued' | 'uploading' | 'processing' | 'error';
 
 export interface UploadTile {
@@ -50,9 +53,9 @@ export const INITIAL_CAPTURE_STATE: CaptureState = {
 };
 
 export type CaptureAction =
-  | { type: 'draftLoaded'; draft: KitchenDraftView }
+  | { type: 'draftLoaded'; draft: CaptureSourceView }
   | { type: 'draftMissing'; expired: boolean }
-  | { type: 'draftStarted'; draft: KitchenDraftView }
+  | { type: 'draftStarted'; draft: CaptureSourceView }
   | { type: 'draftLost' }
   | { type: 'connectivity'; online: boolean }
   | { type: 'uploadsQueued'; localIds: string[] }
@@ -73,7 +76,7 @@ export type CaptureAction =
   | { type: 'saveFailed'; offline: boolean }
   | { type: 'dismissExpired' };
 
-function measurementsOf(draft: KitchenDraftView): Measurements {
+function measurementsOf(draft: CaptureSourceView): Measurements {
   const { lengthCm, widthCm, heightCm } = draft.measurements;
   return { lengthCm: lengthCm ?? null, widthCm: widthCm ?? null, heightCm: heightCm ?? null };
 }

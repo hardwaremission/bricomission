@@ -186,18 +186,18 @@ export type KitchenProjectErrorCode =
   /** 409: not ready for generation (needs a photo, all three measurements and a Moodboard Item). */
   | 'project_incomplete'
   | 'storage_unavailable'
-  /** 400: `photoId` is malformed or not a Photo of this project (controlnet-render). */
-  | 'render_photo_unknown'
-  /** 409: a Render of this project is already queued or running. */
-  | 'render_in_progress'
-  /** 409: the project already has `RENDER_MAX_PER_PROJECT` non-failed Renders. */
-  | 'render_limit_reached'
-  /** 429: the GPU job queue is full; no Render or Budget was created. */
+  /** 409: a Simulation of this project is queued or running (simulations-ux-overhaul). */
+  | 'simulation_in_progress'
+  /** 409: the Simulation is not finished with every Render succeeded (cannot be selected or priced). */
+  | 'simulation_not_ready'
+  /** 409: the project has no selected Simulation (Budget). */
+  | 'no_simulation_selected'
+  /** 409: Retry of a Render that did not fail. */
+  | 'render_not_failed'
+  /** 429: the GPU job queue is full; nothing was created. */
   | 'gpu_queue_full'
   /** 409: a Budget of this project is already queued or running (budget-tier-computation). */
   | 'budget_in_progress'
-  /** 409: the project already has `BUDGET_MAX_PER_PROJECT` non-failed Budgets. */
-  | 'budget_limit_reached'
   /** 409: the Catalog RAG index has no chunk to price from. */
   | 'catalog_empty'
   /** 503: the embedder that searches the Catalog is unreachable. */
@@ -265,18 +265,21 @@ export type RenderMode = 'canny' | 'depth';
 export type RenderErrorCode = 'adapter_error' | 'timeout' | 'interrupted' | 'storage_unavailable';
 
 /**
- * One Render of an owned Kitchen Project (`GET /kitchen-projects/:projectId/renders/:renderId`).
- * `before` is the exact centre crop of the source Photo given to the image model; `full` has the
- * same size. URLs are API-relative paths; `fullUrl`/`thumbUrl` are set only when `succeeded`.
- * The seed, the prompt and the GPU job id stay internal.
+ * One Render of an owned Kitchen Project (`GET /kitchen-projects/:projectId/renders/:renderId`,
+ * also nested in a {@link SimulationView}). `before` is the exact centre crop of the source Photo
+ * given to the image model; `full` has the same size. URLs are API-relative paths;
+ * `fullUrl`/`thumbUrl` are set only when `succeeded`. The seed, the prompt and the GPU job id stay internal.
  */
 export interface RenderView {
   id: string;
+  simulationId: string;
   status: RenderStatus;
   /** Source Photo; null if that Photo was deleted later. */
   photoId: string | null;
-  /** Dominant Moodboard style used for the prompt; null when the Moodboard has only uploads. */
-  styleId: string | null;
+  /** 0-based position of the source Photo when the Simulation was created. */
+  photoPosition: number;
+  /** 1 for the first run, +1 per Retry. */
+  attempts: number;
   mode: RenderMode;
   width: number;
   height: number;
@@ -293,28 +296,90 @@ export interface RenderView {
   thumbUrl: string | null;
 }
 
-/** Body of `POST /kitchen-projects/:projectId/renders` (all fields optional). */
-export interface CreateRenderRequest {
-  /** Photo to render; default: the Photo at position 0. */
-  photoId?: string;
+// --- Simulations (feature simulations-ux-overhaul) ---
+
+/** How the calculated style reaches the image model: IP-Adapter references, VLM text, or both. */
+export type StyleBlendMode = 'ip_adapter' | 'vlm_text' | 'both';
+
+/** Derived status: `active` while stage is not `finished`; then all succeeded, mixed, or none. */
+export type SimulationStatus = 'active' | 'succeeded' | 'partial' | 'failed';
+
+export type SimulationStage = 'describing' | 'rendering' | 'finished';
+
+/** "n of N": `current` is the 1-based Render being generated (0 when none runs). */
+export interface SimulationProgress {
+  total: number;
+  succeeded: number;
+  failed: number;
+  current: number;
 }
 
-/** 202 body of `POST /kitchen-projects/:projectId/renders`. */
-export interface CreateRenderResponse {
-  render: RenderView;
+/** One reference of the calculated style and its share of the blend. */
+export interface SimulationStyleReference {
+  kind: 'gallery' | 'upload';
+  refId: string;
+  weightPercent: number;
 }
 
-/** Body of `GET /kitchen-projects/:projectId/renders`, newest first. */
-export interface RenderListResponse {
+export interface SimulationStyleView {
+  keywords: string[];
+  references: SimulationStyleReference[];
+}
+
+/**
+ * One Simulation of an owned Kitchen Project: one Render per Photo from one calculated style.
+ * Selectable and budget-eligible only when `status` is `succeeded`. Seed, prompts, vision
+ * descriptions, inventory and job ids stay internal.
+ */
+export interface SimulationView {
+  id: string;
+  ordinal: number;
+  createdAt: string;
+  status: SimulationStatus;
+  stage: SimulationStage;
+  progress: SimulationProgress;
+  selected: boolean;
+  blendMode: StyleBlendMode;
+  /** The vision step failed (or the Simulation was migrated): the text style is the dominant style only. */
+  styleDegraded: boolean;
+  style: SimulationStyleView;
+  /** In Photo order. */
   renders: RenderView[];
-  /** Non-failed Renders allowed per project (`RENDER_MAX_PER_PROJECT`). */
-  maxRenders: number;
+  /** The Budget of this Simulation (current succeeded, else the active one), if any. */
+  budget: { id: string; status: BudgetStatus } | null;
+}
+
+/** 202 body of `POST /kitchen-projects/:projectId/simulations` and of a Render retry. */
+export interface CreateSimulationResponse {
+  simulation: SimulationView;
+}
+
+/** Body of `GET /kitchen-projects/:projectId/simulations`, newest first. */
+export interface SimulationListResponse {
+  simulations: SimulationView[];
+}
+
+/** Body of `PUT /kitchen-projects/:projectId/selected-simulation`. */
+export interface SelectSimulationRequest {
+  simulationId: string | null;
+}
+
+export interface SelectSimulationResponse {
+  selectedSimulationId: string | null;
+}
+
+/** Body of `GET/PUT /admin/settings/style-blend`. */
+export interface StyleBlendSettingView {
+  mode: StyleBlendMode;
 }
 
 // --- Budgets (feature budget-tier-computation) ---
 
 /** Lifecycle of a Budget: `queued -> running -> succeeded | failed`. */
 export type BudgetStatus = 'queued' | 'running' | 'succeeded' | 'failed';
+
+/** Where a running Budget is: reading the element inventory of the Simulation's images, then pricing. */
+export type BudgetStage = 'inventory' | 'pricing';
 
 /** The four Budget Tiers, in display order. */
 export type BudgetTier = 'luxury' | 'high' | 'medium' | 'low';
@@ -359,7 +424,15 @@ export interface BudgetTierView {
  */
 export interface BudgetView {
   id: string;
+  /** The Simulation this Budget prices. */
+  simulationId: string;
   status: BudgetStatus;
+  /** `inventory` (reading the images, "Reading image n of N") then `pricing`. */
+  stage: BudgetStage;
+  /** Images read so far (`done`) of the Simulation's images (`total`). */
+  progress: { total: number; done: number };
+  /** True when the tiers were named by total rank after the last attempt came out of order (names only, no amount changed). */
+  relabeled: boolean;
   /** 1-based GPU queue position while `queued` (when known), otherwise null. */
   position: number | null;
   /** Kind of GPU work it waits behind while `queued`, otherwise null. */
@@ -383,7 +456,6 @@ export interface CreateBudgetResponse {
 
 /** Body of `GET /kitchen-projects/:projectId/budgets`, newest first. */
 export interface BudgetListResponse {
+  /** Budgets of the selected Simulation, newest first: the current one plus an active or failed recompute (at most 2). */
   budgets: BudgetView[];
-  /** Non-failed Budgets allowed per project (`BUDGET_MAX_PER_PROJECT`). */
-  maxBudgets: number;
 }

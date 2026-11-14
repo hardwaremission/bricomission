@@ -1,10 +1,8 @@
 /** Budget settings from env (compose and `.env.example` hold the same defaults). */
 export interface BudgetConfig {
-  /** Non-failed Budgets per project (`BUDGET_MAX_PER_PROJECT`, default 5: OQ-3). */
-  maxPerProject: number;
   /** VAT rate in basis points from `BUDGET_VAT_PERCENT` (default 21 % = 2100: OQ-1). Catalog prices are VAT-inclusive. */
   vatBps: number;
-  /** LLM attempts in total (`BUDGET_MAX_ATTEMPTS`, default 2: one retry with feedback). */
+  /** LLM attempts in total (`BUDGET_MAX_ATTEMPTS`, default 3: retries with feedback for verification and tier order). */
   maxAttempts: number;
   /** Catalog chunks sent to the LLM at most (`BUDGET_CHUNK_LIMIT`, default 30). */
   chunkLimit: number;
@@ -12,7 +10,7 @@ export interface BudgetConfig {
 
 export const BUDGET_CONFIG = Symbol('BUDGET_CONFIG');
 
-export const DEFAULT_BUDGET_CONFIG: BudgetConfig = { maxPerProject: 5, vatBps: 2100, maxAttempts: 2, chunkLimit: 30 };
+export const DEFAULT_BUDGET_CONFIG: BudgetConfig = { vatBps: 2100, maxAttempts: 3, chunkLimit: 30 };
 
 function integer(raw: string | undefined, fallback: number, min: number, max: number): number {
   if (raw === undefined || !/^\d+$/.test(raw.trim())) return fallback;
@@ -29,7 +27,6 @@ function vatBps(raw: string | undefined, fallback: number): number {
 
 export function readBudgetConfig(env: NodeJS.ProcessEnv = process.env): BudgetConfig {
   return {
-    maxPerProject: integer(env.BUDGET_MAX_PER_PROJECT, DEFAULT_BUDGET_CONFIG.maxPerProject, 1, 1000),
     vatBps: vatBps(env.BUDGET_VAT_PERCENT, DEFAULT_BUDGET_CONFIG.vatBps),
     maxAttempts: integer(env.BUDGET_MAX_ATTEMPTS, DEFAULT_BUDGET_CONFIG.maxAttempts, 1, 5),
     chunkLimit: integer(env.BUDGET_CHUNK_LIMIT, DEFAULT_BUDGET_CONFIG.chunkLimit, 1, 100),

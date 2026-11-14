@@ -102,6 +102,83 @@
         ]
       }
     },
+    "/admin/settings/style-blend": {
+      "get": {
+        "operationId": "AdminController_getStyleBlend",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StyleBlendSettingDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid or expired bearer token"
+          },
+          "403": {
+            "description": "Caller lacks the admin realm role"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "The platform style blend mode (default `both` when unset)",
+        "tags": [
+          "admin"
+        ]
+      },
+      "put": {
+        "operationId": "AdminController_putStyleBlend",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StyleBlendSettingDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StyleBlendSettingDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "`mode` is not one of ip_adapter, vlm_text, both"
+          },
+          "401": {
+            "description": "Missing, invalid or expired bearer token"
+          },
+          "403": {
+            "description": "Caller lacks the admin realm role"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Set the platform style blend mode (applies to Simulations created afterwards)",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
     "/ai/jobs/{id}": {
       "get": {
         "operationId": "GpuJobsController_getJob",
@@ -1027,7 +1104,281 @@
             "bearer": []
           }
         ],
-        "summary": "A claimed Kitchen Project of the caller (read-only)",
+        "summary": "A claimed Kitchen Project of the caller",
+        "tags": [
+          "kitchen-projects"
+        ]
+      }
+    },
+    "/kitchen-projects/{projectId}/measurements": {
+      "put": {
+        "description": "Same body and validation as the draft route. Refused while a Simulation or a Budget of the project is queued or running.",
+        "operationId": "KitchenProjectsController_updateMeasurements",
+        "parameters": [
+          {
+            "name": "projectId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Id of a Kitchen Project the caller owns"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/KitchenMeasurementsDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KitchenProjectViewDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed project id\n\n`invalid_measurements` with per-field reasons",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvalidMeasurementsErrorDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid or expired bearer token"
+          },
+          "403": {
+            "description": "Caller lacks the user (Homeowner) realm role"
+          },
+          "404": {
+            "description": "Unknown project, still a draft, or owned by another Account (same generic body)"
+          },
+          "409": {
+            "description": "`simulation_in_progress` or `budget_in_progress`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KitchenProjectErrorDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Database unreachable"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Replace the room measurements of an owned project (whole centimetres, null = not entered)",
+        "tags": [
+          "kitchen-projects"
+        ]
+      }
+    },
+    "/kitchen-projects/{projectId}/photos": {
+      "post": {
+        "description": "Same pipeline as the draft route: metadata-free JPEG full (<= 2560 px) and thumbnail (<= 512 px), the original is never stored. Refused while a Simulation or a Budget of the project is queued or running. Existing Simulations are not changed.",
+        "operationId": "KitchenProjectsController_addPhoto",
+        "parameters": [
+          {
+            "name": "projectId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Id of a Kitchen Project the caller owns"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "photo"
+                ],
+                "properties": {
+                  "photo": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KitchenPhotoViewDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed project id"
+          },
+          "401": {
+            "description": "Missing, invalid or expired bearer token"
+          },
+          "403": {
+            "description": "Caller lacks the user (Homeowner) realm role"
+          },
+          "404": {
+            "description": "Unknown project, still a draft, or owned by another Account (same generic body)"
+          },
+          "409": {
+            "description": "`photo_limit_reached`, `simulation_in_progress` or `budget_in_progress`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KitchenProjectErrorDto"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "`photo_too_large`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KitchenDraftErrorDto"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "`photo_unsupported_type` (also for files that do not decode)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KitchenDraftErrorDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "`photo_too_small`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KitchenDraftErrorDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Database unreachable\n\n`storage_unavailable`, or database unreachable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KitchenDraftErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Add one photo to an owned project (JPEG, PNG, WebP or HEIC/HEIF; <= 15 MB; shortest edge >= 480 px; <= 50 MP; <= 8 per project)",
+        "tags": [
+          "kitchen-projects"
+        ]
+      }
+    },
+    "/kitchen-projects/{projectId}/photos/{photoId}": {
+      "delete": {
+        "description": "Allowed down to zero photos (the project then answers 409 `project_incomplete` on Generate, as for a draft). Existing Simulations keep their Renders and `before` images.",
+        "operationId": "KitchenProjectsController_deletePhoto",
+        "parameters": [
+          {
+            "name": "photoId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "projectId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Id of a Kitchen Project the caller owns"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Deleted"
+          },
+          "400": {
+            "description": "Malformed project id"
+          },
+          "401": {
+            "description": "Missing, invalid or expired bearer token"
+          },
+          "403": {
+            "description": "Caller lacks the user (Homeowner) realm role"
+          },
+          "404": {
+            "description": "Unknown project, still a draft, or owned by another Account (same generic body)"
+          },
+          "409": {
+            "description": "`simulation_in_progress` or `budget_in_progress`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KitchenProjectErrorDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Database unreachable\n\n`storage_unavailable` (nothing was deleted), or database unreachable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KitchenDraftErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Delete a photo of an owned project (both objects); later photos move up one position",
         "tags": [
           "kitchen-projects"
         ]
@@ -1181,10 +1532,10 @@
         ]
       }
     },
-    "/kitchen-projects/{projectId}/renders": {
+    "/kitchen-projects/{projectId}/moodboard/gallery-items": {
       "post": {
-        "description": "Takes one Photo (body `photoId`, default the Photo at position 0) and the dominant Moodboard style, stores the centre-cropped \"before\" image and queues an exclusive image job (SDXL + ControlNet). Answers 202 with the `queued` Render; poll `GET .../renders/{renderId}`. One active Render per project; failed Renders do not count towards the limit.",
-        "operationId": "KitchenProjectsController_requestRender",
+        "description": "Refused while a Simulation or a Budget of the project is queued or running.",
+        "operationId": "KitchenProjectsController_addGalleryItem",
         "parameters": [
           {
             "name": "projectId",
@@ -1198,35 +1549,38 @@
           }
         ],
         "requestBody": {
-          "required": false,
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/CreateRenderRequestDto"
+                "$ref": "#/components/schemas/AddGalleryItemRequestDto"
               }
             }
           }
         },
         "responses": {
-          "202": {
-            "description": "",
+          "200": {
+            "description": "Already in the Moodboard; nothing changed",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/CreateRenderResponseDto"
+                  "$ref": "#/components/schemas/MoodboardItemViewDto"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Added",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MoodboardItemViewDto"
                 }
               }
             }
           },
           "400": {
-            "description": "Malformed project id\n\nMalformed project id, or `render_photo_unknown` (malformed or foreign photoId)",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/KitchenProjectErrorDto"
-                }
-              }
-            }
+            "description": "Malformed project id"
           },
           "401": {
             "description": "Missing, invalid or expired bearer token"
@@ -1238,7 +1592,263 @@
             "description": "Unknown project, still a draft, or owned by another Account (same generic body)"
           },
           "409": {
-            "description": "`project_incomplete` (needs a photo, all three measurements and a Moodboard Item), `render_in_progress` or `render_limit_reached`",
+            "description": "`moodboard_limit_reached` (12 items), `simulation_in_progress` or `budget_in_progress`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KitchenProjectErrorDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Database unreachable"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Add a Style Gallery image to the Moodboard of an owned project (idempotent: an image already in it returns its item with 200)",
+        "tags": [
+          "kitchen-projects"
+        ]
+      }
+    },
+    "/kitchen-projects/{projectId}/moodboard/uploads": {
+      "post": {
+        "description": "Refused while a Simulation or a Budget of the project is queued or running.",
+        "operationId": "KitchenProjectsController_addMoodboardUpload",
+        "parameters": [
+          {
+            "name": "projectId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Id of a Kitchen Project the caller owns"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "photo"
+                ],
+                "properties": {
+                  "photo": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MoodboardItemViewDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed project id"
+          },
+          "401": {
+            "description": "Missing, invalid or expired bearer token"
+          },
+          "403": {
+            "description": "Caller lacks the user (Homeowner) realm role"
+          },
+          "404": {
+            "description": "Unknown project, still a draft, or owned by another Account (same generic body)"
+          },
+          "409": {
+            "description": "`moodboard_limit_reached`, `simulation_in_progress` or `budget_in_progress`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KitchenProjectErrorDto"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "`photo_too_large`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KitchenDraftErrorDto"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "`photo_unsupported_type` (also for files that do not decode)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KitchenDraftErrorDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "`photo_too_small`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KitchenDraftErrorDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Database unreachable\n\n`storage_unavailable`, or database unreachable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KitchenDraftErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Upload an own reference photo to the Moodboard of an owned project (same rules as kitchen photos; counts toward the 12 items)",
+        "tags": [
+          "kitchen-projects"
+        ]
+      }
+    },
+    "/kitchen-projects/{projectId}/moodboard/items/{itemId}": {
+      "delete": {
+        "operationId": "KitchenProjectsController_removeMoodboardItem",
+        "parameters": [
+          {
+            "name": "itemId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "projectId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Id of a Kitchen Project the caller owns"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Removed"
+          },
+          "400": {
+            "description": "Malformed project id"
+          },
+          "401": {
+            "description": "Missing, invalid or expired bearer token"
+          },
+          "403": {
+            "description": "Caller lacks the user (Homeowner) realm role"
+          },
+          "404": {
+            "description": "Unknown project, still a draft, or owned by another Account (same generic body)"
+          },
+          "409": {
+            "description": "`simulation_in_progress` or `budget_in_progress`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KitchenProjectErrorDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Database unreachable\n\n`storage_unavailable` (nothing was deleted), or database unreachable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KitchenDraftErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Remove a Moodboard Item of an owned project (an upload loses both objects); later items move up one position",
+        "tags": [
+          "kitchen-projects"
+        ]
+      }
+    },
+    "/kitchen-projects/{projectId}/simulations": {
+      "post": {
+        "description": "Blends every Moodboard reference with weights (equal for the first Simulation of a project, new seeded random weights after that) into one style, creates one queued Render per Photo (up to 8) and runs them one after the other on the GPU. Answers 202 with the Simulation; poll `GET .../simulations/{simulationId}` for `stage` (`describing`, `rendering`, `finished`) and `progress` (\"n of N\"). One active Simulation per project; there is no other limit.",
+        "operationId": "KitchenProjectsController_createSimulation",
+        "parameters": [
+          {
+            "name": "projectId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Id of a Kitchen Project the caller owns"
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateSimulationResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed project id"
+          },
+          "401": {
+            "description": "Missing, invalid or expired bearer token"
+          },
+          "403": {
+            "description": "Caller lacks the user (Homeowner) realm role"
+          },
+          "404": {
+            "description": "Unknown project, still a draft, or owned by another Account (same generic body)"
+          },
+          "409": {
+            "description": "`project_incomplete` (needs a photo, all three measurements and a Moodboard Item) or `simulation_in_progress`",
             "content": {
               "application/json": {
                 "schema": {
@@ -1248,7 +1858,7 @@
             }
           },
           "429": {
-            "description": "`gpu_queue_full`: no Render was created",
+            "description": "`gpu_queue_full`: no Simulation was created",
             "content": {
               "application/json": {
                 "schema": {
@@ -1273,13 +1883,13 @@
             "bearer": []
           }
         ],
-        "summary": "Generate a Render of the kitchen (costly; queued on the GPU)",
+        "summary": "Generate a Simulation: one Render per Photo from one calculated style (costly; queued on the GPU)",
         "tags": [
           "kitchen-projects"
         ]
       },
       "get": {
-        "operationId": "KitchenProjectsController_listRenders",
+        "operationId": "KitchenProjectsController_listSimulations",
         "parameters": [
           {
             "name": "projectId",
@@ -1298,7 +1908,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/RenderListResponseDto"
+                  "$ref": "#/components/schemas/SimulationListResponseDto"
                 }
               }
             }
@@ -1324,7 +1934,304 @@
             "bearer": []
           }
         ],
-        "summary": "The Renders of an owned project, newest first",
+        "summary": "The Simulations of an owned project with their Renders, newest first",
+        "tags": [
+          "kitchen-projects"
+        ]
+      }
+    },
+    "/kitchen-projects/{projectId}/simulations/{simulationId}": {
+      "get": {
+        "operationId": "KitchenProjectsController_getSimulation",
+        "parameters": [
+          {
+            "name": "simulationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "projectId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Id of a Kitchen Project the caller owns"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SimulationViewDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed project id"
+          },
+          "401": {
+            "description": "Missing, invalid or expired bearer token"
+          },
+          "403": {
+            "description": "Caller lacks the user (Homeowner) realm role"
+          },
+          "404": {
+            "description": "Unknown project, still a draft, or owned by another Account (same generic body)"
+          },
+          "503": {
+            "description": "Database unreachable"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "One Simulation of an owned project (stage, progress, style summary, Renders, Budget)",
+        "tags": [
+          "kitchen-projects"
+        ]
+      },
+      "delete": {
+        "description": "Objects are removed first (a storage failure keeps every row), then the rows. Clears the selection when it was selected.",
+        "operationId": "KitchenProjectsController_deleteSimulation",
+        "parameters": [
+          {
+            "name": "simulationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "projectId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Id of a Kitchen Project the caller owns"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Deleted"
+          },
+          "400": {
+            "description": "Malformed project id"
+          },
+          "401": {
+            "description": "Missing, invalid or expired bearer token"
+          },
+          "403": {
+            "description": "Caller lacks the user (Homeowner) realm role"
+          },
+          "404": {
+            "description": "Unknown project, still a draft, or owned by another Account (same generic body)"
+          },
+          "409": {
+            "description": "`simulation_in_progress`: it is still queued or running",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KitchenProjectErrorDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Database unreachable\n\n`storage_unavailable` (nothing was deleted), or database unreachable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KitchenProjectErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Delete a Simulation with its Renders, their stored images and its Budget",
+        "tags": [
+          "kitchen-projects"
+        ]
+      }
+    },
+    "/kitchen-projects/{projectId}/selected-simulation": {
+      "put": {
+        "description": "Only a finished Simulation with every Render succeeded can be selected. At most one is selected per project.",
+        "operationId": "KitchenProjectsController_selectSimulation",
+        "parameters": [
+          {
+            "name": "projectId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Id of a Kitchen Project the caller owns"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SelectSimulationRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SelectSimulationResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed project id"
+          },
+          "401": {
+            "description": "Missing, invalid or expired bearer token"
+          },
+          "403": {
+            "description": "Caller lacks the user (Homeowner) realm role"
+          },
+          "404": {
+            "description": "Unknown project, still a draft, or owned by another Account (same generic body)"
+          },
+          "409": {
+            "description": "`simulation_not_ready`: not finished, or a Render failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KitchenProjectErrorDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Database unreachable"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Select the Simulation a Budget is computed for (or clear the selection with null)",
+        "tags": [
+          "kitchen-projects"
+        ]
+      }
+    },
+    "/kitchen-projects/{projectId}/renders/{renderId}/retry": {
+      "post": {
+        "description": "Answers 202 with the Simulation, which is `rendering` again. Counts as one Render for quotas.",
+        "operationId": "KitchenProjectsController_retryRender",
+        "parameters": [
+          {
+            "name": "renderId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "projectId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Id of a Kitchen Project the caller owns"
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateSimulationResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed project id"
+          },
+          "401": {
+            "description": "Missing, invalid or expired bearer token"
+          },
+          "403": {
+            "description": "Caller lacks the user (Homeowner) realm role"
+          },
+          "404": {
+            "description": "Unknown project, still a draft, or owned by another Account (same generic body)"
+          },
+          "409": {
+            "description": "`render_not_failed` or `simulation_in_progress`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KitchenProjectErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "`gpu_queue_full`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KitchenProjectErrorDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Database unreachable\n\nDatabase unreachable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KitchenProjectErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Retry one failed Render (same row, prompt, style and seed; attempts + 1)",
         "tags": [
           "kitchen-projects"
         ]
@@ -1470,7 +2377,7 @@
     },
     "/kitchen-projects/{projectId}/budget": {
       "post": {
-        "description": "Retrieves Catalog chunks, asks the LLM for four tiers (Luxury, High, Medium, Low) whose Line Items cite a Catalog chunk, verifies every quoted price against that chunk and computes all amounts in code (integer cents). Answers 202 with the `queued` Budget; poll `GET .../budgets/{budgetId}`. One active Budget per project; failed Budgets do not count towards the limit.",
+        "description": "Retrieves Catalog chunks, asks the LLM for four tiers (Luxury, High, Medium, Low) whose Line Items cite a Catalog chunk, verifies every quoted price against that chunk and computes all amounts in code (integer cents). Computes for the selected Simulation. Answers 202 with the `queued` Budget; poll `GET .../budgets/{budgetId}`. One active Budget per project and one current Budget per Simulation: a recompute keeps the old Budget until the new one succeeds, then replaces it.",
         "operationId": "KitchenProjectsController_requestBudget",
         "parameters": [
           {
@@ -1508,7 +2415,7 @@
             "description": "Unknown project, still a draft, or owned by another Account (same generic body)"
           },
           "409": {
-            "description": "`project_incomplete` (needs a photo, all three measurements and a Moodboard Item), `catalog_empty`, `budget_in_progress` or `budget_limit_reached`",
+            "description": "`project_incomplete` (needs a photo, all three measurements and a Moodboard Item), `no_simulation_selected`, `simulation_not_ready`, `catalog_empty`, or `budget_in_progress`",
             "content": {
               "application/json": {
                 "schema": {
@@ -1596,7 +2503,7 @@
             "bearer": []
           }
         ],
-        "summary": "The Budgets of an owned project, newest first",
+        "summary": "The Budgets of the selected Simulation (current plus an active or failed recompute), newest first; empty without a selection",
         "tags": [
           "kitchen-projects"
         ]
@@ -1767,6 +2674,23 @@
         },
         "required": [
           "status"
+        ]
+      },
+      "StyleBlendSettingDto": {
+        "type": "object",
+        "properties": {
+          "mode": {
+            "type": "string",
+            "enum": [
+              "ip_adapter",
+              "vlm_text",
+              "both"
+            ],
+            "description": "How the calculated style reaches the image model; read once per Simulation"
+          }
+        },
+        "required": [
+          "mode"
         ]
       },
       "GpuJobEventDto": {
@@ -2420,15 +3344,113 @@
           "project"
         ]
       },
-      "CreateRenderRequestDto": {
+      "KitchenProjectErrorDto": {
         "type": "object",
         "properties": {
-          "photoId": {
+          "statusCode": {
+            "type": "integer"
+          },
+          "message": {
+            "type": "string"
+          },
+          "code": {
             "type": "string",
-            "format": "uuid",
-            "description": "Photo of this project to render; default: the Photo at position 0"
+            "enum": [
+              "photo_limit_reached",
+              "moodboard_limit_reached",
+              "project_incomplete",
+              "storage_unavailable",
+              "simulation_in_progress",
+              "simulation_not_ready",
+              "no_simulation_selected",
+              "render_not_failed",
+              "gpu_queue_full",
+              "budget_in_progress",
+              "catalog_empty",
+              "embedding_unavailable"
+            ]
           }
-        }
+        },
+        "required": [
+          "statusCode",
+          "message",
+          "code"
+        ]
+      },
+      "SimulationProgressDto": {
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "integer",
+            "example": 3,
+            "description": "Renders of the Simulation (one per Photo)"
+          },
+          "succeeded": {
+            "type": "integer"
+          },
+          "failed": {
+            "type": "integer"
+          },
+          "current": {
+            "type": "integer",
+            "description": "1-based Render being generated (\"n of N\") while rendering, else 0"
+          }
+        },
+        "required": [
+          "total",
+          "succeeded",
+          "failed",
+          "current"
+        ]
+      },
+      "SimulationStyleReferenceDto": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "gallery",
+              "upload"
+            ]
+          },
+          "refId": {
+            "type": "string",
+            "description": "Style Gallery image id, or the Moodboard item id of an upload"
+          },
+          "weightPercent": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100,
+            "description": "Share of the blend; the shares of a Simulation sum to 100"
+          }
+        },
+        "required": [
+          "kind",
+          "refId",
+          "weightPercent"
+        ]
+      },
+      "SimulationStyleViewDto": {
+        "type": "object",
+        "properties": {
+          "keywords": {
+            "description": "The strongest merged style terms (empty when the style is degraded)",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "references": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SimulationStyleReferenceDto"
+            }
+          }
+        },
+        "required": [
+          "keywords",
+          "references"
+        ]
       },
       "RenderViewDto": {
         "type": "object",
@@ -2436,6 +3458,11 @@
           "id": {
             "type": "string",
             "format": "uuid"
+          },
+          "simulationId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The Simulation this Render belongs to"
           },
           "status": {
             "type": "string",
@@ -2452,11 +3479,15 @@
             "nullable": true,
             "description": "Source Photo; null if it was deleted later"
           },
-          "styleId": {
-            "type": "string",
-            "nullable": true,
-            "example": "scandinavian",
-            "description": "Dominant Moodboard style; null for an uploads-only Moodboard"
+          "photoPosition": {
+            "type": "integer",
+            "example": 0,
+            "description": "0-based position of the source Photo when the Simulation was created"
+          },
+          "attempts": {
+            "type": "integer",
+            "example": 1,
+            "description": "1 for the first run, +1 per Retry"
           },
           "mode": {
             "type": "string",
@@ -2528,9 +3559,11 @@
         },
         "required": [
           "id",
+          "simulationId",
           "status",
           "photoId",
-          "styleId",
+          "photoPosition",
+          "attempts",
           "mode",
           "width",
           "height",
@@ -2545,67 +3578,186 @@
           "thumbUrl"
         ]
       },
-      "CreateRenderResponseDto": {
+      "SimulationBudgetRefDto": {
         "type": "object",
         "properties": {
-          "render": {
-            "$ref": "#/components/schemas/RenderViewDto"
-          }
-        },
-        "required": [
-          "render"
-        ]
-      },
-      "KitchenProjectErrorDto": {
-        "type": "object",
-        "properties": {
-          "statusCode": {
-            "type": "integer"
+          "id": {
+            "type": "string",
+            "format": "uuid"
           },
-          "message": {
-            "type": "string"
-          },
-          "code": {
+          "status": {
             "type": "string",
             "enum": [
-              "project_incomplete",
-              "storage_unavailable",
-              "render_photo_unknown",
-              "render_in_progress",
-              "render_limit_reached",
-              "gpu_queue_full",
-              "budget_in_progress",
-              "budget_limit_reached",
-              "catalog_empty",
-              "embedding_unavailable"
+              "queued",
+              "running",
+              "succeeded",
+              "failed"
             ]
           }
         },
         "required": [
-          "statusCode",
-          "message",
-          "code"
+          "id",
+          "status"
         ]
       },
-      "RenderListResponseDto": {
+      "SimulationViewDto": {
         "type": "object",
         "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "ordinal": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Per project, never reused (\"Simulation N\")"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "succeeded",
+              "partial",
+              "failed"
+            ],
+            "description": "`active` until finished, then `succeeded` (every Render), `partial` or `failed`"
+          },
+          "stage": {
+            "type": "string",
+            "enum": [
+              "describing",
+              "rendering",
+              "finished"
+            ]
+          },
+          "progress": {
+            "$ref": "#/components/schemas/SimulationProgressDto"
+          },
+          "selected": {
+            "type": "boolean",
+            "description": "The project's selected Simulation (the one a Budget is computed for)"
+          },
+          "blendMode": {
+            "type": "string",
+            "enum": [
+              "ip_adapter",
+              "vlm_text",
+              "both"
+            ],
+            "description": "Blend mode copied from the platform setting at creation"
+          },
+          "styleDegraded": {
+            "type": "boolean",
+            "description": "The vision step failed (or the Simulation was migrated): the text style is the dominant style only"
+          },
+          "style": {
+            "$ref": "#/components/schemas/SimulationStyleViewDto"
+          },
           "renders": {
-            "description": "Newest first",
+            "description": "In Photo order",
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/RenderViewDto"
             }
           },
-          "maxRenders": {
-            "type": "integer",
-            "example": 10,
-            "description": "Non-failed Renders allowed per project"
+          "budget": {
+            "nullable": true,
+            "description": "The current Budget of this Simulation, if any",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SimulationBudgetRefDto"
+              }
+            ]
           }
         },
         "required": [
+          "id",
+          "ordinal",
+          "createdAt",
+          "status",
+          "stage",
+          "progress",
+          "selected",
+          "blendMode",
+          "styleDegraded",
+          "style",
           "renders",
-          "maxRenders"
+          "budget"
+        ]
+      },
+      "CreateSimulationResponseDto": {
+        "type": "object",
+        "properties": {
+          "simulation": {
+            "$ref": "#/components/schemas/SimulationViewDto"
+          }
+        },
+        "required": [
+          "simulation"
+        ]
+      },
+      "SimulationListResponseDto": {
+        "type": "object",
+        "properties": {
+          "simulations": {
+            "description": "Newest first",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SimulationViewDto"
+            }
+          }
+        },
+        "required": [
+          "simulations"
+        ]
+      },
+      "SelectSimulationRequestDto": {
+        "type": "object",
+        "properties": {
+          "simulationId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true,
+            "description": "A finished Simulation with every Render succeeded, or null to clear the selection"
+          }
+        },
+        "required": [
+          "simulationId"
+        ]
+      },
+      "SelectSimulationResponseDto": {
+        "type": "object",
+        "properties": {
+          "selectedSimulationId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          }
+        },
+        "required": [
+          "selectedSimulationId"
+        ]
+      },
+      "BudgetProgressDto": {
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "integer",
+            "description": "Images of the Simulation"
+          },
+          "done": {
+            "type": "integer",
+            "description": "Images read so far"
+          }
+        },
+        "required": [
+          "total",
+          "done"
         ]
       },
       "BudgetLineItemViewDto": {
@@ -2709,6 +3861,11 @@
             "type": "string",
             "format": "uuid"
           },
+          "simulationId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The Simulation this Budget prices"
+          },
           "status": {
             "type": "string",
             "enum": [
@@ -2717,6 +3874,21 @@
               "succeeded",
               "failed"
             ]
+          },
+          "stage": {
+            "type": "string",
+            "enum": [
+              "inventory",
+              "pricing"
+            ],
+            "description": "`inventory` while the images are read (\"Reading image n of N\"), then `pricing`"
+          },
+          "progress": {
+            "$ref": "#/components/schemas/BudgetProgressDto"
+          },
+          "relabeled": {
+            "type": "boolean",
+            "description": "True when the tiers were named by total rank after the last attempt was out of order (names only; no amount changed)"
           },
           "position": {
             "type": "integer",
@@ -2781,7 +3953,11 @@
         },
         "required": [
           "id",
+          "simulationId",
           "status",
+          "stage",
+          "progress",
+          "relabeled",
           "position",
           "waitingFor",
           "currency",
@@ -2809,21 +3985,15 @@
         "type": "object",
         "properties": {
           "budgets": {
-            "description": "Newest first",
+            "description": "Budgets of the selected Simulation, newest first (the current one plus an active or failed recompute)",
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/BudgetViewDto"
             }
-          },
-          "maxBudgets": {
-            "type": "integer",
-            "example": 5,
-            "description": "Non-failed Budgets allowed per project"
           }
         },
         "required": [
-          "budgets",
-          "maxBudgets"
+          "budgets"
         ]
       }
     }

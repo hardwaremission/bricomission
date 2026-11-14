@@ -6,39 +6,44 @@ import { useTranslations } from 'next-intl';
 import { RefreshCw, Sparkles } from 'lucide-react';
 import { createApiClient, type ApiClient } from '@bricomission/api-client';
 import { loadProject } from '../../lib/kitchen-draft/project-client';
-import { createRender, loadRender, loadRenders } from '../../lib/renders/render-client';
+import { consumeStartParam, startPolling } from '../../lib/renders/render-state';
+import { createSimulation, loadSimulation, loadSimulations, retryRender, type StartSimulationResult } from '../../lib/simulations/simulation-client';
 import {
-  activeRender,
+  activeSimulation,
+  activeStage,
+  canRetry,
   canStart,
-  consumeStartParam,
-  historyRenders,
+  failedRenders,
   INITIAL_RESULTS_STATE,
+  isInterrupted,
   jobsAhead,
-  keptCount,
-  limitReached,
-  nextPhotoId,
   photoNumber,
+  progressNumbers,
   resultsPhase,
   resultsReducer,
   shownRender,
-  startPolling,
-} from '../../lib/renders/render-state';
+  shownSimulation,
+  styleSources,
+} from '../../lib/simulations/simulation-state';
 import { GenerateAlert } from '../generate/GenerateAlert';
 import { BeforeAfterSlider } from './BeforeAfterSlider';
 import { PhotoPicker } from './PhotoPicker';
-import { RenderHistory } from './RenderHistory';
-import { RenderStatusCard } from './RenderStatusCard';
+import { SimulationHistory } from './SimulationHistory';
+import { SimulationStatusCard } from './SimulationStatusCard';
+import { SimulationTiles } from './SimulationTiles';
 
 const MAIN_CLASS = 'flex min-h-0 flex-1 flex-col gap-lg overflow-y-auto px-md pt-sm pb-lg';
 const PRIMARY = 'bg-primary text-white hover:bg-primary-hover';
 const DISABLED = 'cursor-not-allowed border border-border bg-surface-muted text-text-muted';
 
 /**
- * AI Results, render section (docs/design/controlnet-render.md): queued/running placeholder with
- * the 2 s poll, the before/after slider, the photo picker, the history strip and the
- * "Generate again" / "Try again" CTA. `?start=1` (after the Generate claim or from the owned
- * page) starts one Render on load; the server's one-active rule prevents a double start. The
- * HTML is the same for everyone: the project and its Renders load on the client via /api.
+ * AI Results (docs/design/simulations-ux-overhaul.md, S3 to S6): one Simulation = one Render per
+ * photo from one calculated style. Describing and rendering show "n of N" with per-photo tiles
+ * (2 s poll of the Simulation); a finished Simulation shows the before/after slider (its position
+ * is page state and survives switching Render or Simulation), the photo grid with Retry on failed
+ * Renders, and the grouped history. `?start=1` (after the Generate claim or from the owned page)
+ * starts one Simulation on load; the server's one-active rule prevents a double start. The HTML is
+ * the same for everyone: the project and its Simulations load on the client via /api.
  */
 export function ResultsScreen({ projectId }: { projectId: string }) {
   const t = useTranslations('results');
@@ -48,29 +53,30 @@ export function ResultsScreen({ projectId }: { projectId: string }) {
   const clientRef = useRef<ApiClient | null>(null);
   const client = useCallback(() => (clientRef.current ??= createApiClient(`${window.location.origin}/api`)), []);
   const autoStart = useRef(false);
+  /** `?simulation=<id>` (Open on the project page): the Simulation to show first. */
+  const wantedSimulation = useRef<string | null>(null);
   const stateRef = useRef(state);
   stateRef.current = state;
 
-  const refreshRenders = useCallback(async () => {
-    const list = await loadRenders(client(), projectId);
-    if (list.kind === 'ok') dispatch({ type: 'rendersLoaded', renders: list.value.renders, maxRenders: list.value.maxRenders });
+  const refresh = useCallback(async () => {
+    const list = await loadSimulations(client(), projectId);
+    if (list.kind === 'ok') dispatch({ type: 'simulationsLoaded', simulations: list.value });
   }, [client, projectId]);
 
-  const start = useCallback(
-    async (photoId: string | null) => {
-      dispatch({ type: 'startRequested' });
-      const result = await createRender(client(), projectId, photoId ?? undefined);
+  /** Shared outcome of Generate and Retry. */
+  const settle = useCallback(
+    async (result: StartSimulationResult) => {
       switch (result.kind) {
         case 'ok':
-          dispatch({ type: 'startFinished', render: result.value });
+          dispatch({ type: 'startFinished', simulation: result.value });
           return;
         case 'queueFull':
-          dispatch({ type: 'startFinished', render: null, alert: 'queueFull' });
+          dispatch({ type: 'startFinished', simulation: null, alert: 'queueFull' });
           return;
         case 'conflict':
-          // Another tab started one, or the limit was reached: show the server's view.
-          dispatch({ type: 'startFinished', render: null, alert: result.code === 'render_in_progress' || result.code === 'render_limit_reached' ? 'none' : 'startFailed' });
-          await refreshRenders();
+          // Another tab started one: show the server's view.
+          dispatch({ type: 'startFinished', simulation: null, alert: result.code === 'simulation_in_progress' ? 'none' : 'startFailed' });
+          await refresh();
           return;
         case 'signedOut':
           dispatch({ type: 'loadFailed', kind: 'signedOut' });
@@ -79,14 +85,28 @@ export function ResultsScreen({ projectId }: { projectId: string }) {
           dispatch({ type: 'loadFailed', kind: 'notFound' });
           return;
         case 'offline':
-          dispatch({ type: 'startFinished', render: null });
+          dispatch({ type: 'startFinished', simulation: null });
           dispatch({ type: 'connectivity', online: false });
           return;
         default:
-          dispatch({ type: 'startFinished', render: null, alert: 'startFailed' });
+          dispatch({ type: 'startFinished', simulation: null, alert: 'startFailed' });
       }
     },
-    [client, projectId, refreshRenders],
+    [refresh],
+  );
+
+  const start = useCallback(async () => {
+    dispatch({ type: 'startRequested' });
+    await settle(await createSimulation(client(), projectId));
+  }, [client, projectId, settle]);
+
+  const retry = useCallback(
+    async (renderId: string, rest: string[] = []) => {
+      dispatch({ type: 'startRequested' });
+      dispatch({ type: 'retryQueued', renderIds: rest });
+      await settle(await retryRender(client(), projectId, renderId));
+    },
+    [client, projectId, settle],
   );
 
   const load = useCallback(async () => {
@@ -94,15 +114,20 @@ export function ResultsScreen({ projectId }: { projectId: string }) {
       dispatch({ type: 'connectivity', online: false });
       return;
     }
-    const [project, renders] = await Promise.all([loadProject(client(), projectId), loadRenders(client(), projectId)]);
-    if (project.kind === 'signedOut' || renders.kind === 'signedOut') return dispatch({ type: 'loadFailed', kind: 'signedOut' });
-    if (project.kind === 'notFound' || project.kind === 'missing' || renders.kind === 'notFound') return dispatch({ type: 'loadFailed', kind: 'notFound' });
-    if (project.kind !== 'ok' || renders.kind !== 'ok') return dispatch({ type: 'connectivity', online: false });
+    const [project, simulations] = await Promise.all([loadProject(client(), projectId), loadSimulations(client(), projectId)]);
+    if (project.kind === 'signedOut' || simulations.kind === 'signedOut') return dispatch({ type: 'loadFailed', kind: 'signedOut' });
+    if (project.kind === 'notFound' || project.kind === 'missing' || simulations.kind === 'notFound') return dispatch({ type: 'loadFailed', kind: 'notFound' });
+    if (project.kind !== 'ok' || simulations.kind !== 'ok') return dispatch({ type: 'connectivity', online: false });
     dispatch({ type: 'connectivity', online: true });
-    dispatch({ type: 'loaded', project: project.value, renders: renders.value.renders, maxRenders: renders.value.maxRenders });
+    dispatch({ type: 'loaded', project: project.value, simulations: simulations.value });
+    if (wantedSimulation.current) {
+      const wanted = simulations.value.find((simulation) => simulation.id === wantedSimulation.current);
+      wantedSimulation.current = null;
+      if (wanted && wanted.status !== 'active') dispatch({ type: 'simulationShown', simulationId: wanted.id });
+    }
     if (autoStart.current) {
       autoStart.current = false;
-      if (!renders.value.renders.some((render) => render.status === 'queued' || render.status === 'running')) void start(null);
+      if (!simulations.value.some((simulation) => simulation.status === 'active')) void start();
     }
   }, [client, projectId, start]);
 
@@ -110,6 +135,7 @@ export function ResultsScreen({ projectId }: { projectId: string }) {
   useEffect(() => {
     const { start: wantsStart, changed } = consumeStartParam(window.location.search);
     autoStart.current = wantsStart;
+    wantedSimulation.current ??= new URLSearchParams(window.location.search).get('simulation');
     if (changed) window.history.replaceState(window.history.state, '', window.location.pathname);
     void load();
     const online = () => void load();
@@ -122,21 +148,33 @@ export function ResultsScreen({ projectId }: { projectId: string }) {
     };
   }, [load]);
 
-  // Poll the active Render every 2 s while online.
-  const activeId = activeRender(state)?.id ?? null;
+  // Poll the active Simulation every 2 s while online; it pauses offline and resumes on reconnect.
+  const activeId = activeSimulation(state)?.id ?? null;
   useEffect(() => {
     if (!activeId || !state.online) return;
     const poller = startPolling({
       fetchOnce: async () => {
-        const result = await loadRender(client(), projectId, activeId);
+        const result = await loadSimulation(client(), projectId, activeId);
         if (result.kind === 'ok') return result.value;
         if (result.kind === 'signedOut' || result.kind === 'notFound') dispatch({ type: 'loadFailed', kind: result.kind });
         return null;
       },
-      onRender: (render) => dispatch({ type: 'renderUpdated', render }),
+      onRender: (simulation) => dispatch({ type: 'simulationUpdated', simulation }),
     });
     return () => poller.stop();
   }, [activeId, state.online, client, projectId]);
+
+  // "Try again" retries every failed Render, one after the other (the API runs one at a time).
+  useEffect(() => {
+    if (state.load !== 'ready' || !state.online || activeId || state.starting || state.retryQueue.length === 0) return;
+    const [next, ...rest] = state.retryQueue;
+    const stillFailed = state.simulations.flatMap((simulation) => simulation.renders).some((render) => render.id === next && render.status === 'failed');
+    if (!stillFailed) {
+      dispatch({ type: 'retryShifted' });
+      return;
+    }
+    void retry(next ?? '', rest);
+  }, [state.load, state.online, state.starting, state.retryQueue, state.simulations, activeId, retry]);
 
   if (state.load === 'signedOut') {
     const href = `/auth/login?returnTo=${encodeURIComponent(`/kitchen-projects/${projectId}/results`)}`;
@@ -167,97 +205,134 @@ export function ResultsScreen({ projectId }: { projectId: string }) {
 
   const phase = resultsPhase(state);
   const project = state.project;
-  const active = activeRender(state);
-  const shown = shownRender(state);
+  const active = activeSimulation(state);
+  const shown = shownSimulation(state);
   const current = active ?? shown;
-  const photos = project?.photos ?? [];
-  const photoOf = (photoId: string | null | undefined) => photos.find((photo) => photo.id === photoId) ?? photos[0] ?? null;
-  const helperValues = {
-    style: tStyles(current?.styleId ?? 'modern'),
-    n: photoNumber(state, current?.photoId ?? (phase === 'active' ? nextPhotoId(state) : state.photoId)),
-  };
+  const render = shownRender(state);
+  const photoCount = project?.photos.length ?? 0;
   const busy = phase === 'active';
-  const pickerDisabled = busy || !state.online;
-  const limit = limitReached(state) && !busy;
   const enabled = canStart(state);
-  const history = historyRenders(state);
-  const chronological = [...state.renders].reverse();
-  const ctaLabel = phase === 'failed' ? t('cta.retry') : phase === 'empty' ? t('cta.generate') : t('cta.again');
-  const CtaIcon = phase === 'empty' ? Sparkles : RefreshCw;
+  const retryEnabled = canRetry(state);
+  const failed = failedRenders(shown);
+  const stage = activeStage(active);
+  const progress = active ? progressNumbers(active) : { n: 1, count: photoCount, percent: 0 };
+  const count = current?.renders.length || photoCount;
+
+  const sourcesText = (simulation: NonNullable<typeof current>, mode: 'count' | 'names') => {
+    const { styles, uploads } = styleSources(simulation);
+    const parts: string[] = [];
+    if (styles.length > 0) parts.push(mode === 'names' ? styles.map((id) => tStyles(id)).join(', ') : t('sources.gallery', { count: styles.length }));
+    if (uploads > 0) parts.push(t('sources.own', { count: uploads }));
+    return parts.length === 2 ? t('sources.join', { first: parts[0] ?? '', second: parts[1] ?? '' }) : (parts[0] ?? '');
+  };
+  const helper = (() => {
+    if (phase === 'loading' || phase === 'empty' || !current) return null;
+    const sources = sourcesText(current, busy ? 'count' : 'names');
+    if (busy) return sources ? t('helperActive', { sources, count }) : t('helperActiveBare', { count });
+    if (!render) return null;
+    const values = { sources, i: photoNumber(render), count };
+    return sources ? t('helperDone', values) : t('helperDoneBare', values);
+  })();
+
+  let hint: string | null = null;
+  if (busy) hint = t('hints.oneAtATime');
+  else if (!state.online) hint = t('hints.offline');
+  const ctaPhase = phase === 'failed' ? 'retry' : phase === 'empty' ? 'start' : 'again';
+  const ctaLabel = ctaPhase === 'retry' ? t('cta.retry') : ctaPhase === 'start' ? t('cta.generate') : t('cta.again');
+  const CtaIcon = ctaPhase === 'start' ? Sparkles : RefreshCw;
+  const onCta = () => {
+    if (ctaPhase === 'retry') {
+      const ids = failedRenders(shownSimulation(stateRef.current)).map((candidate) => candidate.id);
+      if (ids[0]) void retry(ids[0], ids.slice(1));
+      return;
+    }
+    void start();
+  };
+  const ctaEnabled = ctaPhase === 'retry' ? retryEnabled && failed.length > 0 : enabled;
   const hintId = 'results-hint';
-  const hint = busy ? t('hints.oneAtATime') : limit ? t('hints.limit', { max: state.maxRenders }) : null;
 
   return (
     <>
-      <main className={MAIN_CLASS} data-testid="results-screen" data-phase={phase}>
+      <main className={MAIN_CLASS} data-testid="results-screen" data-phase={phase} data-simulation={current?.ordinal}>
         {!state.online ? <GenerateAlert tone="warning" message={t('alerts.offline')} testId="results-offline" /> : null}
         {state.online && state.alert === 'queueFull' ? <GenerateAlert tone="warning" message={t('alerts.queueFull')} testId="results-queue-full" /> : null}
         {state.online && state.alert === 'startFailed' ? <GenerateAlert tone="danger" message={t('alerts.failed')} testId="results-failed" /> : null}
         {phase === 'failed' && state.alert === 'none' ? (
-          <GenerateAlert tone="danger" message={t(shown?.errorCode === 'interrupted' ? 'alerts.interrupted' : 'alerts.failed')} testId="results-failed" />
+          <GenerateAlert tone="danger" message={t(isInterrupted(shown) ? 'alerts.interrupted' : 'alerts.failed')} testId="results-failed" />
         ) : null}
-        {current && current.styleId === null && phase !== 'loading' ? <GenerateAlert tone="info" message={t('alerts.uploadsOnly')} testId="results-uploads-only" /> : null}
+        {phase === 'partial' && shown ? <GenerateAlert tone="info" message={t('alerts.partial', { failed: failed.length, count })} testId="results-partial" /> : null}
 
         <section className="flex flex-col gap-sm">
-          <h1 className="text-h1 font-bold text-text">{phase === 'succeeded' ? t('titleDone') : t('titleActive')}</h1>
-          {phase === 'loading' ? null : (
+          <h1 className="text-h1 font-bold text-text">{busy || phase === 'loading' || phase === 'empty' ? t('titleActive') : t('titleDone', { n: shown?.ordinal ?? 1 })}</h1>
+          {helper ? (
             <p className="text-body text-text-muted" data-testid="results-helper">
-              {phase === 'succeeded' ? t('helperDone', helperValues) : busy ? t('helperActive', helperValues) : t('helperIdle', helperValues)}
+              {helper}
             </p>
-          )}
+          ) : null}
+          {current?.styleDegraded && !busy && phase !== 'empty' ? (
+            <p className="text-small leading-5 text-text-muted" data-testid="results-degraded">
+              {t('alerts.degraded')}
+            </p>
+          ) : null}
         </section>
 
-        {phase === 'succeeded' && shown?.fullUrl ? (
+        {(phase === 'succeeded' || phase === 'partial') && render?.fullUrl ? (
           <BeforeAfterSlider
-            key={shown.id}
-            beforeSrc={`/api${shown.beforeUrl}`}
-            afterSrc={`/api${shown.fullUrl}`}
-            width={shown.width}
-            height={shown.height}
+            beforeSrc={`/api${render.beforeUrl}`}
+            afterSrc={`/api${render.fullUrl}`}
+            width={render.width}
+            height={render.height}
+            value={state.sliderValue}
+            onChange={(value) => dispatch({ type: 'sliderMoved', value })}
             labels={{ slider: t('slider.label'), before: t('slider.before'), after: t('slider.after'), beforeAlt: t('slider.beforeAlt'), afterAlt: t('slider.afterAlt') }}
           />
         ) : null}
-        {phase === 'active' ? (
-          <RenderStatusCard
-            photoSrc={active ? `/api${active.beforeUrl}` : photoOf(nextPhotoId(state)) ? `/api${photoOf(nextPhotoId(state))?.thumbUrl}` : null}
-            width={active?.width ?? 1216}
-            height={active?.height ?? 832}
-            status={active?.status === 'queued' ? 'queued' : 'running'}
-            label={active?.status === 'queued' ? t('status.queued') : t('status.running')}
+        {busy ? (
+          <SimulationStatusCard
+            stage={stage}
+            label={stage === 'describing' ? t('status.describing') : stage === 'queued' ? t('status.queued') : t('status.rendering', { n: progress.n, count: progress.count })}
+            percent={progress.percent}
+            percentLabel={t('status.percent', { percent: progress.percent })}
             aheadLabel={jobsAhead(active) !== null ? t('status.ahead', { count: jobsAhead(active) ?? 0 }) : null}
           />
         ) : null}
-        {phase === 'failed' && shown ? (
-          <div className="relative w-full overflow-hidden rounded-lg bg-surface-muted" style={{ aspectRatio: `${shown.width} / ${shown.height}` }}>
-            <img src={`/api${shown.beforeUrl}`} alt={t('slider.beforeAlt')} data-testid="results-before-only" className="absolute inset-0 size-full object-cover" />
+        {busy && active ? <SimulationTiles renders={active.renders} label={(n) => t('tile.photo', { n })} failedLabel={(n) => t('tile.failed', { n })} /> : null}
+        {phase === 'failed' && shown?.renders[0] ? (
+          <div className="relative w-full overflow-hidden rounded-lg bg-surface-muted" style={{ aspectRatio: `${shown.renders[0].width} / ${shown.renders[0].height}` }}>
+            <img src={`/api${shown.renders[0].beforeUrl}`} alt={t('slider.beforeAlt')} data-testid="results-before-only" className="absolute inset-0 size-full object-cover" />
           </div>
         ) : null}
-        {phase === 'empty' && photoOf(state.photoId) ? (
+        {phase === 'empty' && project?.photos[0] ? (
           <div className="relative w-full overflow-hidden rounded-lg bg-surface-muted" style={{ aspectRatio: '4 / 3' }}>
-            <img src={`/api${photoOf(state.photoId)?.fullUrl}`} alt={t('slider.beforeAlt')} className="absolute inset-0 size-full object-cover" />
+            <img src={`/api${project.photos[0].fullUrl}`} alt={t('slider.beforeAlt')} className="absolute inset-0 size-full object-cover" />
           </div>
         ) : null}
         {busy ? <p className="text-small leading-5 text-text-muted">{t('note')}</p> : null}
 
-        {photos.length >= 2 && phase !== 'loading' ? (
+        {shown && !busy && (phase === 'succeeded' || phase === 'partial' || phase === 'failed') ? (
           <PhotoPicker
-            photos={photos}
-            selectedId={state.photoId}
-            disabled={pickerDisabled}
-            onSelect={(photoId) => dispatch({ type: 'photoSelected', photoId })}
+            renders={shown.renders}
+            shownId={state.shownRenderId}
+            retryDisabled={!retryEnabled}
+            onShow={(renderId) => dispatch({ type: 'renderShown', renderId })}
+            onRetry={(renderId) => void retry(renderId)}
             title={t('photos.title')}
             helper={t('photos.helper')}
             optionLabel={(n) => t('photos.option', { n })}
+            failedLabel={(n) => t('tile.failed', { n })}
+            retryText={t('tile.retry')}
+            retryLabel={(n) => t('tile.retryPhoto', { n })}
           />
         ) : null}
-        {history.length > 0 ? (
-          <RenderHistory
-            renders={history.map((render) => ({ id: render.id, thumbUrl: render.thumbUrl, number: chronological.findIndex((r) => r.id === render.id) + 1 }))}
-            shownId={phase === 'succeeded' ? state.shownId : null}
+        {state.simulations.length > 0 && phase !== 'loading' ? (
+          <SimulationHistory
+            simulations={state.simulations}
+            shownId={state.shownSimulationId}
             disabled={busy}
-            onShow={(renderId) => dispatch({ type: 'renderShown', renderId })}
+            onShow={(simulationId) => dispatch({ type: 'simulationShown', simulationId })}
             title={t('history.title')}
-            counter={t('history.counter', { count: keptCount(state), max: state.maxRenders })}
+            counter={t('history.counter', { count: state.simulations.length })}
+            itemTitle={(n) => t('history.item', { n })}
             itemLabel={(n) => t('history.item', { n })}
           />
         ) : null}
@@ -271,11 +346,11 @@ export function ResultsScreen({ projectId }: { projectId: string }) {
         ) : null}
         <button
           type="button"
-          data-testid={phase === 'failed' ? 'results-retry' : phase === 'empty' ? 'results-start' : 'results-again'}
-          aria-disabled={!enabled}
+          data-testid={`results-${ctaPhase === 'retry' ? 'retry' : ctaPhase === 'start' ? 'start' : 'again'}`}
+          aria-disabled={!ctaEnabled}
           aria-describedby={hint ? hintId : undefined}
-          onClick={() => enabled && void start(nextPhotoId(stateRef.current))}
-          className={`flex min-h-[52px] w-full items-center justify-center gap-sm rounded-pill px-md py-[13px] text-center text-body font-semibold ${enabled ? PRIMARY : DISABLED}`}
+          onClick={() => ctaEnabled && onCta()}
+          className={`flex min-h-[52px] w-full items-center justify-center gap-sm rounded-pill px-md py-[13px] text-center text-body font-semibold ${ctaEnabled ? PRIMARY : DISABLED}`}
         >
           <CtaIcon size={20} aria-hidden="true" className="shrink-0" />
           <span>{ctaLabel}</span>

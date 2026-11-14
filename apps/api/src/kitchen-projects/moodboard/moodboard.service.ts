@@ -24,7 +24,14 @@ import {
 } from '../kitchen-drafts.repository.js';
 import type { PhotoVariant } from '../kitchen-drafts.service.js';
 import { PhotoRejectedError, processPhoto } from '../photo-processor.js';
-import { MOODBOARD_LIMITS, moodboardItemView, moodboardKeys } from './moodboard.js';
+import type { EditMode } from '../kitchen-drafts.service.js';
+import { DRAFT_MOODBOARD_ITEMS_PATH, MOODBOARD_LIMITS, moodboardItemView, moodboardKeys } from './moodboard.js';
+
+export type MoodboardTarget = Pick<KitchenDraftRecord, 'id' | 'moodboard'>;
+
+function itemsPathOf(mode: EditMode, projectId: string): string {
+  return mode === 'owner' ? `/kitchen-projects/${projectId}/moodboard/items` : DRAFT_MOODBOARD_ITEMS_PATH;
+}
 
 /**
  * The Moodboard of an anonymous draft (feature moodboard-selection): add a Style Gallery image
@@ -45,7 +52,7 @@ export class MoodboardService {
   ) {}
 
   /** `created: false` when the image was already in the Moodboard (the existing item is returned). */
-  async addGalleryItem(draft: KitchenDraftRecord, body: unknown): Promise<{ item: MoodboardItemView; created: boolean }> {
+  async addGalleryItem(draft: MoodboardTarget, body: unknown, mode: EditMode = 'draft'): Promise<{ item: MoodboardItemView; created: boolean }> {
     const galleryImageId = (body as { galleryImageId?: unknown } | null)?.galleryImageId;
     if (typeof body !== 'object' || body === null || Array.isArray(body) || typeof galleryImageId !== 'string') {
       throw new BadRequestException();
@@ -53,7 +60,7 @@ export class MoodboardService {
     const image = GALLERY_ID_PATTERN.test(galleryImageId) ? this.gallery.find(galleryImageId) : null;
     if (!image) throw draftError(HttpStatus.BAD_REQUEST, 'gallery_image_unknown');
     const existing = draft.moodboard.find((item) => item.galleryImageId === image.id);
-    if (existing) return { item: moodboardItemView(existing, this.gallery), created: false };
+    if (existing) return { item: moodboardItemView(existing, this.gallery, itemsPathOf(mode, draft.id)), created: false };
     if (draft.moodboard.length >= MOODBOARD_LIMITS.maxItems) throw draftError(HttpStatus.CONFLICT, 'moodboard_limit_reached');
     const result = await this.db(() =>
       this.repo.addMoodboardItem(
@@ -69,14 +76,14 @@ export class MoodboardService {
           byteSize: null,
         },
         MOODBOARD_LIMITS.maxItems,
-        this.expiry(),
+        this.expiryFor(mode),
       ),
     );
     if (result === 'limit_reached') throw draftError(HttpStatus.CONFLICT, 'moodboard_limit_reached');
-    return { item: moodboardItemView(result.item, this.gallery), created: result.created };
+    return { item: moodboardItemView(result.item, this.gallery, itemsPathOf(mode, draft.id)), created: result.created };
   }
 
-  async addUpload(draft: KitchenDraftRecord, file: Buffer): Promise<MoodboardItemView> {
+  async addUpload(draft: MoodboardTarget, file: Buffer, mode: EditMode = 'draft'): Promise<MoodboardItemView> {
     // Cheap check before decoding; re-checked under the row lock on insert.
     if (draft.moodboard.length >= MOODBOARD_LIMITS.maxItems) throw draftError(HttpStatus.CONFLICT, 'moodboard_limit_reached');
     let processed;
@@ -109,7 +116,7 @@ export class MoodboardService {
     };
     let result: AddMoodboardItemResult;
     try {
-      result = await this.repo.addMoodboardItem(draft.id, item, MOODBOARD_LIMITS.maxItems, this.expiry());
+      result = await this.repo.addMoodboardItem(draft.id, item, MOODBOARD_LIMITS.maxItems, this.expiryFor(mode));
     } catch (error) {
       this.logger.warn(`Reference insert failed (${error instanceof Error ? error.name : 'unknown'})`);
       await this.deleteObjectsQuietly([keys.fullKey, keys.thumbKey]);
@@ -119,7 +126,7 @@ export class MoodboardService {
       await this.deleteObjectsQuietly([keys.fullKey, keys.thumbKey]);
       throw draftError(HttpStatus.CONFLICT, 'moodboard_limit_reached');
     }
-    return moodboardItemView(result.item, this.gallery);
+    return moodboardItemView(result.item, this.gallery, itemsPathOf(mode, draft.id));
   }
 
   /**
@@ -140,7 +147,7 @@ export class MoodboardService {
     }
   }
 
-  async remove(draft: KitchenDraftRecord, itemId: string): Promise<void> {
+  async remove(draft: MoodboardTarget, itemId: string, mode: EditMode = 'draft'): Promise<void> {
     const item = draft.moodboard.find((candidate) => candidate.id === itemId);
     if (!item) throw new NotFoundException();
     if (item.source === 'upload' && item.fullKey && item.thumbKey) {
@@ -152,8 +159,12 @@ export class MoodboardService {
         throw draftError(HttpStatus.SERVICE_UNAVAILABLE, 'storage_unavailable');
       }
     }
-    const deleted = await this.db(() => this.repo.deleteMoodboardItem(draft.id, itemId, this.expiry()));
+    const deleted = await this.db(() => this.repo.deleteMoodboardItem(draft.id, itemId, this.expiryFor(mode)));
     if (!deleted) throw new NotFoundException();
+  }
+
+  private expiryFor(mode: EditMode): Date | null {
+    return mode === 'owner' ? null : this.expiry();
   }
 
   private expiry(): Date {

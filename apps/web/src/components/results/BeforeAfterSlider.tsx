@@ -1,30 +1,36 @@
 'use client';
 
-import { useCallback, useRef, useState, type KeyboardEvent, type PointerEvent } from 'react';
+import { useCallback, useRef, type KeyboardEvent, type PointerEvent } from 'react';
 import { ChevronsLeftRight } from 'lucide-react';
 
 const STEP = 5;
 
 /**
- * Before/after comparison (docs/design/controlnet-render.md, frame 2): the Render (`after`) is the
+ * Before/after comparison (docs/design/controlnet-render.md, frame 2; the position is controlled by
+ * the page: simulations-ux-overhaul S4): the Render (`after`) is the
  * base layer; the `before` image lies on top, clipped to the handle position. Both images have the
  * same size (the API's centre crop), so they align pixel for pixel. Pointer drag anywhere on the
- * slider, or arrow keys (step 5), Home and End on the handle (`role="slider"`, 0-100, start 50).
+ * slider, or arrow keys (step 5), Home and End on the handle (`role="slider"`, 0-100).
  */
 export function BeforeAfterSlider({
   beforeSrc,
   afterSrc,
   width,
   height,
+  value,
+  onChange,
   labels,
 }: {
   beforeSrc: string;
   afterSrc: string;
   width: number;
   height: number;
+  /** Handle position 0-100: owned by the page so it survives switching Render or Simulation. */
+  value: number;
+  onChange: (value: number) => void;
   labels: { slider: string; before: string; after: string; beforeAlt: string; afterAlt: string };
 }) {
-  const [value, setValue] = useState(50);
+  const setValue = onChange;
   const box = useRef<HTMLDivElement | null>(null);
   const dragging = useRef(false);
 
@@ -32,7 +38,7 @@ export function BeforeAfterSlider({
     const rect = box.current?.getBoundingClientRect();
     if (!rect || rect.width === 0) return;
     setValue(Math.round(Math.min(100, Math.max(0, ((clientX - rect.left) / rect.width) * 100))));
-  }, []);
+  }, [setValue]);
 
   const onPointerDown = (event: PointerEvent<HTMLDivElement>) => {
     dragging.current = true;

@@ -123,16 +123,20 @@ test('Capture Continue opens the empty Moodboard with the 24-image Style Gallery
     .poll(() => page.$$eval('[data-testid="moodboard-gallery-image"] img', (imgs) => imgs.slice(0, 4).every((img) => (img as HTMLImageElement).naturalWidth === 512)))
     .toBe(true);
   // Style filter: one style shows its 3 images.
-  await page.getByTestId('moodboard-style-filter').getByRole('radio', { name: m.styles.japandi }).click();
+  await page.getByTestId('moodboard-style-filter').getByRole('button', { name: m.styles.japandi, exact: true }).click();
   await expect(page.getByTestId('moodboard-gallery-image')).toHaveCount(3);
-  await page.getByTestId('moodboard-style-filter').getByRole('radio', { name: 'All' }).click();
+  // Multi-select: a second style adds its images; the selected chips show a check icon.
+  await page.getByTestId('moodboard-style-filter').getByRole('button', { name: m.styles.minimalist, exact: true }).click();
+  await expect(page.getByTestId('moodboard-gallery-image')).toHaveCount(6);
+  await expect(page.getByTestId('moodboard-style-filter').locator('[aria-pressed="true"] svg')).toHaveCount(2);
+  await page.getByTestId('moodboard-style-filter').getByRole('button', { name: 'All', exact: true }).click();
   await expect(page.getByTestId('moodboard-gallery-image')).toHaveCount(24);
   await page.screenshot({ path: 'test-results/moodboard/1-empty.png' });
   // Back returns to Capture with its data.
   await page.getByTestId('moodboard-back').click();
   await page.waitForURL(`${ORIGIN}${CAPTURE}`);
   await expect(page.locator('[data-testid="capture-photo-tile"][data-state="ready"]')).toHaveCount(1);
-  await expect(page.getByTestId('capture-length')).toContainText('4.20');
+  await expect(page.getByTestId('capture-length')).toContainText('420');
 });
 
 test('1 upload + 2 gallery, deselect 1, reload: the Moodboard is intact', async ({ page }) => {
@@ -367,7 +371,7 @@ test('offline: offline alert, controls disabled, filter still works; cached shel
     await galleryTile(page, 'modern-01').dispatchEvent('click');
     await expect(galleryTile(page, 'modern-01')).toHaveAttribute('aria-pressed', 'false');
     await expect(page.getByTestId('moodboard-continue')).toHaveAttribute('aria-disabled', 'true');
-    await page.getByTestId('moodboard-style-filter').getByRole('radio', { name: m.styles.minimalist }).click();
+    await page.getByTestId('moodboard-style-filter').getByRole('button', { name: m.styles.minimalist, exact: true }).click();
     await expect(page.getByTestId('moodboard-gallery-image')).toHaveCount(3);
     await page.screenshot({ path: 'test-results/moodboard/6-offline.png' });
 
@@ -412,3 +416,26 @@ for (const [width, height, locales] of [
     });
   }
 }
+
+test.describe('Style Gallery filter chips wrap (simulations-ux-overhaul S2)', () => {
+  test.use({ viewport: { width: 360, height: 780 } });
+
+  test('360 px in de: every chip visible, wrapped over several rows, 44 px high, no horizontal scroll', async ({ page }) => {
+    await seedCapture(page, 'de');
+    await page.goto(MOODBOARD);
+    await expect(page.getByTestId('moodboard-screen')).toHaveAttribute('data-phase', 'ready');
+    const chips = page.getByTestId('moodboard-style-filter').getByRole('button');
+    await expect(chips).toHaveCount(9);
+    const boxes = await chips.evaluateAll((els) => els.map((el) => ({ ...el.getBoundingClientRect().toJSON(), scroll: el.scrollWidth - el.clientWidth })));
+    for (const box of boxes) {
+      expect(box.height).toBeGreaterThanOrEqual(44);
+      expect(box.right).toBeLessThanOrEqual(360);
+      expect(box.left).toBeGreaterThanOrEqual(0);
+      expect(box.scroll).toBeLessThanOrEqual(1);
+    }
+    expect(new Set(boxes.map((box) => Math.round(box.top))).size).toBeGreaterThan(1);
+    const box = page.getByTestId('moodboard-style-filter');
+    expect(await box.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true);
+    expect(await horizontalOverflow(page)).toEqual([]);
+  });
+});

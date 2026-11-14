@@ -219,11 +219,10 @@
   },
   "project": {
     "title": "Keittiöprojektisi",
-    "helper": "Luo suunnitelma uudesta keittiöstäsi tai pyydä budjettisi.",
+    "helper": "Muokkaa kuviasi, mittojasi ja tyylejäsi milloin tahansa. Valitse yksi simulaatio saadaksesi budjetin.",
     "claimed": "Keittiösi on tallennettu tilillesi.",
     "dismiss": "Sulje",
     "newProject": "Aloita uusi keittiöprojekti",
-    "seeDesigns": "Näytä suunnitelmani",
     "signedOut": {
       "title": "Kirjaudu sisään nähdäksesi tämän keittiöprojektin",
       "signIn": "Kirjaudu sisään"
@@ -233,15 +232,43 @@
       "home": "Siirry etusivulle"
     },
     "offline": "Olet offline-tilassa. Keittiöprojektisi on tallessa; yhdistä uudelleen nähdäksesi sen.",
-    "seeBudget": "Näytä budjettini"
+    "seeBudget": "Näytä budjettini",
+    "summary": {
+      "photos": "{count, plural, one {# kuva} other {# kuvaa}}",
+      "styles": "{count, plural, one {# tyyli tai esimerkki} other {# tyyliä ja esimerkkiä}}",
+      "missing": "—",
+      "editPhotos": "Muokkaa kuvia",
+      "editMeasurements": "Muokkaa mittoja",
+      "editStyles": "Muokkaa tyylejä"
+    },
+    "edit": {
+      "back": "Takaisin keittiöprojektiini",
+      "photosTitle": "Muokkaa kuviasi",
+      "measurementsTitle": "Muokkaa mittojasi",
+      "stylesTitle": "Muokkaa tyylejäsi",
+      "helper": "Muutokset tallennetaan heti. Aiemmat simulaatiosi säilyttävät kuvat, joista ne tehtiin.",
+      "save": "Tallenna muutokset",
+      "saveHint": "Säilytä vähintään yksi kuva ja kaikki kolme mittaa tallentaaksesi.",
+      "blockedSimulation": "Odota, että simulaatio valmistuu, ennen kuin muokkaat projektiasi.",
+      "blockedBudget": "Odota, että budjetti valmistuu, ennen kuin muokkaat projektiasi."
+    },
+    "budgetReason": "Valitse simulaatio ottaaksesi budjetin käyttöön.",
+    "generateMore": "Luo lisää simulaatioita",
+    "actionFailed": "Toiminto ei onnistunut. Yritä hetken kuluttua uudelleen."
   },
   "results": {
     "back": "Takaisin keittiööni",
-    "titleDone": "Uusi keittiösi",
     "titleActive": "Keittiötäsi suunnitellaan",
-    "helperDone": "Tyyli {style}, kuvasta {n}. Vertaa vetämällä liukusäädintä.",
-    "helperActive": "Tyyli {style}, kuvasta {n}. Tämä kestää noin 10–30 sekuntia.",
-    "helperIdle": "Tyyli {style}, kuvasta {n}.",
+    "titleDone": "Simulaatio {n}",
+    "helperActive": "Yksi laskettu tyyli lähteistä {sources}, sovellettuna {count, plural, one {keittiökuvaasi} other {jokaiseen # keittiökuvaasi}}.",
+    "helperActiveBare": "Yksi laskettu tyyli, sovellettuna {count, plural, one {keittiökuvaasi} other {jokaiseen # keittiökuvaasi}}.",
+    "helperDone": "Laskettu tyyli lähteistä {sources}. Kuva {i}/{count}. Vertaa vetämällä kahvaa.",
+    "helperDoneBare": "Kuva {i}/{count}. Vertaa vetämällä kahvaa.",
+    "sources": {
+      "gallery": "{count, plural, one {# galleriatyyli} other {# galleriatyyliä}}",
+      "own": "{count} omaa kuvaasi",
+      "join": "{first} ja {second}"
+    },
     "slider": {
       "label": "Vertaa ennen ja jälkeen",
       "before": "Ennen",
@@ -250,20 +277,28 @@
       "afterAlt": "Uuden keittiösi suunnitelma"
     },
     "status": {
-      "running": "Luodaan…",
       "queued": "Odotetaan grafiikkasuoritinta",
-      "ahead": "{count, plural, one {# työ ennen omaasi} other {# työtä ennen omaasi}}"
+      "ahead": "{count, plural, one {# työ ennen omaasi} other {# työtä ennen omaasi}}",
+      "describing": "Tutkitaan tyyliviitteitäsi",
+      "rendering": "Renderöidään {n}/{count}",
+      "percent": "{percent} %"
     },
-    "note": "Voit poistua sivulta; renderöinti jatkuu ja näkyy täällä, kun se on valmis.",
+    "tile": {
+      "photo": "Kuva {n}",
+      "failed": "Kuva {n} epäonnistui",
+      "retry": "Yritä uudelleen",
+      "retryPhoto": "Yritä kuvaa {n} uudelleen"
+    },
+    "note": "Voit poistua sivulta; simulaatio jatkuu ja näkyy täällä, kun se on valmis.",
     "photos": {
-      "title": "Kuva seuraavaa renderöintiä varten",
-      "helper": "Renderöinti säilyttää tämän kuvan seinät, ikkunat ja putket.",
+      "title": "Tämän simulaation kuvat",
+      "helper": "Jokainen kuva renderöidään samalla lasketulla tyylillä.",
       "option": "Kuva {n}"
     },
     "history": {
-      "title": "Renderöintisi",
-      "counter": "{count}/{max}",
-      "item": "Renderöinti {n}"
+      "title": "Simulaatiosi",
+      "counter": "{count}",
+      "item": "Simulaatio {n}"
     },
     "cta": {
       "again": "Luo uudelleen",
@@ -272,21 +307,22 @@
       "back": "Takaisin keittiööni"
     },
     "hints": {
-      "oneAtATime": "Yksi renderöinti kerrallaan.",
-      "limit": "Olet luonut {max} renderöintiä, mikä on tämän projektin enimmäismäärä."
+      "oneAtATime": "Yksi simulaatio kerrallaan.",
+      "offline": "Olet offline-tilassa. Yhdistä uudelleen luodaksesi."
     },
     "alerts": {
-      "failed": "Emme voineet luoda tätä renderöintiä. Yritä hetken kuluttua uudelleen.",
-      "interrupted": "Tämä renderöinti keskeytyi. Yritä uudelleen.",
+      "failed": "Emme voineet luoda tätä simulaatiota. Yritä hetken kuluttua uudelleen.",
+      "interrupted": "Tämä simulaatio keskeytyi. Yritä uudelleen.",
       "queueFull": "Suunnittelija on juuri nyt varattu. Yritä minuutin kuluttua uudelleen.",
-      "uploadsOnly": "Omat kuvasi eivät vielä voi ohjata tyyliä, joten käytimme neutraalia modernia tyyliä.",
-      "offline": "Olet offline-tilassa. Renderöintisi ovat tallessa; yhdistä uudelleen nähdäksesi uudet."
+      "offline": "Olet offline-tilassa. Simulaatiosi ovat tallessa; yhdistä uudelleen nähdäksesi uudet.",
+      "partial": "{failed}/{count} kuvaa ei voitu renderöidä. Yritä uudelleen, jotta voit valita tämän simulaation budjettiisi.",
+      "degraded": "Emme voineet analysoida kaikkia viitteitäsi, joten tämä simulaatio käyttää päätyyliäsi."
     }
   },
   "budget": {
     "back": "Takaisin keittiööni",
     "title": "Keittiösi budjetti",
-    "helper": "Neljä vaihtoehtoa premiumista perustasoon. Hinnat tulevat tuotekatalogista; napauta vaihtoehtoa nähdäksesi kaikki tuotteet.",
+    "helper": "Neljä vaihtoehtoa premiumista perustasoon simulaatiosi näkyvien elementtien perusteella. Napauta vaihtoehtoa nähdäksesi jokaisen tuotteen.",
     "titleActive": "Budjettia lasketaan",
     "helperActive": "Yhdistämme keittiösi tuotekatalogiin. Tämä kestää noin minuutin.",
     "tiers": {
@@ -304,27 +340,22 @@
       "vat": "Alv {percent} %",
       "total": "Yhteensä (sis. alv:n)"
     },
-    "history": {
-      "title": "Budjettisi",
-      "counter": "{count} / {max}",
-      "item": "Budjetti {n}"
-    },
     "status": {
-      "running": "Lasketaan…",
       "queued": "Odotetaan GPU:ta",
-      "ahead": "{count, plural, one {# työ ennen sinun omaasi} other {# työtä ennen sinun omaasi}}"
+      "ahead": "{count, plural, one {# työ ennen sinun omaasi} other {# työtä ennen sinun omaasi}}",
+      "reading": "Luetaan kuvaa {n}/{count}",
+      "matching": "Etsitään tuotteita luettelosta"
     },
     "note": "Voit poistua sivulta; budjetti valmistuu taustalla ja ilmestyy tähän, kun se on valmis.",
     "hints": {
-      "oneAtATime": "Yksi budjetti kerrallaan.",
-      "limit": "Olet luonut {max} budjettia, joka on tämän projektin enimmäismäärä."
+      "oneAtATime": "Yksi budjetti kerrallaan."
     },
     "empty": {
       "title": "Ei vielä budjettia",
       "helper": "Pyydä neljä vaihtoehtoa keittiöösi premiumista perustasoon."
     },
     "cta": {
-      "again": "Laske uudelleen",
+      "again": "Laske budjetti uudelleen",
       "retry": "Yritä uudelleen",
       "start": "Pyydä budjettini",
       "back": "Takaisin keittiööni"
@@ -336,7 +367,42 @@
       "searchDown": "Hintahaku ei ole juuri nyt käytettävissä. Yritä minuutin kuluttua uudelleen.",
       "queueFull": "Suunnittelija on juuri nyt kiireinen. Yritä minuutin kuluttua uudelleen.",
       "incomplete": "Lisää ensin kuvasi ja mittasi ja pyydä sitten budjettisi.",
-      "offline": "Olet offline-tilassa. Budjettisi ovat turvassa; yhdistä uudelleen nähdäksesi uudet."
+      "offline": "Olet offline-tilassa. Budjettisi ovat turvassa; yhdistä uudelleen nähdäksesi uudet.",
+      "noSelection": "Valitse keittiöprojektistasi simulaatio saadaksesi budjetin.",
+      "notReady": "Tässä simulaatiossa on vielä kuvia, joita ei renderöity. Yritä niitä ensin uudelleen."
+    },
+    "basedOn": "Perustuu simulaatioon {n}",
+    "change": "Vaihda",
+    "relabeled": "Vaihtoehdot on järjestetty kokonaishinnan mukaan kalleimmasta halvimpaan.",
+    "recalculating": "Lasketaan uutta budjettia",
+    "goToSimulations": "Siirry simulaatioihini"
+  },
+  "simulations": {
+    "title": "Omat simulaatiot",
+    "instruction": "Valitse alta yksi simulaatio saadaksesi budjetin. Budjetti laskee jokaisen kuvissa näkyvän elementin.",
+    "empty": {
+      "title": "Ei vielä simulaatioita",
+      "helper": "Luo ensimmäinen simulaatio nähdäksesi uuden keittiösi jokaisesta kuvasta."
+    },
+    "name": "Simulaatio {n}",
+    "meta": "{date} · {count, plural, one {# kuva} other {# kuvaa}}",
+    "rendering": "Renderöidään {n}/{count}",
+    "selected": "Valittu",
+    "selectedNamed": "Simulaatio {n}, valittu",
+    "select": "Valitse",
+    "selectNamed": "Valitse simulaatio {n}",
+    "open": "Avaa",
+    "openRetry": "Avaa ja yritä uudelleen",
+    "openNamed": "Avaa simulaatio {n}",
+    "openRetryNamed": "Avaa simulaatio {n} ja yritä uudelleen",
+    "delete": "Poista",
+    "deleteNamed": "Poista simulaatio {n}",
+    "photosFailed": "{count, plural, one {# kuva epäonnistui} other {# kuvaa epäonnistui}}",
+    "deleteDialog": {
+      "title": "Poistetaanko simulaatio {n}?",
+      "message": "Sen kuvat ja budjetti poistetaan pysyvästi. Kuvasi ja mittasi säilyvät.",
+      "confirm": "Poista simulaatio",
+      "cancel": "Peruuta"
     }
   }
 }

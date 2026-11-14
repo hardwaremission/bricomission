@@ -104,6 +104,28 @@ describe('ComfyUiImageAdapter (node:http stub)', () => {
     expect(s.seen.some((r) => r.url === '/interrupt')).toBe(false);
   });
 
+  it('uploads every style reference and queues the IP-Adapter encoders at their weights (blend modes ip_adapter and both)', async () => {
+    const s = await stub({ historyPolls: 0 });
+    server = s.server;
+    const refA = Buffer.from('ref-a-bytes');
+    const refB = Buffer.from('ref-b-bytes');
+    await s.adapter.render(imageRequest({ mode: 'canny', references: [{ image: refA, weight: 0.3 }, { image: refB, weight: 0.9 }] }), new AbortController().signal);
+    const uploads = s.seen.filter((r) => r.url === '/upload/image');
+    expect(uploads).toHaveLength(3); // the photo and two references
+    expect(uploads[1]!.body.includes(refA)).toBe(true);
+    expect(uploads[2]!.body.includes(refB)).toBe(true);
+    for (const upload of uploads) expect(upload.body.toString('latin1')).toMatch(/filename="bm-[0-9a-f-]{36}\.jpg"/);
+    const wf = (JSON.parse(s.seen.find((r) => r.url === '/prompt')!.body.toString()) as { prompt: Record<string, { class_type: string; inputs: Record<string, unknown> }> }).prompt;
+    expect(wf['400'].inputs).toMatchObject({ weight: 0.3 });
+    expect(wf['401'].inputs).toMatchObject({ weight: 0.9 });
+    expect(wf['10'].inputs.model).toEqual(['60', 0]);
+    // Without references nothing changes: one upload, no IP-Adapter node.
+    s.seen.length = 0;
+    await s.adapter.render(imageRequest({ mode: 'canny' }), new AbortController().signal);
+    expect(s.seen.filter((r) => r.url === '/upload/image')).toHaveLength(1);
+    expect(JSON.parse(s.seen.find((r) => r.url === '/prompt')!.body.toString()).prompt['60']).toBeUndefined();
+  });
+
   it('control values come from the request; no depth assist means the sampler reads the canny ControlNet', () => {
     const control = { strength: 0.9, endPercent: 0.75, cannyLow: 0.4, cannyHigh: 0.8, depthAssist: null };
     const wf = buildRenderWorkflow({ mode: 'canny', inputImage: 'i.jpg', width: 1216, height: 832, prompt: 'p', negativePrompt: 'n', seed: 1, control });
