@@ -122,5 +122,51 @@
       "expired": "Dein vorheriger Entwurf ist nach 7 Tagen ohne Änderungen abgelaufen. Fang neu an.",
       "dismiss": "Schließen"
     }
+  },
+  "moodboard": {
+    "backToCapture": "Zurück zu deiner Küche",
+    "step": "Schritt {current} von {total}",
+    "title": "Dein Stil",
+    "helper": "Wähle Küchen, die dir gefallen, und füge eigene Referenzen hinzu. Wir nutzen sie, um deine neue Küche zu gestalten.",
+    "board": {
+      "title": "Dein Moodboard",
+      "counter": "{count} von {max}",
+      "rules": "Deine Fotos: JPG, PNG, WebP oder HEIC · bis 15 MB",
+      "empty": "Noch nichts hier. Wähle Küchen aus der Galerie oder füge eigene Fotos hinzu.",
+      "add": "Eigene Fotos hinzufügen",
+      "yourPhoto": "Dein Foto",
+      "uploadAlt": "Dein Referenzfoto {n}",
+      "removeUpload": "Referenz {n} entfernen",
+      "removeGallery": "Küche {style} {n} entfernen",
+      "limitReached": "Du hast {max} Elemente hinzugefügt, das Maximum. Entferne eines, um ein weiteres hinzuzufügen."
+    },
+    "gallery": {
+      "title": "Stilgalerie",
+      "helper": "Tippe auf eine Küche, um sie deinem Moodboard hinzuzufügen. Tippe erneut, um sie zu entfernen.",
+      "filter": "Nach Stil filtern",
+      "all": "Alle",
+      "alt": "Küche {style} {n}"
+    },
+    "styles": {
+      "modern": "Modern",
+      "scandinavian": "Skandinavisch",
+      "industrial": "Industrial",
+      "farmhouse": "Landhaus",
+      "classic": "Klassisch",
+      "mediterranean": "Mediterran",
+      "minimalist": "Minimalistisch",
+      "japandi": "Japandi"
+    },
+    "continue": "Weiter",
+    "continueHints": {
+      "items": "Füge mindestens eine Küche oder ein Foto hinzu, um fortzufahren.",
+      "capture": "Für deine Küche fehlen noch ein Foto und alle drei Maße.",
+      "goToCapture": "Zu deiner Küche"
+    },
+    "alerts": {
+      "offline": "Du bist offline. Was du gespeichert hast, ist sicher; stelle die Verbindung wieder her, um weiterzumachen.",
+      "expired": "Dein vorheriger Entwurf ist nach 7 Tagen ohne Änderungen abgelaufen. Fang neu an.",
+      "dismiss": "Schließen"
+    }
   }
 }

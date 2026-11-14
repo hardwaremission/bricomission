@@ -334,7 +334,7 @@ test('measurement keypad: rules, keyboard, and no system keyboard', async ({ pag
   await expect(page.getByTestId('capture-continue')).toHaveAttribute('aria-disabled', 'true');
 });
 
-test('remove a photo, Continue to the Moodboard route', async ({ page }) => {
+test('remove a photo, Continue to the Moodboard screen', async ({ page }) => {
   await open(page);
   await upload(page, [fixture('kitchen-1.jpg'), fixture('kitchen-2.jpg')]);
   const tiles = await readyTiles(page, 2);
@@ -349,10 +349,10 @@ test('remove a photo, Continue to the Moodboard route', async ({ page }) => {
   expect(await remaining.first().getAttribute('data-photo-id')).toBe(secondId);
   expect(JSON.parse((await pageFetch(page, CURRENT)).body).photos.map((p: { id: string; position: number }) => [p.id, p.position])).toEqual([[secondId, 0]]);
 
-  const [response] = await Promise.all([page.waitForResponse((r) => new URL(r.url()).pathname === '/kitchen-projects/new/moodboard'), page.getByTestId('capture-continue').click()]);
+  await page.getByTestId('capture-continue').click();
   await page.waitForURL(`${ORIGIN}/kitchen-projects/new/moodboard`);
-  expect([200, 404]).toContain(response.status());
-  expect((await page.request.get('/kitchen-projects/new/moodboard')).status()).toBe(404);
+  await expect(page.getByTestId('moodboard-screen')).toHaveAttribute('data-phase', 'ready');
+  expect((await page.request.get('/kitchen-projects/new/moodboard')).status()).toBe(200);
 
   await page.goto(CAPTURE);
   await readyTiles(page, 1);

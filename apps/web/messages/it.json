@@ -122,5 +122,51 @@
       "expired": "La tua bozza precedente è scaduta dopo 7 giorni senza modifiche. Ricomincia.",
       "dismiss": "Chiudi"
     }
+  },
+  "moodboard": {
+    "backToCapture": "Torna alla tua cucina",
+    "step": "Passo {current} di {total}",
+    "title": "Il tuo stile",
+    "helper": "Scegli le cucine che ti piacciono e aggiungi i tuoi riferimenti. Li useremo per progettare la tua nuova cucina.",
+    "board": {
+      "title": "Il tuo moodboard",
+      "counter": "{count} di {max}",
+      "rules": "Le tue foto: JPG, PNG, WebP o HEIC · fino a 15 MB",
+      "empty": "Ancora niente. Scegli cucine dalla galleria o aggiungi le tue foto.",
+      "add": "Aggiungi le tue foto",
+      "yourPhoto": "La tua foto",
+      "uploadAlt": "La tua foto di riferimento {n}",
+      "removeUpload": "Rimuovi riferimento {n}",
+      "removeGallery": "Rimuovi cucina {style} {n}",
+      "limitReached": "Hai aggiunto {max} elementi, il massimo. Rimuovine uno per aggiungerne un altro."
+    },
+    "gallery": {
+      "title": "Galleria di stili",
+      "helper": "Tocca una cucina per aggiungerla al tuo moodboard. Toccala di nuovo per rimuoverla.",
+      "filter": "Filtra per stile",
+      "all": "Tutti",
+      "alt": "Cucina {style} {n}"
+    },
+    "styles": {
+      "modern": "Moderna",
+      "scandinavian": "Scandinava",
+      "industrial": "Industriale",
+      "farmhouse": "Rustica",
+      "classic": "Classica",
+      "mediterranean": "Mediterranea",
+      "minimalist": "Minimalista",
+      "japandi": "Japandi"
+    },
+    "continue": "Continua",
+    "continueHints": {
+      "items": "Aggiungi almeno una cucina o una foto per continuare.",
+      "capture": "Alla tua cucina mancano ancora una foto e tutte e tre le misure.",
+      "goToCapture": "Vai alla tua cucina"
+    },
+    "alerts": {
+      "offline": "Sei offline. Ciò che hai salvato è al sicuro; riconnettiti per continuare.",
+      "expired": "La tua bozza precedente è scaduta dopo 7 giorni senza modifiche. Ricomincia.",
+      "dismiss": "Chiudi"
+    }
   }
 }

@@ -5,6 +5,7 @@
   "type": "module",
   "files": [
     "dist",
+    "assets",
     "prisma",
     "prisma.config.ts",
     "docker-entrypoint.sh"

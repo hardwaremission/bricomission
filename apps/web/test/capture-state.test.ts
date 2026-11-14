@@ -16,7 +16,8 @@ const draft = (overrides: Partial<KitchenDraftView> = {}): KitchenDraftView => (
   status: 'draft',
   measurements: { lengthCm: null, widthCm: null, heightCm: null },
   photos: [],
-  limits: { maxPhotos: 8, maxPhotoBytes: 15728640 },
+  moodboard: [],
+  limits: { maxPhotos: 8, maxPhotoBytes: 15728640, maxMoodboardItems: 12 },
   expiresAt: '2026-11-21T00:00:00.000Z',
   ...overrides,
 });

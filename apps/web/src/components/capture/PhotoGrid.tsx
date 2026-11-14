@@ -13,7 +13,7 @@ const ERROR_KEY: Partial<Record<UploadErrorCode, 'tooLarge' | 'unsupported' | 't
   photo_too_small: 'tooSmall',
 };
 
-const TILE = 'relative aspect-[4/3] w-full overflow-hidden rounded-lg';
+export const TILE = 'relative aspect-[4/3] w-full overflow-hidden rounded-lg';
 
 /** Server photo: its thumbnail through the /api proxy, or the neutral placeholder if it cannot load. */
 function PhotoTile({ photo, index, disabled, onRemove }: { photo: KitchenPhotoView; index: number; disabled: boolean; onRemove: () => void }) {
@@ -47,13 +47,31 @@ function PhotoTile({ photo, index, disabled, onRemove }: { photo: KitchenPhotoVi
   );
 }
 
-function UploadingTile({ tile, index, disabled, onRetry, onRemove }: { tile: UploadTile; index: number; disabled: boolean; onRetry: () => void; onRemove: () => void }) {
+/**
+ * Local upload tile (queued, uploading, processing or error). Also used by the Moodboard for
+ * reference photos (same states and copy); `testIdPrefix` names the screen in the test ids.
+ */
+export function UploadingTile({
+  tile,
+  index,
+  disabled,
+  onRetry,
+  onRemove,
+  testIdPrefix = 'capture-photo',
+}: {
+  tile: UploadTile;
+  index: number;
+  disabled: boolean;
+  onRetry: () => void;
+  onRemove: () => void;
+  testIdPrefix?: string;
+}) {
   const t = useTranslations('capture.photos');
   if (tile.status === 'error' && tile.error) {
     const key = ERROR_KEY[tile.error] ?? 'failed';
     return (
       <li
-        data-testid="capture-photo-tile"
+        data-testid={`${testIdPrefix}-tile`}
         data-state="error"
         data-error={tile.error}
         className={`${TILE} flex flex-col items-center justify-center gap-2 border-2 border-danger bg-surface p-2`}
@@ -69,7 +87,7 @@ function UploadingTile({ tile, index, disabled, onRetry, onRemove }: { tile: Upl
               onClick={onRetry}
               disabled={disabled}
               aria-label={t('retry')}
-              data-testid="capture-photo-retry"
+              data-testid={`${testIdPrefix}-retry`}
               className="flex size-11 items-center justify-center rounded-pill bg-surface-muted text-primary disabled:opacity-60"
             >
               <RefreshCw size={18} aria-hidden="true" />
@@ -79,7 +97,7 @@ function UploadingTile({ tile, index, disabled, onRetry, onRemove }: { tile: Upl
             type="button"
             onClick={onRemove}
             aria-label={t('remove', { n: index + 1 })}
-            data-testid="capture-photo-remove"
+            data-testid={`${testIdPrefix}-remove`}
             className="flex size-11 items-center justify-center rounded-pill bg-surface-muted text-text"
           >
             <Trash2 size={18} aria-hidden="true" />
@@ -89,7 +107,7 @@ function UploadingTile({ tile, index, disabled, onRetry, onRemove }: { tile: Upl
     );
   }
   return (
-    <li data-testid="capture-photo-tile" data-state={tile.status} className={`${TILE} flex flex-col items-center justify-center gap-2 bg-surface-muted px-md`}>
+    <li data-testid={`${testIdPrefix}-tile`} data-state={tile.status} className={`${TILE} flex flex-col items-center justify-center gap-2 bg-surface-muted px-md`}>
       {tile.status === 'uploading' ? (
         <>
           <span className="text-center text-small leading-5 font-semibold text-text">{t('uploading', { percent: tile.progress })}</span>

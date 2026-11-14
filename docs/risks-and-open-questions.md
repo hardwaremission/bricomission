@@ -24,6 +24,7 @@ None. Discovery is sufficient to derive the harness (`/harness-starter`).
 
 - Anonymous draft expiry and cleanup (2026-11-13, developer decision; built in `kitchen-capture-draft`): drafts expire 7 days after their last change (sliding), and an in-API sweeper deletes expired drafts and their MinIO objects on start and hourly.
 - HEIC/HEIF decoder (2026-11-14, `kitchen-capture-draft`): the probe showed that `sharp` 0.35.5 (libvips 8.18.7, libheif 1.23.5) in the api image reads an iPhone HEIC header but cannot decode HEVC pixels (its prebuilt libheif has AVIF only). The API decodes HEIC with `heic-decode` 2.1.0 (ISC) over `libheif-js` 1.23.5 (WASM libheif + libde265, LGPL-3.0, used unmodified as npm dependencies; no native build, works offline). Measured in the api container: a 12 MP HEIC upload takes about 0.5 s end to end. HEVC is patent-encumbered: fine for the local demo, review before any distribution.
+- Style Gallery source (2026-11-14, `moodboard-selection`): generated once with RealVisXL V5.0 (local SDXL) and committed as metadata-free JPEGs; never generated at runtime. Licence checked 2026-11-14 on the model page: `openrail++` (CreativeML Open RAIL++-M), no claim on outputs; use in the app and the public demo video is allowed (see `apps/api/assets/style-gallery/SOURCE.md`).
 - Web proxy cookie parsing (L2 below): resolved in `kitchen-capture-draft`; `api-proxy.ts` now uses `readCookie` for both `bm_session` and `bm_draft`.
 
 ## Later / Not MVP
@@ -62,6 +63,8 @@ None. Discovery is sufficient to derive the harness (`/harness-starter`).
 | The api uses the MinIO root credentials (`kitchen-capture-draft`) | An api compromise has full MinIO admin rights | Accepted for local MVP use; `admin-service-endpoints` moves to a dedicated access key with a bucket-scoped policy, editable by the Administrator |
 | Code email logo is a data-URI PNG (`brand-logo-animation`) | Some clients (Gmail, Outlook) block data-URI images, and inline base64 can raise spam scores | Accepted: the `alt` text is styled 22/28 bold ink as the text fallback and the plain-text part carries the code; hosted images are not possible offline and CID needs a custom Keycloak SPI. Revisit before any real mail delivery |
 | Welcome splash replays per tab (`brand-logo-animation`) | `sessionStorage` is per tab, so every new tab or window plays it again (up to ~3.2 s, skippable with a tap or key) | Accepted by the developer (2026-11-14); reloads, client navigation and Keycloak round trips in the same tab do not replay it |
+| Style Gallery looks AI-generated (`moodboard-selection`) | Small artifacts (odd chair legs, repeated details) can look artificial in the demo | Developer approval of the contact sheet (`design/openpencil/moodboard-selection/gallery-contact-sheet.png`) before commit; regenerate single ids with `scripts/style-gallery/generate.sh <id>` |
+| Style Gallery assets size | About 3.2 MB of JPEGs in git and in the api image | Accepted; full images capped at 1280 px (q82), thumbs 512 px (q80) |
 | Disk space for models | Stack fails | Optional: move Docker data-root and model weights to a data NVMe (see docs/technical-discovery.md); otherwise monitor free space on the 465 GB system disk |
 
 ## Research Tasks

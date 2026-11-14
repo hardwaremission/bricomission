@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { errorCodeForStatus, isRetryable, PHOTO_ACCEPT, precheckPhoto, uploadPhoto } from '../src/lib/kitchen-draft/upload';
+import { errorCodeForStatus, isRetryable, MOODBOARD_UPLOAD_URL, PHOTO_ACCEPT, precheckPhoto, uploadPhoto } from '../src/lib/kitchen-draft/upload';
 
 const MB = 1024 * 1024;
 
@@ -32,6 +32,7 @@ describe('error mapping', () => {
     [415, undefined, 'photo_unsupported_type'],
     [422, undefined, 'photo_too_small'],
     [409, undefined, 'photo_limit_reached'],
+    [409, 'moodboard_limit_reached', 'moodboard_limit_reached'],
     [503, undefined, 'storage_unavailable'],
     [503, 'storage_unavailable', 'storage_unavailable'],
     [404, undefined, 'draft_missing'],
@@ -106,5 +107,28 @@ describe('uploadPhoto', () => {
     const pending2 = uploadPhoto(new Blob(['x']), { createXhr: () => offline as unknown as XMLHttpRequest });
     offline.onerror?.();
     expect(await pending2).toEqual({ ok: false, code: 'network' });
+  });
+
+  it('posts to another target when given (Moodboard references) and returns its 201 body', async () => {
+    const xhr = new FakeXhr();
+    const pending = uploadPhoto<{ id: string; source: string }>(new Blob(['x']), {
+      createXhr: () => xhr as unknown as XMLHttpRequest,
+      url: MOODBOARD_UPLOAD_URL,
+    });
+    expect([xhr.method, xhr.url]).toEqual(['POST', '/api/kitchen-projects/drafts/current/moodboard/uploads']);
+    expect((xhr.body as FormData).get('photo')).toBeInstanceOf(Blob);
+    xhr.status = 201;
+    xhr.responseText = JSON.stringify({ id: 'm1', source: 'upload' });
+    xhr.onload?.();
+    expect(await pending).toEqual({ ok: true, photo: { id: 'm1', source: 'upload' } });
+  });
+
+  it('maps the Moodboard limit code', async () => {
+    const xhr = new FakeXhr();
+    const pending = uploadPhoto(new Blob(['x']), { createXhr: () => xhr as unknown as XMLHttpRequest, url: MOODBOARD_UPLOAD_URL });
+    xhr.status = 409;
+    xhr.responseText = JSON.stringify({ code: 'moodboard_limit_reached' });
+    xhr.onload?.();
+    expect(await pending).toEqual({ ok: false, code: 'moodboard_limit_reached' });
   });
 });

@@ -233,6 +233,78 @@
         ]
       }
     },
+    "/style-gallery": {
+      "get": {
+        "operationId": "StyleGalleryController_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StyleGalleryViewDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "The Style Gallery: styles and their images, in a fixed order",
+        "tags": [
+          "style-gallery"
+        ]
+      }
+    },
+    "/style-gallery/images/{imageId}/content": {
+      "get": {
+        "operationId": "StyleGalleryController_content",
+        "parameters": [
+          {
+            "name": "imageId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "variant",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "thumb",
+                "full"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "JPEG bytes",
+            "content": {
+              "image/jpeg": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad variant"
+          },
+          "404": {
+            "description": "Unknown image id"
+          }
+        },
+        "summary": "A Style Gallery image (metadata-free JPEG; thumb <= 512 px, full <= 1280 px)",
+        "tags": [
+          "style-gallery"
+        ]
+      }
+    },
     "/kitchen-projects/drafts": {
       "post": {
         "operationId": "KitchenDraftsController_start",
@@ -573,6 +645,299 @@
           "kitchen-projects"
         ]
       }
+    },
+    "/kitchen-projects/drafts/current/moodboard/gallery-items": {
+      "post": {
+        "operationId": "MoodboardController_addGalleryItem",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddGalleryItemRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Already in the Moodboard; nothing changed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MoodboardItemViewDto"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Added",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MoodboardItemViewDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "`gallery_image_unknown`, or a malformed body",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KitchenDraftErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No draft for this token (missing, malformed, unknown or expired token), or the item is not in it"
+          },
+          "409": {
+            "description": "`moodboard_limit_reached` (12 items)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KitchenDraftErrorDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Database unreachable"
+          }
+        },
+        "security": [
+          {
+            "draftToken": []
+          }
+        ],
+        "summary": "Add a Style Gallery image to the Moodboard (idempotent: an image already in it returns its item with 200)",
+        "tags": [
+          "kitchen-projects"
+        ]
+      }
+    },
+    "/kitchen-projects/drafts/current/moodboard/uploads": {
+      "post": {
+        "description": "Stored as metadata-free JPEG full (<= 2560 px) and thumbnail (<= 512 px); the original is never stored. Counts toward the 12 Moodboard Items.",
+        "operationId": "MoodboardController_addUpload",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "photo"
+                ],
+                "properties": {
+                  "photo": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MoodboardItemViewDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed multipart body or `photo_missing`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KitchenDraftErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No draft for this token (missing, malformed, unknown or expired token), or the item is not in it"
+          },
+          "409": {
+            "description": "`moodboard_limit_reached` (12 items)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KitchenDraftErrorDto"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "`photo_too_large`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KitchenDraftErrorDto"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "`photo_unsupported_type` (also for files that do not decode)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KitchenDraftErrorDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "`photo_too_small`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KitchenDraftErrorDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "`storage_unavailable`, or database unreachable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KitchenDraftErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "draftToken": []
+          }
+        ],
+        "summary": "Upload an own reference photo (same rules as kitchen photos: JPEG, PNG, WebP or HEIC/HEIF; <= 15 MB; shortest edge >= 480 px; <= 50 MP)",
+        "tags": [
+          "kitchen-projects"
+        ]
+      }
+    },
+    "/kitchen-projects/drafts/current/moodboard/items/{itemId}/content": {
+      "get": {
+        "operationId": "MoodboardController_content",
+        "parameters": [
+          {
+            "name": "itemId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "variant",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "thumb",
+                "full"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "JPEG bytes",
+            "content": {
+              "image/jpeg": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed item id or variant"
+          },
+          "404": {
+            "description": "No draft for this token (missing, malformed, unknown or expired token), or the item is not in it, or it is a gallery item"
+          },
+          "503": {
+            "description": "`storage_unavailable`",
+            "content": {
+              "image/jpeg": {
+                "schema": {
+                  "$ref": "#/components/schemas/KitchenDraftErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "draftToken": []
+          }
+        ],
+        "summary": "A stored reference photo (metadata-free JPEG). Upload items only; gallery items use their gallery URLs.",
+        "tags": [
+          "kitchen-projects"
+        ]
+      }
+    },
+    "/kitchen-projects/drafts/current/moodboard/items/{itemId}": {
+      "delete": {
+        "operationId": "MoodboardController_remove",
+        "parameters": [
+          {
+            "name": "itemId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Removed"
+          },
+          "400": {
+            "description": "Malformed item id"
+          },
+          "404": {
+            "description": "No draft for this token (missing, malformed, unknown or expired token), or the item is not in it"
+          },
+          "503": {
+            "description": "`storage_unavailable`, or database unreachable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KitchenDraftErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "draftToken": []
+          }
+        ],
+        "summary": "Remove a Moodboard Item (an upload loses both objects); later items move up one position",
+        "tags": [
+          "kitchen-projects"
+        ]
+      }
     }
   },
   "info": {
@@ -875,6 +1240,77 @@
           "results"
         ]
       },
+      "StyleGalleryImageViewDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9-]{1,64}$",
+            "example": "scandinavian-01",
+            "description": "Stable id, never reused"
+          },
+          "width": {
+            "type": "integer",
+            "description": "Width of the full image"
+          },
+          "height": {
+            "type": "integer",
+            "description": "Height of the full image"
+          },
+          "thumbUrl": {
+            "type": "string",
+            "example": "/style-gallery/images/scandinavian-01/content?variant=thumb",
+            "description": "API-relative path"
+          },
+          "fullUrl": {
+            "type": "string",
+            "example": "/style-gallery/images/scandinavian-01/content?variant=full",
+            "description": "API-relative path"
+          }
+        },
+        "required": [
+          "id",
+          "width",
+          "height",
+          "thumbUrl",
+          "fullUrl"
+        ]
+      },
+      "StyleGalleryStyleViewDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9-]{1,64}$",
+            "example": "scandinavian"
+          },
+          "images": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StyleGalleryImageViewDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "images"
+        ]
+      },
+      "StyleGalleryViewDto": {
+        "type": "object",
+        "properties": {
+          "styles": {
+            "description": "In manifest order",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StyleGalleryStyleViewDto"
+            }
+          }
+        },
+        "required": [
+          "styles"
+        ]
+      },
       "KitchenMeasurementsDto": {
         "type": "object",
         "properties": {
@@ -946,6 +1382,68 @@
           "fullUrl"
         ]
       },
+      "MoodboardItemViewDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "gallery",
+              "upload"
+            ]
+          },
+          "galleryImageId": {
+            "type": "string",
+            "nullable": true,
+            "example": "scandinavian-01",
+            "description": "Style Gallery image id; null for uploads"
+          },
+          "styleId": {
+            "type": "string",
+            "nullable": true,
+            "example": "scandinavian",
+            "description": "Style of the gallery image; null for uploads"
+          },
+          "position": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "0-based, compacted on delete"
+          },
+          "width": {
+            "type": "integer",
+            "description": "Width of the full image"
+          },
+          "height": {
+            "type": "integer",
+            "description": "Height of the full image"
+          },
+          "thumbUrl": {
+            "type": "string",
+            "example": "/style-gallery/images/scandinavian-01/content?variant=thumb",
+            "description": "API-relative path: the gallery content route for gallery items, the draft item content route for uploads"
+          },
+          "fullUrl": {
+            "type": "string",
+            "example": "/kitchen-projects/drafts/current/moodboard/items/0b6f.../content?variant=full",
+            "description": "API-relative path"
+          }
+        },
+        "required": [
+          "id",
+          "source",
+          "galleryImageId",
+          "styleId",
+          "position",
+          "width",
+          "height",
+          "thumbUrl",
+          "fullUrl"
+        ]
+      },
       "KitchenDraftLimitsDto": {
         "type": "object",
         "properties": {
@@ -956,11 +1454,17 @@
           "maxPhotoBytes": {
             "type": "integer",
             "example": 15728640
+          },
+          "maxMoodboardItems": {
+            "type": "integer",
+            "example": 12,
+            "description": "Moodboard Items per draft, uploads and gallery picks together"
           }
         },
         "required": [
           "maxPhotos",
-          "maxPhotoBytes"
+          "maxPhotoBytes",
+          "maxMoodboardItems"
         ]
       },
       "KitchenDraftViewDto": {
@@ -986,6 +1490,13 @@
               "$ref": "#/components/schemas/KitchenPhotoViewDto"
             }
           },
+          "moodboard": {
+            "description": "Moodboard Items ordered by position",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MoodboardItemViewDto"
+            }
+          },
           "limits": {
             "$ref": "#/components/schemas/KitchenDraftLimitsDto"
           },
@@ -1000,6 +1511,7 @@
           "status",
           "measurements",
           "photos",
+          "moodboard",
           "limits",
           "expiresAt"
         ]
@@ -1039,7 +1551,9 @@
               "photo_unsupported_type",
               "photo_too_small",
               "photo_limit_reached",
-              "storage_unavailable"
+              "storage_unavailable",
+              "moodboard_limit_reached",
+              "gallery_image_unknown"
             ]
           }
         },
@@ -1094,7 +1608,9 @@
               "photo_unsupported_type",
               "photo_too_small",
               "photo_limit_reached",
-              "storage_unavailable"
+              "storage_unavailable",
+              "moodboard_limit_reached",
+              "gallery_image_unknown"
             ]
           },
           "fields": {
@@ -1106,6 +1622,20 @@
           "message",
           "code",
           "fields"
+        ]
+      },
+      "AddGalleryItemRequestDto": {
+        "type": "object",
+        "properties": {
+          "galleryImageId": {
+            "type": "string",
+            "pattern": "^[a-z0-9-]{1,64}$",
+            "example": "scandinavian-01",
+            "description": "A Style Gallery image id (GET /style-gallery)"
+          }
+        },
+        "required": [
+          "galleryImageId"
         ]
       }
     }

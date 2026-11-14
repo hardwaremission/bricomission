@@ -107,6 +107,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/style-gallery": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The Style Gallery: styles and their images, in a fixed order */
+        get: operations["StyleGalleryController_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/style-gallery/images/{imageId}/content": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A Style Gallery image (metadata-free JPEG; thumb <= 512 px, full <= 1280 px) */
+        get: operations["StyleGalleryController_content"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/kitchen-projects/drafts": {
         parameters: {
             query?: never;
@@ -207,6 +241,77 @@ export interface paths {
         post?: never;
         /** Delete a photo (both objects); later photos move up one position */
         delete: operations["KitchenDraftsController_deletePhoto"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/kitchen-projects/drafts/current/moodboard/gallery-items": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Add a Style Gallery image to the Moodboard (idempotent: an image already in it returns its item with 200) */
+        post: operations["MoodboardController_addGalleryItem"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/kitchen-projects/drafts/current/moodboard/uploads": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Upload an own reference photo (same rules as kitchen photos: JPEG, PNG, WebP or HEIC/HEIF; <= 15 MB; shortest edge >= 480 px; <= 50 MP)
+         * @description Stored as metadata-free JPEG full (<= 2560 px) and thumbnail (<= 512 px); the original is never stored. Counts toward the 12 Moodboard Items.
+         */
+        post: operations["MoodboardController_addUpload"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/kitchen-projects/drafts/current/moodboard/items/{itemId}/content": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A stored reference photo (metadata-free JPEG). Upload items only; gallery items use their gallery URLs. */
+        get: operations["MoodboardController_content"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/kitchen-projects/drafts/current/moodboard/items/{itemId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove a Moodboard Item (an upload loses both objects); later items move up one position */
+        delete: operations["MoodboardController_remove"];
         options?: never;
         head?: never;
         patch?: never;
@@ -322,6 +427,36 @@ export interface components {
             query: string;
             results: components["schemas"]["CatalogSearchResultDto"][];
         };
+        StyleGalleryImageViewDto: {
+            /**
+             * @description Stable id, never reused
+             * @example scandinavian-01
+             */
+            id: string;
+            /** @description Width of the full image */
+            width: number;
+            /** @description Height of the full image */
+            height: number;
+            /**
+             * @description API-relative path
+             * @example /style-gallery/images/scandinavian-01/content?variant=thumb
+             */
+            thumbUrl: string;
+            /**
+             * @description API-relative path
+             * @example /style-gallery/images/scandinavian-01/content?variant=full
+             */
+            fullUrl: string;
+        };
+        StyleGalleryStyleViewDto: {
+            /** @example scandinavian */
+            id: string;
+            images: components["schemas"]["StyleGalleryImageViewDto"][];
+        };
+        StyleGalleryViewDto: {
+            /** @description In manifest order */
+            styles: components["schemas"]["StyleGalleryStyleViewDto"][];
+        };
         KitchenMeasurementsDto: {
             /** @example 420 */
             lengthCm: number | null;
@@ -350,11 +485,48 @@ export interface components {
              */
             fullUrl: string;
         };
+        MoodboardItemViewDto: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            source: "gallery" | "upload";
+            /**
+             * @description Style Gallery image id; null for uploads
+             * @example scandinavian-01
+             */
+            galleryImageId: string | null;
+            /**
+             * @description Style of the gallery image; null for uploads
+             * @example scandinavian
+             */
+            styleId: string | null;
+            /** @description 0-based, compacted on delete */
+            position: number;
+            /** @description Width of the full image */
+            width: number;
+            /** @description Height of the full image */
+            height: number;
+            /**
+             * @description API-relative path: the gallery content route for gallery items, the draft item content route for uploads
+             * @example /style-gallery/images/scandinavian-01/content?variant=thumb
+             */
+            thumbUrl: string;
+            /**
+             * @description API-relative path
+             * @example /kitchen-projects/drafts/current/moodboard/items/0b6f.../content?variant=full
+             */
+            fullUrl: string;
+        };
         KitchenDraftLimitsDto: {
             /** @example 8 */
             maxPhotos: number;
             /** @example 15728640 */
             maxPhotoBytes: number;
+            /**
+             * @description Moodboard Items per draft, uploads and gallery picks together
+             * @example 12
+             */
+            maxMoodboardItems: number;
         };
         KitchenDraftViewDto: {
             /** Format: uuid */
@@ -364,6 +536,8 @@ export interface components {
             measurements: components["schemas"]["KitchenMeasurementsDto"];
             /** @description Ordered by position */
             photos: components["schemas"]["KitchenPhotoViewDto"][];
+            /** @description Moodboard Items ordered by position */
+            moodboard: components["schemas"]["MoodboardItemViewDto"][];
             limits: components["schemas"]["KitchenDraftLimitsDto"];
             /**
              * Format: date-time
@@ -380,7 +554,7 @@ export interface components {
             statusCode: number;
             message: string;
             /** @enum {string} */
-            code: "draft_capacity" | "invalid_measurements" | "photo_missing" | "photo_too_large" | "photo_unsupported_type" | "photo_too_small" | "photo_limit_reached" | "storage_unavailable";
+            code: "draft_capacity" | "invalid_measurements" | "photo_missing" | "photo_too_large" | "photo_unsupported_type" | "photo_too_small" | "photo_limit_reached" | "storage_unavailable" | "moodboard_limit_reached" | "gallery_image_unknown";
         };
         MeasurementFieldErrorsDto: {
             /** @enum {string} */
@@ -394,8 +568,15 @@ export interface components {
             statusCode: number;
             message: string;
             /** @enum {string} */
-            code: "draft_capacity" | "invalid_measurements" | "photo_missing" | "photo_too_large" | "photo_unsupported_type" | "photo_too_small" | "photo_limit_reached" | "storage_unavailable";
+            code: "draft_capacity" | "invalid_measurements" | "photo_missing" | "photo_too_large" | "photo_unsupported_type" | "photo_too_small" | "photo_limit_reached" | "storage_unavailable" | "moodboard_limit_reached" | "gallery_image_unknown";
             fields: components["schemas"]["MeasurementFieldErrorsDto"];
+        };
+        AddGalleryItemRequestDto: {
+            /**
+             * @description A Style Gallery image id (GET /style-gallery)
+             * @example scandinavian-01
+             */
+            galleryImageId: string;
         };
     };
     responses: never;
@@ -613,6 +794,63 @@ export interface operations {
             };
             /** @description Embedding endpoint or database unreachable */
             503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    StyleGalleryController_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StyleGalleryViewDto"];
+                };
+            };
+        };
+    };
+    StyleGalleryController_content: {
+        parameters: {
+            query: {
+                variant: "thumb" | "full";
+            };
+            header?: never;
+            path: {
+                imageId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description JPEG bytes */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "image/jpeg": string;
+                };
+            };
+            /** @description Bad variant */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unknown image id */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -894,6 +1132,248 @@ export interface operations {
                 content?: never;
             };
             /** @description No draft for this token (missing, malformed, unknown or expired token), or the photo is not in it */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description `storage_unavailable`, or database unreachable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KitchenDraftErrorDto"];
+                };
+            };
+        };
+    };
+    MoodboardController_addGalleryItem: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddGalleryItemRequestDto"];
+            };
+        };
+        responses: {
+            /** @description Already in the Moodboard; nothing changed */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoodboardItemViewDto"];
+                };
+            };
+            /** @description Added */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoodboardItemViewDto"];
+                };
+            };
+            /** @description `gallery_image_unknown`, or a malformed body */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KitchenDraftErrorDto"];
+                };
+            };
+            /** @description No draft for this token (missing, malformed, unknown or expired token), or the item is not in it */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description `moodboard_limit_reached` (12 items) */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KitchenDraftErrorDto"];
+                };
+            };
+            /** @description Database unreachable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    MoodboardController_addUpload: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    /** Format: binary */
+                    photo: string;
+                };
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoodboardItemViewDto"];
+                };
+            };
+            /** @description Malformed multipart body or `photo_missing` */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KitchenDraftErrorDto"];
+                };
+            };
+            /** @description No draft for this token (missing, malformed, unknown or expired token), or the item is not in it */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description `moodboard_limit_reached` (12 items) */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KitchenDraftErrorDto"];
+                };
+            };
+            /** @description `photo_too_large` */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KitchenDraftErrorDto"];
+                };
+            };
+            /** @description `photo_unsupported_type` (also for files that do not decode) */
+            415: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KitchenDraftErrorDto"];
+                };
+            };
+            /** @description `photo_too_small` */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KitchenDraftErrorDto"];
+                };
+            };
+            /** @description `storage_unavailable`, or database unreachable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KitchenDraftErrorDto"];
+                };
+            };
+        };
+    };
+    MoodboardController_content: {
+        parameters: {
+            query: {
+                variant: "thumb" | "full";
+            };
+            header?: never;
+            path: {
+                itemId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description JPEG bytes */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "image/jpeg": string;
+                };
+            };
+            /** @description Malformed item id or variant */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No draft for this token (missing, malformed, unknown or expired token), or the item is not in it, or it is a gallery item */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description `storage_unavailable` */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "image/jpeg": components["schemas"]["KitchenDraftErrorDto"];
+                };
+            };
+        };
+    };
+    MoodboardController_remove: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                itemId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Removed */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Malformed item id */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No draft for this token (missing, malformed, unknown or expired token), or the item is not in it */
             404: {
                 headers: {
                     [name: string]: unknown;

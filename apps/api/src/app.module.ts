@@ -7,8 +7,9 @@ import { HealthModule } from './health/health.module.js';
 import { KitchenProjectsModule } from './kitchen-projects/kitchen-projects.module.js';
 import { PrismaModule } from './prisma/prisma.module.js';
 import { StorageModule } from './storage/storage.module.js';
+import { StyleGalleryModule } from './style-gallery/style-gallery.module.js';
 
 @Module({
-  imports: [PrismaModule, AuthModule, HealthModule, AdminModule, AiModule.register(), CatalogModule, StorageModule, KitchenProjectsModule],
+  imports: [PrismaModule, AuthModule, HealthModule, AdminModule, AiModule.register(), CatalogModule, StorageModule, StyleGalleryModule, KitchenProjectsModule],
 })
 export class AppModule {}

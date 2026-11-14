@@ -122,5 +122,51 @@
       "expired": "Tu borrador anterior caducó tras 7 días sin cambios. Empieza de nuevo.",
       "dismiss": "Cerrar"
     }
+  },
+  "moodboard": {
+    "backToCapture": "Volver a tu cocina",
+    "step": "Paso {current} de {total}",
+    "title": "Tu estilo",
+    "helper": "Elige cocinas que te gusten y añade tus propias referencias. Las usaremos para diseñar tu nueva cocina.",
+    "board": {
+      "title": "Tu moodboard",
+      "counter": "{count} de {max}",
+      "rules": "Tus fotos: JPG, PNG, WebP o HEIC · hasta 15 MB",
+      "empty": "Aún no hay nada. Elige cocinas de la galería o añade tus propias fotos.",
+      "add": "Añadir tus fotos",
+      "yourPhoto": "Tu foto",
+      "uploadAlt": "Tu foto de referencia {n}",
+      "removeUpload": "Quitar referencia {n}",
+      "removeGallery": "Quitar cocina {style} {n}",
+      "limitReached": "Has añadido {max} elementos, el máximo. Quita uno para añadir otro."
+    },
+    "gallery": {
+      "title": "Galería de estilos",
+      "helper": "Toca una cocina para añadirla a tu moodboard. Tócala de nuevo para quitarla.",
+      "filter": "Filtrar por estilo",
+      "all": "Todos",
+      "alt": "Cocina {style} {n}"
+    },
+    "styles": {
+      "modern": "Moderna",
+      "scandinavian": "Escandinava",
+      "industrial": "Industrial",
+      "farmhouse": "Rústica",
+      "classic": "Clásica",
+      "mediterranean": "Mediterránea",
+      "minimalist": "Minimalista",
+      "japandi": "Japandi"
+    },
+    "continue": "Continuar",
+    "continueHints": {
+      "items": "Añade al menos una cocina o una foto para continuar.",
+      "capture": "A tu cocina aún le falta una foto y las tres medidas.",
+      "goToCapture": "Ir a tu cocina"
+    },
+    "alerts": {
+      "offline": "No tienes conexión. Lo que has guardado está a salvo; vuelve a conectarte para seguir.",
+      "expired": "Tu borrador anterior caducó tras 7 días sin cambios. Empieza de nuevo.",
+      "dismiss": "Cerrar"
+    }
   }
 }
