@@ -107,6 +107,111 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/kitchen-projects/drafts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Start an anonymous kitchen draft and get its draft token (shown once) */
+        post: operations["KitchenDraftsController_start"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/kitchen-projects/drafts/current": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The draft of the X-Draft-Token */
+        get: operations["KitchenDraftsController_current"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/kitchen-projects/drafts/current/measurements": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Replace the room measurements (whole centimetres, null = not entered) */
+        put: operations["KitchenDraftsController_updateMeasurements"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/kitchen-projects/drafts/current/photos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Upload one photo (JPEG, PNG, WebP or HEIC/HEIF; <= 15 MB; shortest edge >= 480 px; <= 50 MP; <= 8 per draft)
+         * @description The type is detected from the bytes. Stored as metadata-free JPEG full (<= 2560 px) and thumbnail (<= 512 px); the original is never stored.
+         */
+        post: operations["KitchenDraftsController_addPhoto"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/kitchen-projects/drafts/current/photos/{photoId}/content": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A stored photo (metadata-free JPEG) */
+        get: operations["KitchenDraftsController_photoContent"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/kitchen-projects/drafts/current/photos/{photoId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete a photo (both objects); later photos move up one position */
+        delete: operations["KitchenDraftsController_deletePhoto"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -216,6 +321,81 @@ export interface components {
             /** @example oak laminate worktop */
             query: string;
             results: components["schemas"]["CatalogSearchResultDto"][];
+        };
+        KitchenMeasurementsDto: {
+            /** @example 420 */
+            lengthCm: number | null;
+            /** @example 310 */
+            widthCm: number | null;
+            /** @example 260 */
+            heightCm: number | null;
+        };
+        KitchenPhotoViewDto: {
+            /** Format: uuid */
+            id: string;
+            /** @description 0-based, compacted on delete */
+            position: number;
+            /** @description Width of the stored full JPEG (orientation applied) */
+            width: number;
+            /** @description Height of the stored full JPEG (orientation applied) */
+            height: number;
+            /**
+             * @description API-relative path
+             * @example /kitchen-projects/drafts/current/photos/0b6f.../content?variant=thumb
+             */
+            thumbUrl: string;
+            /**
+             * @description API-relative path
+             * @example /kitchen-projects/drafts/current/photos/0b6f.../content?variant=full
+             */
+            fullUrl: string;
+        };
+        KitchenDraftLimitsDto: {
+            /** @example 8 */
+            maxPhotos: number;
+            /** @example 15728640 */
+            maxPhotoBytes: number;
+        };
+        KitchenDraftViewDto: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            status: "draft";
+            measurements: components["schemas"]["KitchenMeasurementsDto"];
+            /** @description Ordered by position */
+            photos: components["schemas"]["KitchenPhotoViewDto"][];
+            limits: components["schemas"]["KitchenDraftLimitsDto"];
+            /**
+             * Format: date-time
+             * @description Slides 7 days ahead on every change
+             */
+            expiresAt: string;
+        };
+        StartKitchenDraftResponseDto: {
+            draft: components["schemas"]["KitchenDraftViewDto"];
+            /** @description Opaque draft token (43 characters, base64url). Returned only here; send it as X-Draft-Token. */
+            draftToken: string;
+        };
+        KitchenDraftErrorDto: {
+            statusCode: number;
+            message: string;
+            /** @enum {string} */
+            code: "draft_capacity" | "invalid_measurements" | "photo_missing" | "photo_too_large" | "photo_unsupported_type" | "photo_too_small" | "photo_limit_reached" | "storage_unavailable";
+        };
+        MeasurementFieldErrorsDto: {
+            /** @enum {string} */
+            lengthCm?: "not_integer" | "out_of_range";
+            /** @enum {string} */
+            widthCm?: "not_integer" | "out_of_range";
+            /** @enum {string} */
+            heightCm?: "not_integer" | "out_of_range";
+        };
+        InvalidMeasurementsErrorDto: {
+            statusCode: number;
+            message: string;
+            /** @enum {string} */
+            code: "draft_capacity" | "invalid_measurements" | "photo_missing" | "photo_too_large" | "photo_unsupported_type" | "photo_too_small" | "photo_limit_reached" | "storage_unavailable";
+            fields: components["schemas"]["MeasurementFieldErrorsDto"];
         };
     };
     responses: never;
@@ -437,6 +617,297 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    KitchenDraftsController_start: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StartKitchenDraftResponseDto"];
+                };
+            };
+            /** @description `draft_capacity`: too many open drafts */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KitchenDraftErrorDto"];
+                };
+            };
+            /** @description Database unreachable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    KitchenDraftsController_current: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KitchenDraftViewDto"];
+                };
+            };
+            /** @description No draft for this token (missing, malformed, unknown or expired token), or the photo is not in it */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Database unreachable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    KitchenDraftsController_updateMeasurements: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["KitchenMeasurementsDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KitchenDraftViewDto"];
+                };
+            };
+            /** @description `invalid_measurements` with per-field reasons */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InvalidMeasurementsErrorDto"];
+                };
+            };
+            /** @description No draft for this token (missing, malformed, unknown or expired token), or the photo is not in it */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Database unreachable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    KitchenDraftsController_addPhoto: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    /** Format: binary */
+                    photo: string;
+                };
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KitchenPhotoViewDto"];
+                };
+            };
+            /** @description Malformed multipart body or `photo_missing` */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KitchenDraftErrorDto"];
+                };
+            };
+            /** @description No draft for this token (missing, malformed, unknown or expired token), or the photo is not in it */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description `photo_limit_reached` */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KitchenDraftErrorDto"];
+                };
+            };
+            /** @description `photo_too_large` */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KitchenDraftErrorDto"];
+                };
+            };
+            /** @description `photo_unsupported_type` (also for files that do not decode) */
+            415: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KitchenDraftErrorDto"];
+                };
+            };
+            /** @description `photo_too_small` */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KitchenDraftErrorDto"];
+                };
+            };
+            /** @description `storage_unavailable`, or database unreachable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KitchenDraftErrorDto"];
+                };
+            };
+        };
+    };
+    KitchenDraftsController_photoContent: {
+        parameters: {
+            query: {
+                variant: "thumb" | "full";
+            };
+            header?: never;
+            path: {
+                photoId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description JPEG bytes */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "image/jpeg": string;
+                };
+            };
+            /** @description Malformed photo id or variant */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No draft for this token (missing, malformed, unknown or expired token), or the photo is not in it */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description `storage_unavailable` */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "image/jpeg": components["schemas"]["KitchenDraftErrorDto"];
+                };
+            };
+        };
+    };
+    KitchenDraftsController_deletePhoto: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                photoId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deleted */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Malformed photo id */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No draft for this token (missing, malformed, unknown or expired token), or the photo is not in it */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description `storage_unavailable`, or database unreachable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KitchenDraftErrorDto"];
+                };
             };
         };
     };

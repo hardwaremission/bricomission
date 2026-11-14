@@ -55,5 +55,72 @@
       "tryAgain": "Try again",
       "backHome": "Back to Home"
     }
+  },
+  "capture": {
+    "backToHome": "Back to Home",
+    "step": "Step {current} of {total}",
+    "title": "Your kitchen",
+    "helper": "Add photos and the measurements of the room you want to renovate.",
+    "photos": {
+      "title": "Photos",
+      "rules": "JPG, PNG, WebP or HEIC · up to 15 MB · up to 8 photos",
+      "add": "Add photos",
+      "tip": "Shoot from the corners so the whole room is visible.",
+      "alt": "Kitchen photo {n}",
+      "remove": "Remove photo {n}",
+      "retry": "Retry upload",
+      "uploading": "Uploading… {percent}%",
+      "processing": "Processing…",
+      "queued": "Waiting…",
+      "limitReached": "You've added {max} photos, the maximum. Remove one to add another.",
+      "errors": {
+        "tooLarge": "This photo is larger than 15 MB.",
+        "unsupported": "Use JPG, PNG, WebP or HEIC.",
+        "tooSmall": "This photo is too small. Use one at least 480 px wide.",
+        "failed": "We couldn't upload this photo."
+      }
+    },
+    "measurements": {
+      "title": "Measurements",
+      "unit": "Unit",
+      "fields": {
+        "lengthCm": "Length",
+        "widthCm": "Width",
+        "heightCm": "Height"
+      },
+      "rangeHint": "Length and width between {lwMin} and {lwMax} {unit} · height between {hMin} and {hMax} {unit}"
+    },
+    "units": {
+      "m": "m",
+      "cm": "cm"
+    },
+    "keypad": {
+      "label": "Enter measurements",
+      "title": "Measurements",
+      "close": "Close",
+      "empty": "—",
+      "decrease": "Decrease by 1 centimetre",
+      "increase": "Increase by 1 centimetre",
+      "separator": "Decimal separator",
+      "backspace": "Delete last digit",
+      "clear": "Clear",
+      "next": "Next: {field}",
+      "done": "Done",
+      "range": "Between {min} and {max} {unit}",
+      "rangeError": "Between {min} {unit} and {max} {unit}."
+    },
+    "continue": "Continue",
+    "continueHint": "Add at least one photo and all three measurements to continue.",
+    "save": {
+      "saving": "Saving…",
+      "saved": "Saved",
+      "offline": "Not saved: you're offline",
+      "failed": "Not saved: try again in a moment."
+    },
+    "alerts": {
+      "offline": "You're offline. What you've saved is safe; reconnect to keep going.",
+      "expired": "Your previous draft expired after 7 days without changes. Start again.",
+      "dismiss": "Close"
+    }
   }
 }

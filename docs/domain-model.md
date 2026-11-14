@@ -7,7 +7,8 @@ Terms as defined in `CONTEXT.md`.
 - **Account**: identity in Keycloak (role: User, Professional, or Administrator), plus a local profile with preferred locale.
 - **Company**: Tax ID, legal name, corporate email domain, status. Has one or more Professionals.
 - **Kitchen Project**: owned by one Homeowner. Holds Photos, Measurements, Moodboard, Renders, Budget, and its chosen path.
-- **Photo / Render / PDF**: binary objects stored in MinIO; the database stores keys and metadata.
+- **Photo / Render / PDF**: binary objects stored in MinIO; the database stores keys and metadata. A Photo (`kitchen_photo`) is stored only as a normalized, metadata-free JPEG `full` (longest edge <= 2560, orientation applied) plus a `thumb` (<= 512); it keeps its 0-based `position` in the Kitchen Project, the `full` width/height and byte size. The uploaded original (including any GPS data and the file name) is never stored. Accepted inputs: JPEG, PNG, WebP, HEIC/HEIF; at most 8 per Kitchen Project, 15 MB each, shortest edge >= 480 px.
+- **Measurements**: room Length x Width x Height stored as whole centimetres (length/width 100-2000, height 180-600; each null until entered). The UI shows metres with 2 decimals or centimetres, locale-formatted.
 - **Budget**: four Budget Tiers; each tier is a list of Line Items. Totals are derived, never stored as LLM output.
 - **Line Item**: product name, SKU, Catalog, source reference (document + page/chunk), cited unit price, quantity, unit, subtotal (computed).
 - **Chat Session**: messages between Homeowner and the budget assistant, with the active Persona per message.
@@ -37,7 +38,7 @@ Terms as defined in `CONTEXT.md`.
 `pending_validation` → `validated` | `rejected`. A new Professional whose Tax ID matches a validated Company is linked to it by the Administrator.
 
 **Kitchen Project**
-`draft` (anonymous allowed) → `claimed` (Login Gate passed, bound to the Account) → `budgeted` (Budget exists) → `diy_completed` (Shopping List generated) or `published` (Dossier created) → `contracted` (Contract binding).
+`draft` (anonymous allowed; expires 7 days after its last change unless claimed) → `claimed` (Login Gate passed, bound to the Account) → `budgeted` (Budget exists) → `diy_completed` (Shopping List generated) or `published` (Dossier created) → `contracted` (Contract binding).
 
 **Dossier**
 `open` → `accepted` (Homeowner accepts a Bid) | `expired` (Bidding Window ends with no acceptance) | `withdrawn` (Homeowner). Content is immutable in every state.

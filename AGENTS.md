@@ -64,6 +64,13 @@ Before writing code:
 - The API is default-deny. A new route is protected unless it is explicitly `@Public()`. Restrict it by role with `@Roles(...)`.
 - The realm is imported only once per `keycloak-data` volume. After editing the realm JSON or the seed passwords, reset the realm: `docker compose rm -sf keycloak && docker volume rm ${COMPOSE_PROJECT_NAME}_keycloak-data`, then `docker compose up -d --build --wait`. Confirm the project name first; without `COMPOSE_PROJECT_NAME` it is the directory name. A realm volume older than `keycloak-login-theme` or `homeowner-password-login` needs this reset; `./init.sh` detects it (no theme on the sign-in page, or the `bricomission-web` client is rejected) and prints the command. `WEB_PORT` is baked into the client's redirect URI at import, so changing it also needs the reset.
 
+## Kitchen Drafts
+
+- Anonymous Capture drafts (`/kitchen-projects/new`) are bound to the HttpOnly cookie `bm_draft`. The web proxy sends it to the API as `X-Draft-Token`; the API stores only its SHA-256. Unknown or expired tokens give 404.
+- Photos are stored as metadata-free JPEGs in the private MinIO bucket `bricomission-media` (`S3_BUCKET`), keys `kitchen-projects/<projectId>/photos/<photoId>/{full,thumb}.jpg`. Inspect them in the MinIO console on `MINIO_CONSOLE_PORT` (9001) with the MinIO root credentials. Never add a bucket policy.
+- Drafts expire `DRAFT_TTL_DAYS` (7) after their last change. The API deletes expired drafts and their objects on start and every `DRAFT_CLEANUP_INTERVAL_MS`. `DRAFT_MAX_OPEN` caps open drafts.
+- HEIC fixtures: `apps/api/scripts/generate-heic-fixtures.sh` (needs network for apt in a pinned Debian container).
+
 ## AI Services
 
 - The local AI stack is opt-in and GPU-bound, so `./init.sh` never starts it.

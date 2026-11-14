@@ -55,5 +55,72 @@
       "tryAgain": "Opnieuw proberen",
       "backHome": "Terug naar home"
     }
+  },
+  "capture": {
+    "backToHome": "Terug naar home",
+    "step": "Stap {current} van {total}",
+    "title": "Jouw keuken",
+    "helper": "Voeg foto's en de afmetingen toe van de ruimte die je wilt renoveren.",
+    "photos": {
+      "title": "Foto's",
+      "rules": "JPG, PNG, WebP of HEIC · tot 15 MB · tot 8 foto's",
+      "add": "Foto's toevoegen",
+      "tip": "Fotografeer vanuit de hoeken zodat de hele ruimte zichtbaar is.",
+      "alt": "Keukenfoto {n}",
+      "remove": "Foto {n} verwijderen",
+      "retry": "Opnieuw uploaden",
+      "uploading": "Uploaden… {percent}%",
+      "processing": "Verwerken…",
+      "queued": "Wachten…",
+      "limitReached": "Je hebt {max} foto's toegevoegd, het maximum. Verwijder er een om een andere toe te voegen.",
+      "errors": {
+        "tooLarge": "Deze foto is groter dan 15 MB.",
+        "unsupported": "Gebruik JPG, PNG, WebP of HEIC.",
+        "tooSmall": "Deze foto is te klein. Gebruik er een van minstens 480 px breed.",
+        "failed": "We konden deze foto niet uploaden."
+      }
+    },
+    "measurements": {
+      "title": "Afmetingen",
+      "unit": "Eenheid",
+      "fields": {
+        "lengthCm": "Lengte",
+        "widthCm": "Breedte",
+        "heightCm": "Hoogte"
+      },
+      "rangeHint": "Lengte en breedte tussen {lwMin} en {lwMax} {unit} · hoogte tussen {hMin} en {hMax} {unit}"
+    },
+    "units": {
+      "m": "m",
+      "cm": "cm"
+    },
+    "keypad": {
+      "label": "Afmetingen invoeren",
+      "title": "Afmetingen",
+      "close": "Sluiten",
+      "empty": "—",
+      "decrease": "1 centimeter verlagen",
+      "increase": "1 centimeter verhogen",
+      "separator": "Decimaalteken",
+      "backspace": "Laatste cijfer wissen",
+      "clear": "Wissen",
+      "next": "Volgende: {field}",
+      "done": "Klaar",
+      "range": "Tussen {min} en {max} {unit}",
+      "rangeError": "Tussen {min} {unit} en {max} {unit}."
+    },
+    "continue": "Doorgaan",
+    "continueHint": "Voeg minstens één foto en alle drie de afmetingen toe om door te gaan.",
+    "save": {
+      "saving": "Opslaan…",
+      "saved": "Opgeslagen",
+      "offline": "Niet opgeslagen: je bent offline",
+      "failed": "Niet opgeslagen: probeer het zo opnieuw."
+    },
+    "alerts": {
+      "offline": "Je bent offline. Wat je hebt opgeslagen is veilig; maak opnieuw verbinding om verder te gaan.",
+      "expired": "Je vorige concept is verlopen na 7 dagen zonder wijzigingen. Begin opnieuw.",
+      "dismiss": "Sluiten"
+    }
   }
 }

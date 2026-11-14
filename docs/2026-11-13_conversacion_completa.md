@@ -1,6 +1,6 @@
 # Registro de conversación con Claude Code · 2026-11-13
 
-_Actualizado: 2026-11-13 22:25_
+_Actualizado: 2026-11-14 02:02_
 
 
 ---
@@ -3207,3 +3207,216 @@ Mientras tanto ya puedes probarlo:
 2. Pulsa el icono de usuario y entra como `bm-homeowner`.
 3. Lee el código en Mailpit (http://localhost:8025).
 4. Vuelves a Home con tu inicial en la cabecera; desde ahí puedes cerrar sesión.
+
+
+### 🤖 **Claude** · 2026-11-13 22:25:49
+
+El validator ha dado **accept**. Resuelvo la nota L1: borro `apps/web/.vitest/` y la añado a `.gitignore`. Las mejoras opcionales L2-L4 las dejo anotadas en los riesgos. Después marco la feature como `accepted` y publico:
+
+
+### 🤖 **Claude** · 2026-11-13 22:25:55
+
+> 🔧 **Bash**: `{"command": "rm -rf apps/web/.vitest && grep -qx '.vitest/' .gitignore || echo '.vitest/' >> .gitignore; tail -3 .gitignore; python3 -I - <<'EOF'\nimport json\np='feature_list.json'; s=open(p).read()\ni=s.index('\"id\": \"homeowner-password-login\"'); j=s.index('\"status\": \"passing\"',i); assert j`
+
+
+### 🤖 **Claude** · 2026-11-13 22:26:06
+
+> 🔧 **Bash**: `{"command": "git add -A && git diff --cached --name-only | grep -E 'node_modules|test-results|playwright-report|\\.next/|\\.vitest|auth-state|(^|/)\\.env$' || echo \"no junk\"; git diff --cached --stat | tail -1; git commit -q -F - <<'EOF'\nfeat: complete homeowner-password-login\n\n- Web BFF sign-i`
+
+
+### 🤖 **Claude** · 2026-11-13 22:26:24
+
+> 🔧 **mcp__github__create_pull_request**: `{"owner": "hardwaremission", "repo": "bricomission", "title": "[homeowner-password-login] Homeowner signs in with password and email OTP", "head": "feature/homeowner-password-login", "base": "main", "body": "Closes #13\n\n## Summary\n- **BFF sign-in**: the Next server is the confidential OIDC client`
+
+
+### 🤖 **Claude** · 2026-11-13 22:26:25
+
+> 🔧 **mcp__github__add_issue_comment**: `{"owner": "hardwaremission", "repo": "bricomission", "issue_number": 13, "body": "Status: **accepted** by the independent validator. Commit `e3041d8 feat: complete homeowner-password-login` pushed to `feature/homeowner-password-login`; published as PR #16 (not merged)."}`
+
+
+### 🤖 **Claude** · 2026-11-13 22:26:38
+
+`homeowner-password-login` está **publicada**: PR **#16**, que cierra el issue #13.
+
+**Qué se ha hecho**
+- **Login BFF:** el servidor web es el cliente OIDC confidencial `bricomission-web`. Usa PKCE S256, comprueba state, nonce e `iss`, y verifica la firma del ID token. Las pantallas de login y registro son las de Keycloak con el tema de #14.
+- **Sesiones en PostgreSQL** (esquema `web_session`):
+  - la cookie es opaca y en la base de datos solo se guarda su hash;
+  - los tokens van cifrados con AES-256-GCM;
+  - las sesiones sobreviven a reiniciar el contenedor web.
+- **Proxy `/api`:**
+  - añade el token de la sesión e ignora la cabecera `Authorization` del navegador;
+  - protege contra CSRF comprobando el `Origin`;
+  - refresca el token una sola vez aunque lleguen varias peticiones a la vez;
+  - el logout cierra también la sesión de Keycloak.
+- **UI del diseño aprobado:**
+  - botón de cuenta en la cabecera;
+  - hoja de cuenta con "Sign out";
+  - página `/auth/error`;
+  - por debajo de 375 px, el selector muestra el nombre completo del idioma a 12 px, centrado.
+
+**Cómo probarlo**
+```bash
+./init.sh
+# http://localhost:3100/  (usa localhost, no 127.0.0.1)
+# icono de usuario → bm-homeowner → código en Mailpit http://localhost:8025
+# crear cuenta: http://localhost:3100/auth/login?mode=register
+bash scripts/web/auth-persist-check.sh
+```
+
+**Validación:** accept, sin hallazgos bloqueantes.
+- Tests: api 130, web 284 y 89 E2E.
+- El smoke de Keycloak pasa.
+- La sesión sobrevive a reiniciar el contenedor web.
+- Las pruebas de CSRF, redirección abierta y `Authorization` falsificada pasan.
+- Los tokens están cifrados en la base de datos.
+
+He borrado un fichero de salida de Vitest que se había colado y he añadido `.vitest/` a `.gitignore`. Las tres mejoras opcionales (L2-L4) quedan anotadas en los riesgos.
+
+**Commit:** `e3041d8 feat: complete homeowner-password-login`.
+
+**Tras el merge:** cada checkout tiene que reiniciar el volumen del realm una vez; `init.sh` lo detecta.
+
+**Siguiente:** haz merge de **#16**. Quedarán listas `kitchen-capture-draft`, `professional-registration`, `google-sso-login` y `language-preference-account`. La primera de la lista es `kitchen-capture-draft`, que también tiene pantallas.
+
+
+### 🧑 **Juan Miguel** · 2026-11-13 22:32:45
+
+Hecho
+
+
+### 🤖 **Claude** · 2026-11-13 22:32:50
+
+> 🔧 **Bash**: `{"command": "GIT_TERMINAL_PROMPT=0 git fetch -q origin && (git merge-base --is-ancestor feature/homeowner-password-login origin/main && echo merged || echo NOT-MERGED) && git stash -q && git checkout -q main && GIT_TERMINAL_PROMPT=0 git pull -q --ff-only origin main && git stash pop -q; git branch -`
+
+
+### 🤖 **Claude** · 2026-11-13 22:32:57
+
+> 🔧 **Bash**: `{"command": "git checkout -q -b feature/kitchen-capture-draft && git branch --show-current && docker compose ps --format '{{.Service}} {{.Status}}' | head; grep -c . /dev/null; python3 -I -c \"\nimport json;x=[x for x in json.load(open('feature_list.json')) if x['id']=='kitchen-capture-draft'][0];pr`
+
+
+### 🤖 **Claude** · 2026-11-13 22:33:03
+
+> 🔧 **mcp__github__issue_write**: `{"method": "create", "owner": "hardwaremission", "repo": "bricomission", "title": "[kitchen-capture-draft] Anonymous visitor uploads kitchen photos and measurements", "body": "**Feature:** `kitchen-capture-draft` (see `feature_list.json`)\n\n**Behavior:** Without an account, a visitor creates a draf`
+
+
+### 🤖 **Claude** · 2026-11-13 22:33:15
+
+> 🔧 **Agent**: `{"description": "Plan kitchen-capture-draft spec", "subagent_type": "planner", "prompt": "Repository: /home/juanmi/Proyectos/hardwaremission.bricomission (branch feature/kitchen-capture-draft, base 82ca50d = main with web-pwa-shell, keycloak-login-theme and homeowner-password-login merged; work in t`
+
+
+### 🤖 **Claude** · 2026-11-13 22:33:22
+
+PR #16 está en `main` (`82ca50d`) y he borrado la rama local. Hay 4 features listas: `kitchen-capture-draft`, `professional-registration`, `google-sso-login` y `language-preference-account`. Sigo el orden de la lista con **`kitchen-capture-draft`**: el visitante sin cuenta sube fotos de la cocina e introduce las medidas.
+
+- **Issue:** [#17](https://github.com/hardwaremission/bricomission/issues/17).
+- **Rama:** `feature/kitchen-capture-draft`, creada desde `82ca50d`.
+- **Planner:** está escribiendo la spec. Le he pedido que decida y justifique:
+  - cómo identificar el borrador anónimo de forma segura, dado que la API deniega todo por defecto;
+  - si las fotos suben a MinIO con URL prefirmada o a través de la API, con límites de tamaño y tipo, y si se elimina el EXIF/GPS por privacidad;
+  - el modelo Prisma del Kitchen Project;
+  - medidas con decimales según el idioma;
+  - el comportamiento sin conexión;
+  - el brief de diseño solo en inglés: pantalla vacía, con fotos, subiendo, errores, validación de medidas, sin conexión y comprobación a 360 px.
+
+Cuando termine te consulto las decisiones clave y diseñamos en OpenPencil.
+
+
+### 🤖 **Claude** · 2026-11-13 22:39:24
+
+El planner ha terminado la spec (`docs/specs/kitchen-capture-draft.md`, 10 escenarios). Las decisiones técnicas principales:
+- **Identidad del borrador:** un token aleatorio en una cookie HttpOnly `bm_draft`. El proxy lo convierte en una cabecera, la API solo guarda su hash y siempre se trabaja sobre "el borrador actual", nunca por id.
+- **Fotos:** suben a través de la API. `sharp` aplica la orientación, **elimina el GPS y el resto de metadatos** y genera la imagen completa y la miniatura en MinIO, en un bucket privado.
+
+Necesito que confirmes cuatro decisiones de producto:
+
+
+### 🤖 **Claude** · 2026-11-13 22:39:32
+
+> 🔧 **AskUserQuestion**: `{"questions": [{"question": "¿Qué rangos de medidas acepta la cocina? (se guardan en centímetros enteros)", "header": "Rangos", "multiSelect": false, "options": [{"label": "Largo/ancho 1-20 m, alto 1,80-6 m (Recomendado)", "description": "Cubre desde office pequeño hasta cocina-comedor grande; altur`
+
+
+### 🤖 **Claude** · 2026-11-13 22:41:18
+
+> 🔧 **SendMessage**: `{"to": "a8abaf3522e8d207d", "summary": "Apply developer decisions incl. HEIC", "message": "Developer decisions (2026-11-13) for kitchen-capture-draft — update docs/specs/kitchen-capture-draft.md (Decisions section, scenarios, verification, risks) and the feature notes in feature_list.json:\n1. Range`
+
+
+### 🤖 **Claude** · 2026-11-13 22:41:27
+
+Decisiones registradas:
+- **Rangos:** largo y ancho de 1 a 20 m, alto de 1,80 a 6 m.
+- **Unidades:** metros por defecto, con conmutador m/cm.
+- **Fotos:** hasta 8, de 15 MB, en JPEG, PNG, WebP **y HEIC**.
+- **Caducidad:** 7 días desde el último cambio.
+
+HEIC es lo único que cambia respecto a lo propuesto. El planner está añadiendo a la spec cómo se decodifican las fotos de iPhone en el servidor:
+- **Opciones:** `sharp`/libvips con soporte HEVC o un decodificador basado en libheif.
+- **Regla:** si no hay un decodificador con licencia limpia que funcione sin conexión, el implementer para e informa.
+- **Pruebas:** test con un fichero HEIC de muestra.
+
+Cuando termine diseño la página **Capture** en OpenPencil y te la envío para aprobar.
+
+
+### 🤖 **Claude** · 2026-11-13 22:42:53
+
+La spec está actualizada con HEIC. Diseño la página **Capture**. Primero leo el brief:
+
+
+### 🤖 **Claude** · 2026-11-13 22:42:55
+
+> 🔧 **Bash**: `{"command": "awk '/Design Brief For The OpenPencil Step/{p=1} p&&/^## /&&!/Design Brief/{exit} p' docs/specs/kitchen-capture-draft.md", "description": "Read the Capture design brief"}`
+
+
+### 🤖 **Claude** · 2026-11-13 22:42:55
+
+> 🔧 **mcp__open-pencil__list_documents**: `{}`
+
+
+### 🤖 **Claude** · 2026-11-13 22:43:18
+
+Antes de diseñar busco una foto de muestra con licencia conocida para las miniaturas:
+
+
+### 🤖 **Claude** · 2026-11-13 22:43:19
+
+> 🔧 **Bash**: `{"command": "ls infra/ai/samples/ 2>/dev/null; cat infra/ai/samples/SOURCE.md 2>/dev/null | head -8", "description": "Find sample kitchen photo and its license"}`
+
+
+### 🤖 **Claude** · 2026-11-13 22:43:20
+
+> 🔧 **ToolSearch**: `{"query": "select:mcp__open-pencil__set_image_fill", "max_results": 1}`
+
+
+### 🤖 **Claude** · 2026-11-13 22:43:23
+
+Uso la foto de dominio público del spike (USDA Forest Service). Genero dos miniaturas pequeñas para las fichas:
+
+
+### 🤖 **Claude** · 2026-11-13 22:43:26
+
+> 🔧 **Bash**: `{"command": "S=/tmp/claude-1000/-home-juanmi-Proyectos-hardwaremission-bricomission/f43e4370-93ae-4d11-927d-b8255aa114d7/scratchpad; cd /home/juanmi/Proyectos/hardwaremission.bricomission && ffmpeg -loglevel error -y -i infra/ai/samples/kitchen-sample.jpg -vf \"scale=342:256:force_original_aspect_ra`
+
+
+### 🤖 **Claude** · 2026-11-13 22:43:30
+
+> 🔧 **Bash**: `{"command": "S=/tmp/claude-1000/-home-juanmi-Proyectos-hardwaremission-bricomission/f43e4370-93ae-4d11-927d-b8255aa114d7/scratchpad; for i in 1 2; do ffmpeg -loglevel error -y -i $S/thumb$i.jpg -vf scale=171:128 -q:v 12 $S/t$i.jpg; done; ls -la $S/t1.jpg $S/t2.jpg; base64 -w0 $S/t1.jpg | wc -c", "de`
+
+
+### 🤖 **Claude** · 2026-11-13 22:43:34
+
+Dibujo primero el marco más completo, **Capture – with photos and measurements**:
+
+
+### 🤖 **Claude** · 2026-11-13 22:43:34
+
+> 🔧 **mcp__open-pencil__create_page**: `{"name": "Capture"}`
+
+
+### 🤖 **Claude** · 2026-11-13 22:43:35
+
+> 🔧 **mcp__open-pencil__fetch_icons**: `{"names": ["lucide:image-plus", "lucide:lightbulb", "lucide:check", "lucide:cloud-off", "lucide:refresh-cw", "lucide:trash-2", "lucide:triangle-alert", "lucide:info", "lucide:loader"]}`
+
+
+### 🤖 **Claude** · 2026-11-13 22:43:37
+
+You've hit your 5-hour limit · resets 1am (Europe/Madrid)

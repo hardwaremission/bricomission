@@ -47,3 +47,49 @@ model CatalogChunk {
   @@unique([documentId, pageNumber, chunkIndex])
   @@map("catalog_chunk")
 }
+
+/// Lifecycle of a Kitchen Project (feature kitchen-capture-draft adds `draft`; later
+/// features add the other states).
+enum KitchenProjectStatus {
+  draft
+
+  @@map("kitchen_project_status")
+}
+
+/// A homeowner's Kitchen Project. While `draft` it is anonymous: the browser holds an opaque
+/// draft token and only its SHA-256 (32 bytes) is stored. Measurements are whole centimetres
+/// (CHECK constraints in the migration). `expiresAt` slides 7 days on every change; the API's
+/// DraftCleanupService deletes expired drafts and their stored photos.
+model KitchenProject {
+  id             String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  status         KitchenProjectStatus @default(draft)
+  draftTokenHash Bytes?               @unique @map("draft_token_hash")
+  lengthCm       Int?                 @map("length_cm")
+  widthCm        Int?                 @map("width_cm")
+  heightCm       Int?                 @map("height_cm")
+  expiresAt      DateTime             @map("expires_at") @db.Timestamptz(3)
+  createdAt      DateTime             @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt      DateTime             @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+  photos         KitchenPhoto[]
+
+  @@index([expiresAt])
+  @@map("kitchen_project")
+}
+
+/// A normalized kitchen photo: two metadata-free JPEG objects in MinIO (`full`, `thumb`).
+/// `width`, `height` and `byteSize` describe `full`. Positions are 0-based and compacted.
+model KitchenPhoto {
+  id               String         @id @db.Uuid
+  kitchenProjectId String         @map("kitchen_project_id") @db.Uuid
+  kitchenProject   KitchenProject @relation(fields: [kitchenProjectId], references: [id], onDelete: Cascade)
+  position         Int
+  fullKey          String         @map("full_key")
+  thumbKey         String         @map("thumb_key")
+  width            Int
+  height           Int
+  byteSize         Int            @map("byte_size")
+  createdAt        DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@index([kitchenProjectId, position])
+  @@map("kitchen_photo")
+}

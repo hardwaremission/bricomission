@@ -55,5 +55,72 @@
       "tryAgain": "Yritä uudelleen",
       "backHome": "Takaisin etusivulle"
     }
+  },
+  "capture": {
+    "backToHome": "Takaisin etusivulle",
+    "step": "Vaihe {current}/{total}",
+    "title": "Keittiösi",
+    "helper": "Lisää kuvat ja mitat huoneesta, jonka haluat remontoida.",
+    "photos": {
+      "title": "Kuvat",
+      "rules": "JPG, PNG, WebP tai HEIC · enintään 15 Mt · enintään 8 kuvaa",
+      "add": "Lisää kuvia",
+      "tip": "Kuvaa nurkista, jotta koko huone näkyy.",
+      "alt": "Keittiökuva {n}",
+      "remove": "Poista kuva {n}",
+      "retry": "Yritä lähetystä uudelleen",
+      "uploading": "Lähetetään… {percent} %",
+      "processing": "Käsitellään…",
+      "queued": "Odottaa…",
+      "limitReached": "Olet lisännyt {max} kuvaa, mikä on enimmäismäärä. Poista yksi lisätäksesi toisen.",
+      "errors": {
+        "tooLarge": "Kuva on yli 15 Mt.",
+        "unsupported": "Käytä JPG-, PNG-, WebP- tai HEIC-muotoa.",
+        "tooSmall": "Kuva on liian pieni. Käytä vähintään 480 px leveää kuvaa.",
+        "failed": "Emme voineet lähettää kuvaa."
+      }
+    },
+    "measurements": {
+      "title": "Mitat",
+      "unit": "Yksikkö",
+      "fields": {
+        "lengthCm": "Pituus",
+        "widthCm": "Leveys",
+        "heightCm": "Korkeus"
+      },
+      "rangeHint": "Pituus ja leveys {lwMin}–{lwMax} {unit} · korkeus {hMin}–{hMax} {unit}"
+    },
+    "units": {
+      "m": "m",
+      "cm": "cm"
+    },
+    "keypad": {
+      "label": "Syötä mitat",
+      "title": "Mitat",
+      "close": "Sulje",
+      "empty": "—",
+      "decrease": "Pienennä 1 senttimetrillä",
+      "increase": "Suurenna 1 senttimetrillä",
+      "separator": "Desimaalierotin",
+      "backspace": "Poista viimeinen numero",
+      "clear": "Tyhjennä",
+      "next": "Seuraava: {field}",
+      "done": "Valmis",
+      "range": "Välillä {min}–{max} {unit}",
+      "rangeError": "Välillä {min} {unit} – {max} {unit}."
+    },
+    "continue": "Jatka",
+    "continueHint": "Lisää vähintään yksi kuva ja kaikki kolme mittaa jatkaaksesi.",
+    "save": {
+      "saving": "Tallennetaan…",
+      "saved": "Tallennettu",
+      "offline": "Ei tallennettu: olet offline-tilassa",
+      "failed": "Ei tallennettu: yritä hetken kuluttua uudelleen."
+    },
+    "alerts": {
+      "offline": "Olet offline-tilassa. Tallentamasi tiedot ovat tallessa; muodosta yhteys jatkaaksesi.",
+      "expired": "Edellinen luonnoksesi vanheni 7 päivän jälkeen ilman muutoksia. Aloita alusta.",
+      "dismiss": "Sulje"
+    }
   }
 }

@@ -55,5 +55,72 @@
       "tryAgain": "Tentar novamente",
       "backHome": "Voltar ao início"
     }
+  },
+  "capture": {
+    "backToHome": "Voltar ao início",
+    "step": "Passo {current} de {total}",
+    "title": "A sua cozinha",
+    "helper": "Adicione fotos e as medidas da divisão que quer renovar.",
+    "photos": {
+      "title": "Fotos",
+      "rules": "JPG, PNG, WebP ou HEIC · até 15 MB · até 8 fotos",
+      "add": "Adicionar fotos",
+      "tip": "Fotografe a partir dos cantos para que se veja toda a divisão.",
+      "alt": "Foto da cozinha {n}",
+      "remove": "Remover a foto {n}",
+      "retry": "Tentar enviar de novo",
+      "uploading": "A enviar… {percent}%",
+      "processing": "A processar…",
+      "queued": "À espera…",
+      "limitReached": "Adicionou {max} fotos, o máximo. Remova uma para adicionar outra.",
+      "errors": {
+        "tooLarge": "Esta foto tem mais de 15 MB.",
+        "unsupported": "Use JPG, PNG, WebP ou HEIC.",
+        "tooSmall": "Esta foto é demasiado pequena. Use uma com pelo menos 480 px de largura.",
+        "failed": "Não conseguimos enviar esta foto."
+      }
+    },
+    "measurements": {
+      "title": "Medidas",
+      "unit": "Unidade",
+      "fields": {
+        "lengthCm": "Comprimento",
+        "widthCm": "Largura",
+        "heightCm": "Altura"
+      },
+      "rangeHint": "Comprimento e largura entre {lwMin} e {lwMax} {unit} · altura entre {hMin} e {hMax} {unit}"
+    },
+    "units": {
+      "m": "m",
+      "cm": "cm"
+    },
+    "keypad": {
+      "label": "Introduzir medidas",
+      "title": "Medidas",
+      "close": "Fechar",
+      "empty": "—",
+      "decrease": "Diminuir 1 centímetro",
+      "increase": "Aumentar 1 centímetro",
+      "separator": "Separador decimal",
+      "backspace": "Apagar o último dígito",
+      "clear": "Limpar",
+      "next": "Seguinte: {field}",
+      "done": "Concluído",
+      "range": "Entre {min} e {max} {unit}",
+      "rangeError": "Entre {min} {unit} e {max} {unit}."
+    },
+    "continue": "Continuar",
+    "continueHint": "Adicione pelo menos uma foto e as três medidas para continuar.",
+    "save": {
+      "saving": "A guardar…",
+      "saved": "Guardado",
+      "offline": "Não guardado: está offline",
+      "failed": "Não guardado: tente de novo daqui a pouco."
+    },
+    "alerts": {
+      "offline": "Está offline. O que guardou está seguro; volte a ligar-se para continuar.",
+      "expired": "O seu rascunho anterior expirou após 7 dias sem alterações. Comece de novo.",
+      "dismiss": "Fechar"
+    }
   }
 }

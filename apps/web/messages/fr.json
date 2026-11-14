@@ -55,5 +55,72 @@
       "tryAgain": "Réessayer",
       "backHome": "Retour à l'accueil"
     }
+  },
+  "capture": {
+    "backToHome": "Retour à l'accueil",
+    "step": "Étape {current} sur {total}",
+    "title": "Votre cuisine",
+    "helper": "Ajoutez des photos et les dimensions de la pièce que vous voulez rénover.",
+    "photos": {
+      "title": "Photos",
+      "rules": "JPG, PNG, WebP ou HEIC · jusqu'à 15 Mo · jusqu'à 8 photos",
+      "add": "Ajouter des photos",
+      "tip": "Photographiez depuis les angles pour que toute la pièce soit visible.",
+      "alt": "Photo de la cuisine {n}",
+      "remove": "Retirer la photo {n}",
+      "retry": "Réessayer l'envoi",
+      "uploading": "Envoi… {percent} %",
+      "processing": "Traitement…",
+      "queued": "En attente…",
+      "limitReached": "Vous avez ajouté {max} photos, le maximum. Retirez-en une pour en ajouter une autre.",
+      "errors": {
+        "tooLarge": "Cette photo dépasse 15 Mo.",
+        "unsupported": "Utilisez JPG, PNG, WebP ou HEIC.",
+        "tooSmall": "Cette photo est trop petite. Utilisez-en une d'au moins 480 px de large.",
+        "failed": "Nous n'avons pas pu envoyer cette photo."
+      }
+    },
+    "measurements": {
+      "title": "Dimensions",
+      "unit": "Unité",
+      "fields": {
+        "lengthCm": "Longueur",
+        "widthCm": "Largeur",
+        "heightCm": "Hauteur"
+      },
+      "rangeHint": "Longueur et largeur entre {lwMin} et {lwMax} {unit} · hauteur entre {hMin} et {hMax} {unit}"
+    },
+    "units": {
+      "m": "m",
+      "cm": "cm"
+    },
+    "keypad": {
+      "label": "Saisir les dimensions",
+      "title": "Dimensions",
+      "close": "Fermer",
+      "empty": "—",
+      "decrease": "Diminuer de 1 centimètre",
+      "increase": "Augmenter de 1 centimètre",
+      "separator": "Séparateur décimal",
+      "backspace": "Effacer le dernier chiffre",
+      "clear": "Effacer",
+      "next": "Suivant : {field}",
+      "done": "Terminé",
+      "range": "Entre {min} et {max} {unit}",
+      "rangeError": "Entre {min} {unit} et {max} {unit}."
+    },
+    "continue": "Continuer",
+    "continueHint": "Ajoutez au moins une photo et les trois dimensions pour continuer.",
+    "save": {
+      "saving": "Enregistrement…",
+      "saved": "Enregistré",
+      "offline": "Non enregistré : vous êtes hors ligne",
+      "failed": "Non enregistré : réessayez dans un instant."
+    },
+    "alerts": {
+      "offline": "Vous êtes hors ligne. Ce que vous avez enregistré est en sécurité ; reconnectez-vous pour continuer.",
+      "expired": "Votre brouillon précédent a expiré après 7 jours sans modification. Recommencez.",
+      "dismiss": "Fermer"
+    }
   }
 }

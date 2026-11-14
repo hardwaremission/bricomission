@@ -13,7 +13,8 @@
 - Web PWA: `web-pwa-shell` is `passing` (implemented and self-verified, awaiting independent validation). Web on `http://localhost:3100/` (`WEB_PORT`).
 - Keycloak theme: `keycloak-login-theme` is `passing` (implemented and self-verified, awaiting independent validation). Locale precedence decided (option a): Keycloak stores no account locale; `ui_locales` decides. `./init.sh` now also fails on a stale realm volume (no theme on the sign-in page) and prints the reset command.
 - Web sign-in: `homeowner-password-login` is `passing` (implemented and self-verified, awaiting independent validation). BFF client `bricomission-web`, sessions in schema `web_session`; realm volumes older than this feature need a reset (`./init.sh` detects it).
-- Last verified at: 2026-11-13 after `homeowner-password-login` and a realm reset (`./init.sh` exit 0 with 6 healthy services and the new Keycloak/Web auth checks; `pnpm test:e2e` 89 passed, 1 skipped; `./scripts/keycloak-smoke.sh` exit 0; `bash scripts/web/auth-persist-check.sh` exit 0)
+- Kitchen capture: `kitchen-capture-draft` is `passing` (implemented and self-verified, awaiting independent validation). Capture screen at `/kitchen-projects/new`; anonymous drafts bound to the HttpOnly cookie `bm_draft`; photos (JPEG/PNG/WebP/HEIC) normalized to metadata-free JPEGs in the private MinIO bucket `bricomission-media`; HEIC decoded with `heic-decode`/`libheif-js` (sharp cannot decode HEVC); 7-day sliding expiry with an in-API sweeper. `./init.sh` Web step also checks the Capture page and the guarded draft route.
+- Last verified at: 2026-11-14 after `kitchen-capture-draft` (`./init.sh` exit 0, 6 healthy; workspace gate api 203 / web 364 / api-client 3, also offline; `pnpm test:e2e` 103 passed, 1 skipped). Before that: 2026-11-13 after `homeowner-password-login` and a realm reset (`./init.sh` exit 0 with 6 healthy services and the new Keycloak/Web auth checks; `pnpm test:e2e` 89 passed, 1 skipped; `./scripts/keycloak-smoke.sh` exit 0; `bash scripts/web/auth-persist-check.sh` exit 0)
 
 ## Session Log
 
@@ -201,3 +202,20 @@
 - State left: core stack (6 services) healthy; realm reset done (new client present). Dev realm has test accounts `e2e-web-*`; `web_session` holds test sessions (expire within 10 h). `apps/web/test-results` has no `auth-state.json`. Nothing committed.
 - Known risks: web holds DB credentials; dev default key and client secret are public; `bm_session` is shared across localhost ports (worktrees). Other checkouts need a realm reset after pulling (`./init.sh` detects it).
 - Next best step: independent validation of `homeowner-password-login` (`feature-validator`).
+
+### Session 011
+
+- Date: 2026-11-14
+- Goal: implement `kitchen-capture-draft` (spec `docs/specs/kitchen-capture-draft.md`, including the "Design Step Outcome" section) in the base checkout, branch `feature/kitchen-capture-draft`, default compose project `hardwaremissionbricomission`, default ports. UI gate satisfied: `docs/design/kitchen-capture-draft.md` (approved by developer on 2026-11-14).
+- Completed:
+  - API: `src/storage/` (`ObjectStorage`, `S3ObjectStorage`, lazy private bucket) and `src/kitchen-projects/` (draft token + `DraftTokenGuard` with the 404 policy, service, controller with 6 routes, multer upload interceptor, photo processor with sharp + heic-decode, measurement validation, `DraftCleanupService`, config, Prisma repository). Prisma models `KitchenProject`/`KitchenPhoto` and migration `20261114000000_kitchen_capture_draft` with hand-written CHECKs. `draftToken` API-key scheme. Shared types; OpenAPI and api-client regenerated.
+  - Web: BFF start route `POST /api/kitchen-projects/drafts`; proxy maps `bm_draft` to `X-Draft-Token`, drops the client header, extends the CSRF rule and reuses `readCookie` (risk L2 resolved). Capture page and components (photo grid, measurement keypad sheet, alerts, sticky bar), pure helpers in `src/lib/kitchen-draft/`, `capture` namespace in the 11 message files (10 agent-translated).
+  - Infra: api env for S3 and draft settings in `compose.yaml` and `.env.example`; two new `init.sh` Web checks. Fixture generator `apps/api/scripts/generate-heic-fixtures.sh` with committed HEIC/JPEG fixtures and `SOURCE.md` notes.
+  - Tests: 7 api spec files, 4 new web unit files plus proxy cases, `e2e/capture.spec.ts` (14 tests).
+  - Docs: ARCHITECTURE.md, AGENTS.md (Kitchen Drafts), DESIGN.md, docs/user-and-access-model.md, docs/domain-model.md, docs/technical-discovery.md, docs/risks-and-open-questions.md, spec Implementation Notes.
+- Verification run: workspace gate (also offline), OpenAPI export (additions only), live curl against the API and through the web, HEIC probe and timing in the api container, MinIO policy/listing/metadata checks, psql checks (CHECKs, 32-byte hash, HNSW index kept, CHECK violation), cleanup after `docker compose restart api`, MinIO-stopped path (curl and a temporary browser spec, deleted), restart persistence (`docker compose restart web api`), `./init.sh` exit 0, `pnpm test:e2e` 103 passed / 1 skipped. Details in `feature_list.json` evidence.
+- HEIC decoder outcome: sharp 0.35.5 fails on HEVC in the container; `heic-decode` 2.1.0 (ISC) + `libheif-js` 1.23.5 (LGPL-3.0, WASM, unmodified) works offline; 12 MP HEIC upload about 0.5 s.
+- Deviations: see the spec's Implementation Notes (extra `photo_missing` code, 50 MP -> 413, delete order, field buttons instead of inputs, save-status/hint rule, localStorage expiry marker, heic-decode license ISC, trixie fixture image).
+- State left: core stack (6 services) healthy with the new api and web images. Test drafts from curl and E2E runs exist in the dev database and bucket (they expire within 7 days and the sweeper removes them). No throwaway compose projects or buckets were created. Nothing committed.
+- Known risks: global-only abuse cap (`DRAFT_MAX_OPEN`), MinIO root credentials in the api, HEVC patents before any distribution (all recorded in `docs/risks-and-open-questions.md`).
+- Next best step: independent validation of `kitchen-capture-draft` (`feature-validator`).
