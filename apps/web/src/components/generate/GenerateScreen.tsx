@@ -85,7 +85,7 @@ export function GenerateScreen() {
       if (outcome.kind === 'ok') {
         // The bm_draft cookie is gone; the marker must not turn the next 404 into "expired".
         draftMarker('clear');
-        // Render intent: AI Results starts the first Render (controlnet-render); budget: the owned page.
+        // Render intent: AI Results starts the first Render (controlnet-render); budget: the Budget page starts the first Budget.
         router.replace(claimLanding(outcome.projectId, intent));
         return;
       }

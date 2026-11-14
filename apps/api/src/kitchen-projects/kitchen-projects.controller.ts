@@ -27,7 +27,6 @@ import {
   ApiParam,
   ApiProduces,
   ApiQuery,
-  ApiResponse,
   ApiSecurity,
   ApiServiceUnavailableResponse,
   ApiTags,
@@ -43,6 +42,8 @@ import type { PhotoVariant } from './kitchen-drafts.service.js';
 import { ClaimKitchenDraftResponseDto, KitchenProjectErrorDto, KitchenProjectViewDto } from './kitchen-projects.dto.js';
 import { KitchenProjectsService } from './kitchen-projects.service.js';
 import { CurrentProject, OwnedProjectGuard } from './owned-project.guard.js';
+import { BudgetListResponseDto, BudgetViewDto, CreateBudgetResponseDto } from './budget/budget.dto.js';
+import { BudgetService } from './budget/budget.service.js';
 import { CreateRenderRequestDto, CreateRenderResponseDto, RenderListResponseDto, RenderViewDto } from './renders/renders.dto.js';
 import { RENDER_VARIANTS, RendersService, type RenderVariant } from './renders/renders.service.js';
 
@@ -76,18 +77,6 @@ const Content = (variants: readonly string[] = ['thumb', 'full']) =>
     ApiServiceUnavailableResponse({ type: KitchenDraftErrorDto, description: '`storage_unavailable`, or database unreachable' }),
   );
 
-const Costly = (summary: string, feature: string) =>
-  applyDecorators(
-    Owned(),
-    HttpCode(501),
-    ApiOperation({
-      summary,
-      description: `Placeholder until ${feature}: it never calls the GPU job broker or an AI adapter. That feature keeps the path, the guards and the 409 rule.`,
-    }),
-    ApiConflictResponse({ type: KitchenProjectErrorDto, description: '`project_incomplete`: needs a photo, all three measurements and a Moodboard Item' }),
-    ApiResponse({ status: 501, type: KitchenProjectErrorDto, description: '`not_available_yet`' }),
-  );
-
 /**
  * Claimed Kitchen Projects (feature login-gate-claim). Default-deny: no `@Public()` here (it
  * would beat `@Roles()`). Every route needs a Bearer token of a Homeowner (realm role `user`);
@@ -100,6 +89,7 @@ export class KitchenProjectsController {
   constructor(
     private readonly projects: KitchenProjectsService,
     private readonly renders: RendersService,
+    private readonly budgets: BudgetService,
   ) {}
 
   @Post('drafts/current/claim')
@@ -206,8 +196,39 @@ export class KitchenProjectsController {
   }
 
   @Post(':projectId/budget')
-  @Costly('Compute the Budget of the kitchen (costly; placeholder)', 'budget-tier-computation')
-  requestBudget(@CurrentProject() project: KitchenProjectRecord): void {
-    this.projects.requestCostlyAction(project, 'budget');
+  @HttpCode(202)
+  @ApiOperation({
+    summary: 'Compute the Budget of the kitchen (costly; queued on the GPU)',
+    description:
+      'Retrieves Catalog chunks, asks the LLM for four tiers (Luxury, High, Medium, Low) whose Line Items cite a Catalog chunk, verifies every quoted price against that chunk and computes all amounts in code (integer cents). Answers 202 with the `queued` Budget; poll `GET .../budgets/{budgetId}`. One active Budget per project; failed Budgets do not count towards the limit.',
+  })
+  @ApiAcceptedResponse({ type: CreateBudgetResponseDto })
+  @ApiConflictResponse({
+    type: KitchenProjectErrorDto,
+    description: '`project_incomplete` (needs a photo, all three measurements and a Moodboard Item), `catalog_empty`, `budget_in_progress` or `budget_limit_reached`',
+  })
+  @ApiTooManyRequestsResponse({ type: KitchenProjectErrorDto, description: '`gpu_queue_full`: no Budget was created' })
+  @ApiServiceUnavailableResponse({ type: KitchenProjectErrorDto, description: '`embedding_unavailable` (the Catalog search is down), or database unreachable' })
+  // Applied first, so the budget-specific 503 description above wins in the OpenAPI document.
+  @Owned()
+  requestBudget(@CurrentProject() project: KitchenProjectRecord, @CurrentUser() user: AuthenticatedUser): Promise<CreateBudgetResponseDto> {
+    return this.budgets.create(project, user.sub);
+  }
+
+  @Get(':projectId/budgets')
+  @Owned()
+  @ApiOperation({ summary: 'The Budgets of an owned project, newest first' })
+  @ApiOkResponse({ type: BudgetListResponseDto })
+  listBudgets(@CurrentProject() project: KitchenProjectRecord): Promise<BudgetListResponseDto> {
+    return this.budgets.list(project);
+  }
+
+  @Get(':projectId/budgets/:budgetId')
+  @Owned()
+  @ApiOperation({ summary: 'One Budget of an owned project (status, queue position, tiers with verified Line Items)' })
+  @ApiParam({ name: 'budgetId', schema: { type: 'string', format: 'uuid' } })
+  @ApiOkResponse({ type: BudgetViewDto })
+  getBudget(@CurrentProject() project: KitchenProjectRecord, @Param('budgetId', new ParseUUIDPipe()) budgetId: string): Promise<BudgetViewDto> {
+    return this.budgets.get(project, budgetId);
   }
 }

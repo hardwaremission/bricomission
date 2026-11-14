@@ -219,11 +219,10 @@
   },
   "project": {
     "title": "Dein Küchenprojekt",
-    "helper": "Erstelle ein Design deiner neuen Küche. Angebote folgen bald.",
+    "helper": "Erstelle einen Entwurf deiner neuen Küche oder hole dir dein Budget.",
     "claimed": "Deine Küche ist in deinem Konto gespeichert.",
     "dismiss": "Schließen",
     "newProject": "Neues Küchenprojekt starten",
-    "budgetsSoon": "Angebote: bald verfügbar",
     "seeDesigns": "Meine Designs ansehen",
     "signedOut": {
       "title": "Melde dich an, um dieses Küchenprojekt zu sehen",
@@ -233,7 +232,8 @@
       "title": "Wir konnten dieses Küchenprojekt nicht finden",
       "home": "Zur Startseite"
     },
-    "offline": "Du bist offline. Dein Küchenprojekt ist sicher; verbinde dich wieder, um es zu sehen."
+    "offline": "Du bist offline. Dein Küchenprojekt ist sicher; verbinde dich wieder, um es zu sehen.",
+    "seeBudget": "Mein Budget ansehen"
   },
   "results": {
     "back": "Zurück zu meiner Küche",
@@ -281,6 +281,62 @@
       "queueFull": "Der Designer ist gerade ausgelastet. Versuche es in einer Minute erneut.",
       "uploadsOnly": "Deine eigenen Fotos können den Stil noch nicht vorgeben, daher haben wir einen neutralen modernen Stil verwendet.",
       "offline": "Du bist offline. Deine Renderings sind sicher; verbinde dich erneut, um neue zu sehen."
+    }
+  },
+  "budget": {
+    "back": "Zurück zu meiner Küche",
+    "title": "Ihr Küchenbudget",
+    "helper": "Vier Optionen, von Premium bis Basis. Die Preise stammen aus dem Produktkatalog; tippe auf eine Option, um alle Artikel zu sehen.",
+    "titleActive": "Ihr Budget wird berechnet",
+    "helperActive": "Wir gleichen deine Küche mit dem Produktkatalog ab. Das dauert etwa eine Minute.",
+    "tiers": {
+      "luxury": "Luxus",
+      "high": "Hoch",
+      "medium": "Mittel",
+      "low": "Günstig"
+    },
+    "meta": "{count, plural, one {# Artikel} other {# Artikel}} · inkl. MwSt.",
+    "detail": "{unitPrice} × {quantity} {unit} · Art.-Nr. {sku}",
+    "citation": "{catalog}, Seite {page}",
+    "more": "+ {count, plural, one {# weiterer Artikel} other {# weitere Artikel}}",
+    "totals": {
+      "subtotal": "Zwischensumme (ohne MwSt.)",
+      "vat": "MwSt. {percent} %",
+      "total": "Gesamtsumme (inkl. MwSt.)"
+    },
+    "history": {
+      "title": "Deine Budgets",
+      "counter": "{count} von {max}",
+      "item": "Budget {n}"
+    },
+    "status": {
+      "running": "Berechnung läuft…",
+      "queued": "Warte auf die GPU",
+      "ahead": "{count, plural, one {# Auftrag vor deinem} other {# Aufträge vor deinem}}"
+    },
+    "note": "Du kannst diese Seite verlassen; das Budget wird weiter berechnet und erscheint hier, sobald es fertig ist.",
+    "hints": {
+      "oneAtATime": "Immer nur ein Budget gleichzeitig.",
+      "limit": "Du hast {max} Budgets erstellt, das Maximum für dieses Projekt."
+    },
+    "empty": {
+      "title": "Noch kein Budget",
+      "helper": "Hole dir vier Optionen für deine Küche, von Premium bis Basis."
+    },
+    "cta": {
+      "again": "Erneut berechnen",
+      "retry": "Erneut versuchen",
+      "start": "Mein Budget erstellen",
+      "back": "Zurück zu meiner Küche"
+    },
+    "alerts": {
+      "failed": "Dieses Budget konnte nicht berechnet werden. Versuche es gleich noch einmal.",
+      "interrupted": "Dieses Budget wurde unterbrochen. Versuche es erneut.",
+      "catalogEmpty": "Der Produktkatalog ist noch nicht bereit. Versuche es später erneut.",
+      "searchDown": "Die Preissuche ist gerade nicht verfügbar. Versuche es in einer Minute erneut.",
+      "queueFull": "Der Designer ist gerade ausgelastet. Versuche es in einer Minute erneut.",
+      "incomplete": "Füge zuerst deine Fotos und Maße hinzu und hole dir dann dein Budget.",
+      "offline": "Du bist offline. Deine Budgets sind sicher; verbinde dich wieder, um neue zu sehen."
     }
   }
 }

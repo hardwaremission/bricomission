@@ -219,11 +219,10 @@
   },
   "project": {
     "title": "Ditt köksprojekt",
-    "helper": "Skapa en design av ditt nya kök. Offerter kommer snart.",
+    "helper": "Skapa en design av ditt nya kök eller få din budget.",
     "claimed": "Ditt kök är sparat i ditt konto.",
     "dismiss": "Stäng",
     "newProject": "Starta ett nytt köksprojekt",
-    "budgetsSoon": "Offerter: kommer snart",
     "seeDesigns": "Se mina designer",
     "signedOut": {
       "title": "Logga in för att se det här köksprojektet",
@@ -233,7 +232,8 @@
       "title": "Vi kunde inte hitta det här köksprojektet",
       "home": "Gå till startsidan"
     },
-    "offline": "Du är offline. Ditt köksprojekt är säkert; anslut igen för att se det."
+    "offline": "Du är offline. Ditt köksprojekt är säkert; anslut igen för att se det.",
+    "seeBudget": "Visa min budget"
   },
   "results": {
     "back": "Tillbaka till mitt kök",
@@ -281,6 +281,62 @@
       "queueFull": "Designern är upptagen just nu. Försök igen om en minut.",
       "uploadsOnly": "Dina egna foton kan inte styra stilen ännu, så vi använde en neutral modern stil.",
       "offline": "Du är offline. Dina renderingar är säkra; anslut igen för att se nya."
+    }
+  },
+  "budget": {
+    "back": "Tillbaka till mitt kök",
+    "title": "Budget för ditt kök",
+    "helper": "Fyra alternativ, från premium till grundläggande. Priserna kommer från produktkatalogen; tryck på ett alternativ för att se alla artiklar.",
+    "titleActive": "Din budget beräknas",
+    "helperActive": "Vi matchar ditt kök mot produktkatalogen. Det tar ungefär en minut.",
+    "tiers": {
+      "luxury": "Lyx",
+      "high": "Hög",
+      "medium": "Medel",
+      "low": "Låg"
+    },
+    "meta": "{count, plural, one {# artikel} other {# artiklar}} · inkl. moms",
+    "detail": "{unitPrice} × {quantity} {unit} · Art.nr {sku}",
+    "citation": "{catalog}, sida {page}",
+    "more": "+ {count, plural, one {# artikel till} other {# artiklar till}}",
+    "totals": {
+      "subtotal": "Delsumma (exkl. moms)",
+      "vat": "Moms {percent} %",
+      "total": "Totalt (inkl. moms)"
+    },
+    "history": {
+      "title": "Dina budgetar",
+      "counter": "{count} av {max}",
+      "item": "Budget {n}"
+    },
+    "status": {
+      "running": "Beräknar…",
+      "queued": "Väntar på GPU:n",
+      "ahead": "{count, plural, one {# jobb före ditt} other {# jobb före ditt}}"
+    },
+    "note": "Du kan lämna sidan; budgeten fortsätter och visas här när den är klar.",
+    "hints": {
+      "oneAtATime": "En budget åt gången.",
+      "limit": "Du har skapat {max} budgetar, det maximala för det här projektet."
+    },
+    "empty": {
+      "title": "Ingen budget än",
+      "helper": "Få fyra alternativ för ditt kök, från premium till grundläggande."
+    },
+    "cta": {
+      "again": "Beräkna igen",
+      "retry": "Försök igen",
+      "start": "Få min budget",
+      "back": "Tillbaka till mitt kök"
+    },
+    "alerts": {
+      "failed": "Vi kunde inte beräkna budgeten. Försök igen om en stund.",
+      "interrupted": "Budgeten avbröts. Försök igen.",
+      "catalogEmpty": "Produktkatalogen är inte klar än. Försök igen senare.",
+      "searchDown": "Prissökningen är inte tillgänglig just nu. Försök igen om en minut.",
+      "queueFull": "Designern är upptagen just nu. Försök igen om en minut.",
+      "incomplete": "Lägg först till dina foton och mått och få sedan din budget.",
+      "offline": "Du är offline. Dina budgetar är säkra; anslut igen för att se nya."
     }
   }
 }

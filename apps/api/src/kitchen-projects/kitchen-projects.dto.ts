@@ -36,12 +36,15 @@ export class ClaimKitchenDraftResponseDto implements ClaimKitchenDraftResponse {
 
 const PROJECT_ERROR_CODES: KitchenProjectErrorCode[] = [
   'project_incomplete',
-  'not_available_yet',
   'storage_unavailable',
   'render_photo_unknown',
   'render_in_progress',
   'render_limit_reached',
   'gpu_queue_full',
+  'budget_in_progress',
+  'budget_limit_reached',
+  'catalog_empty',
+  'embedding_unavailable',
 ];
 
 export class KitchenProjectErrorDto {

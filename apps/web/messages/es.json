@@ -219,11 +219,10 @@
   },
   "project": {
     "title": "Tu proyecto de cocina",
-    "helper": "Genera un diseño de tu nueva cocina. Los presupuestos llegarán pronto.",
+    "helper": "Genera un diseño de tu nueva cocina u obtén tu presupuesto.",
     "claimed": "Tu cocina está guardada en tu cuenta.",
     "dismiss": "Cerrar",
     "newProject": "Empezar un nuevo proyecto de cocina",
-    "budgetsSoon": "Presupuestos: disponibles pronto",
     "seeDesigns": "Ver mis diseños",
     "signedOut": {
       "title": "Inicia sesión para ver este proyecto de cocina",
@@ -233,7 +232,8 @@
       "title": "No encontramos este proyecto de cocina",
       "home": "Ir al inicio"
     },
-    "offline": "Estás sin conexión. Tu proyecto de cocina está a salvo; vuelve a conectarte para verlo."
+    "offline": "Estás sin conexión. Tu proyecto de cocina está a salvo; vuelve a conectarte para verlo.",
+    "seeBudget": "Ver mi presupuesto"
   },
   "results": {
     "back": "Volver a mi cocina",
@@ -281,6 +281,62 @@
       "queueFull": "El diseñador está ocupado ahora mismo. Inténtalo de nuevo en un minuto.",
       "uploadsOnly": "Tus propias fotos aún no pueden guiar el estilo, así que hemos usado un estilo moderno neutro.",
       "offline": "Estás sin conexión. Tus renders están a salvo; vuelve a conectarte para ver los nuevos."
+    }
+  },
+  "budget": {
+    "back": "Volver a mi cocina",
+    "title": "El presupuesto de tu cocina",
+    "helper": "Cuatro opciones, de premium a esencial. Los precios salen del catálogo de productos; toca una opción para ver todos los artículos.",
+    "titleActive": "Calculando tu presupuesto",
+    "helperActive": "Estamos cruzando tu cocina con el catálogo de productos. Tarda alrededor de un minuto.",
+    "tiers": {
+      "luxury": "Lujo",
+      "high": "Alta",
+      "medium": "Media",
+      "low": "Básica"
+    },
+    "meta": "{count, plural, one {# artículo} other {# artículos}} · IVA incluido",
+    "detail": "{unitPrice} × {quantity} {unit} · Ref. {sku}",
+    "citation": "{catalog}, página {page}",
+    "more": "+ {count, plural, one {# artículo más} other {# artículos más}}",
+    "totals": {
+      "subtotal": "Subtotal (sin IVA)",
+      "vat": "IVA {percent}%",
+      "total": "Total (IVA incluido)"
+    },
+    "history": {
+      "title": "Tus presupuestos",
+      "counter": "{count} de {max}",
+      "item": "Presupuesto {n}"
+    },
+    "status": {
+      "running": "Calculando…",
+      "queued": "Esperando a la GPU",
+      "ahead": "{count, plural, one {# trabajo por delante del tuyo} other {# trabajos por delante del tuyo}}"
+    },
+    "note": "Puedes salir de esta página; el presupuesto sigue en marcha y aparecerá aquí cuando esté listo.",
+    "hints": {
+      "oneAtATime": "Un presupuesto a la vez.",
+      "limit": "Has creado {max} presupuestos, el máximo para este proyecto."
+    },
+    "empty": {
+      "title": "Aún no hay presupuesto",
+      "helper": "Obtén cuatro opciones para tu cocina, de premium a esencial."
+    },
+    "cta": {
+      "again": "Calcular de nuevo",
+      "retry": "Reintentar",
+      "start": "Obtener mi presupuesto",
+      "back": "Volver a mi cocina"
+    },
+    "alerts": {
+      "failed": "No hemos podido calcular este presupuesto. Inténtalo de nuevo en un momento.",
+      "interrupted": "Este presupuesto se interrumpió. Inténtalo de nuevo.",
+      "catalogEmpty": "El catálogo de productos aún no está listo. Inténtalo más tarde.",
+      "searchDown": "La búsqueda de precios no está disponible ahora. Inténtalo en un minuto.",
+      "queueFull": "El diseñador está ocupado ahora mismo. Inténtalo en un minuto.",
+      "incomplete": "Añade primero tus fotos y medidas y luego obtén tu presupuesto.",
+      "offline": "Sin conexión. Tus presupuestos están a salvo; vuelve a conectarte para ver los nuevos."
     }
   }
 }

@@ -50,7 +50,7 @@ export type ResultsAction =
   | { type: 'renderShown'; renderId: string }
   | { type: 'connectivity'; online: boolean };
 
-export function isActive(render: RenderView | null | undefined): boolean {
+export function isActive(render: { status: string } | null | undefined): boolean {
   return render?.status === 'queued' || render?.status === 'running';
 }
 
@@ -169,13 +169,13 @@ export const browserTimer: PollTimer = {
 };
 
 /**
- * Polls one active Render (first after `firstDelayMs`, then every `intervalMs`) until `fetchOnce` returns a terminal Render, or
+ * Polls one active Render or Budget (first after `firstDelayMs`, then every `intervalMs`) until `fetchOnce` returns a terminal Render, or
  * `stop()` is called (offline, unmount). One request at a time: the next poll is scheduled after
  * the previous answer arrives. Failed requests keep polling.
  */
-export function startPolling(options: {
-  fetchOnce: () => Promise<RenderView | null>;
-  onRender: (render: RenderView) => void;
+export function startPolling<T extends { status: string } = RenderView>(options: {
+  fetchOnce: () => Promise<T | null>;
+  onRender: (render: T) => void;
   timer?: PollTimer;
   intervalMs?: number;
   firstDelayMs?: number;

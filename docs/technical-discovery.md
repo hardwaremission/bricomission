@@ -98,6 +98,8 @@ Built in `keycloak-login-theme` (2026-11-13):
 
 See ADR 0002. LLM returns JSON Line Items (schema-constrained output) with source references; the API verifies each cited price against the retrieved chunk text and computes subtotals, tier totals, VAT, penalties, and commission with decimal arithmetic.
 
+Implemented in `budget-tier-computation` (`src/kitchen-projects/budget/`): fixed-category retrieval (8 queries x 5 hits, at most 30 chunks and 12 000 characters, outside the GPU job; embedder down = 503, empty index = 409); **one** `LlmAdapter.complete` with a JSON Schema for all four tiers (at most 5 items per tier, about 1 000 completion tokens, 38-56 s measured with llama-server alone at 25.5 tok/s, inside the 120 s `GPU_BROKER_LLM_TIMEOUT_MS`); every Line Item cites a numbered chunk (`chunkRef`), a SKU and a quoted price that must be printed on a line of that chunk's text, otherwise it is rejected; one retry with feedback when a tier ends without a verified item, then `verification_failed`; all amounts are BigInt integer cents (`budget-math.ts`, half-up). **VAT decision (OQ-1, 2026-11-14):** Catalog retail prices are VAT-inclusive, `BUDGET_VAT_PERCENT` (21) splits each tier total into subtotal and VAT; the Contract PDF VAT stays for a later feature. The synthetic sample Catalog's cover still says "VAT excluded" (it is fake test data; real partner Catalogs decide their own convention).
+
 ## Testing and Verification
 
 - Unit tests for budget math, penalty and commission computation, access rules.

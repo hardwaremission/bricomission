@@ -185,8 +185,6 @@ export interface ClaimKitchenDraftResponse {
 export type KitchenProjectErrorCode =
   /** 409: not ready for generation (needs a photo, all three measurements and a Moodboard Item). */
   | 'project_incomplete'
-  /** 501: the costly action is not implemented yet (budget-tier-computation). */
-  | 'not_available_yet'
   | 'storage_unavailable'
   /** 400: `photoId` is malformed or not a Photo of this project (controlnet-render). */
   | 'render_photo_unknown'
@@ -194,8 +192,16 @@ export type KitchenProjectErrorCode =
   | 'render_in_progress'
   /** 409: the project already has `RENDER_MAX_PER_PROJECT` non-failed Renders. */
   | 'render_limit_reached'
-  /** 429: the GPU job queue is full; no Render was created. */
-  | 'gpu_queue_full';
+  /** 429: the GPU job queue is full; no Render or Budget was created. */
+  | 'gpu_queue_full'
+  /** 409: a Budget of this project is already queued or running (budget-tier-computation). */
+  | 'budget_in_progress'
+  /** 409: the project already has `BUDGET_MAX_PER_PROJECT` non-failed Budgets. */
+  | 'budget_limit_reached'
+  /** 409: the Catalog RAG index has no chunk to price from. */
+  | 'catalog_empty'
+  /** 503: the embedder that searches the Catalog is unreachable. */
+  | 'embedding_unavailable';
 
 /** Per-field reason in a 400 `invalid_measurements` body. */
 export type KitchenMeasurementFieldError = 'not_integer' | 'out_of_range';
@@ -303,4 +309,81 @@ export interface RenderListResponse {
   renders: RenderView[];
   /** Non-failed Renders allowed per project (`RENDER_MAX_PER_PROJECT`). */
   maxRenders: number;
+}
+
+// --- Budgets (feature budget-tier-computation) ---
+
+/** Lifecycle of a Budget: `queued -> running -> succeeded | failed`. */
+export type BudgetStatus = 'queued' | 'running' | 'succeeded' | 'failed';
+
+/** The four Budget Tiers, in display order. */
+export type BudgetTier = 'luxury' | 'high' | 'medium' | 'low';
+
+/** Public failure code of a Budget. Backend messages are never exposed. */
+export type BudgetErrorCode = 'adapter_error' | 'timeout' | 'interrupted' | 'verification_failed';
+
+/**
+ * One verified Line Item. Every amount is an integer in minor units (euro cents) computed by
+ * code (ADR 0002); `quotedPrice` is the price exactly as the Catalog prints it and was verified
+ * against the cited Catalog chunk. `quantity` is a decimal string with at most two decimals.
+ */
+export interface BudgetLineItemView {
+  name: string;
+  sku: string;
+  /** Catalog the price comes from (PDF title or file name). */
+  catalogName: string;
+  /** 1-based page of that Catalog. */
+  pageNumber: number;
+  unit: string;
+  quantity: string;
+  quotedPrice: string;
+  unitPriceCents: number;
+  subtotalCents: number;
+}
+
+/**
+ * One tier of a Budget. Catalog prices are VAT-inclusive: `totalCents` is the sum of the item
+ * subtotals, `vatCents` its VAT part and `subtotalCents` the part before VAT (`subtotal + vat = total`).
+ */
+export interface BudgetTierView {
+  tier: BudgetTier;
+  subtotalCents: number;
+  vatCents: number;
+  totalCents: number;
+  items: BudgetLineItemView[];
+}
+
+/**
+ * One Budget of an owned Kitchen Project. `tiers` is empty until `succeeded`. Prompt, token
+ * counts, GPU job id and source quotes stay internal.
+ */
+export interface BudgetView {
+  id: string;
+  status: BudgetStatus;
+  /** 1-based GPU queue position while `queued` (when known), otherwise null. */
+  position: number | null;
+  /** Kind of GPU work it waits behind while `queued`, otherwise null. */
+  waitingFor: GpuJobKind | null;
+  currency: 'EUR';
+  /** VAT rate in percent (catalog prices are VAT-inclusive). */
+  vatPercent: number;
+  errorCode: BudgetErrorCode | null;
+  createdAt: string;
+  startedAt: string | null;
+  finishedAt: string | null;
+  /** Number of verified Line Items over all tiers (0 until `succeeded`). */
+  lineItemsCount: number;
+  tiers: BudgetTierView[];
+}
+
+/** 202 body of `POST /kitchen-projects/:projectId/budget`. */
+export interface CreateBudgetResponse {
+  budget: BudgetView;
+}
+
+/** Body of `GET /kitchen-projects/:projectId/budgets`, newest first. */
+export interface BudgetListResponse {
+  budgets: BudgetView[];
+  /** Non-failed Budgets allowed per project (`BUDGET_MAX_PER_PROJECT`). */
+  maxBudgets: number;
 }

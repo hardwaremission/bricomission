@@ -36,8 +36,8 @@ describe('messages/*.json', () => {
     expect(files).toEqual([...LOCALES].sort());
   });
 
-  it('en.json has the ten namespaces', () => {
-    expect(Object.keys(load('en')).sort()).toEqual(['auth', 'capture', 'generate', 'home', 'language', 'meta', 'moodboard', 'project', 'results', 'status']);
+  it('en.json has the eleven namespaces', () => {
+    expect(Object.keys(load('en')).sort()).toEqual(['auth', 'budget', 'capture', 'generate', 'home', 'language', 'meta', 'moodboard', 'project', 'results', 'status']);
   });
 
   describe.each([...LOCALES])('%s', (locale) => {

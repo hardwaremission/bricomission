@@ -219,11 +219,10 @@
   },
   "project": {
     "title": "Your kitchen project",
-    "helper": "Generate a design of your new kitchen. Budgets are coming soon.",
+    "helper": "Generate a design of your new kitchen or get your budget.",
     "claimed": "Your kitchen is saved to your account.",
     "dismiss": "Close",
     "newProject": "Start a new kitchen project",
-    "budgetsSoon": "Budgets: available soon",
     "seeDesigns": "See my designs",
     "signedOut": {
       "title": "Sign in to see this kitchen project",
@@ -233,7 +232,8 @@
       "title": "We couldn't find this kitchen project",
       "home": "Go to Home"
     },
-    "offline": "You're offline. Your kitchen project is safe; reconnect to see it."
+    "offline": "You're offline. Your kitchen project is safe; reconnect to see it.",
+    "seeBudget": "See my budget"
   },
   "results": {
     "back": "Back to my kitchen",
@@ -281,6 +281,62 @@
       "queueFull": "The designer is busy right now. Try again in a minute.",
       "uploadsOnly": "Your own photos can't guide the style yet, so we used a neutral modern style.",
       "offline": "You're offline. Your renders are safe; reconnect to see new ones."
+    }
+  },
+  "budget": {
+    "back": "Back to my kitchen",
+    "title": "Your kitchen budget",
+    "helper": "Four options, from premium to essential. Prices come from the product catalog; tap an option to see every item.",
+    "titleActive": "Calculating your budget",
+    "helperActive": "Matching your kitchen with the product catalog. This takes about a minute.",
+    "tiers": {
+      "luxury": "Luxury",
+      "high": "High",
+      "medium": "Medium",
+      "low": "Low"
+    },
+    "meta": "{count, plural, one {# item} other {# items}} · VAT included",
+    "detail": "{unitPrice} × {quantity} {unit} · SKU {sku}",
+    "citation": "{catalog}, page {page}",
+    "more": "+ {count, plural, one {# more item} other {# more items}}",
+    "totals": {
+      "subtotal": "Subtotal (before VAT)",
+      "vat": "VAT {percent}%",
+      "total": "Total (VAT included)"
+    },
+    "history": {
+      "title": "Your budgets",
+      "counter": "{count} of {max}",
+      "item": "Budget {n}"
+    },
+    "status": {
+      "running": "Calculating…",
+      "queued": "Waiting for the GPU",
+      "ahead": "{count, plural, one {# job ahead of yours} other {# jobs ahead of yours}}"
+    },
+    "note": "You can leave this page; the budget keeps going and appears here when it's ready.",
+    "hints": {
+      "oneAtATime": "One budget at a time.",
+      "limit": "You've created {max} budgets, the maximum for this project."
+    },
+    "empty": {
+      "title": "No budget yet",
+      "helper": "Get four options for your kitchen, from premium to essential."
+    },
+    "cta": {
+      "again": "Calculate again",
+      "retry": "Try again",
+      "start": "Get my budget",
+      "back": "Back to my kitchen"
+    },
+    "alerts": {
+      "failed": "We couldn't calculate this budget. Try again in a moment.",
+      "interrupted": "This budget was interrupted. Try again.",
+      "catalogEmpty": "The product catalog isn't ready yet. Try again later.",
+      "searchDown": "The price search is unavailable right now. Try again in a minute.",
+      "queueFull": "The designer is busy right now. Try again in a minute.",
+      "incomplete": "Add your photos and measurements first, then get your budget.",
+      "offline": "You're offline. Your budgets are safe; reconnect to see new ones."
     }
   }
 }

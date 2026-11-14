@@ -405,14 +405,27 @@
     "title": "Homeowner receives four verified Budget Tiers",
     "user_visible_behavior": "For a claimed Kitchen Project, the system returns Luxury/High/Medium/Low tiers whose Line Items cite Catalog sources; every unit price is verified against the source chunk and all totals are computed by code.",
     "depends_on": ["catalog-rag-ingestion", "gpu-job-broker", "login-gate-claim"],
-    "status": "not_started",
+    "status": "accepted",
     "verification": [
       "Unit tests: decimal computation of subtotals, tier totals and VAT",
       "Unit test: a Line Item whose cited price is absent from its chunk is rejected",
       "Same Line Items recomputed twice give identical totals",
       "Integration run with the real LLM on a sample project produces four tiers"
     ],
-    "evidence": [],
+    "evidence": [
+      "2026-11-14 implementer (worktree feature/budget-tier-computation, compose project budget-tier-computation, ports 5433/9100/9101/8035/1125/3010/3110/8185/8085/8091). Spec docs/specs/budget-tier-computation.md, design docs/design/budget-tier-computation.md (approved 2026-11-14).",
+      "Verification item 1 (decimal math): apps/api/test/budget/budget-math.spec.ts (cents parsing, 2.5 m x 189.90 = 474.75, half-up at the cent, VAT-inclusive 21% breakdown with subtotal + vat = total, order independence, 200-run property test).",
+      "Verification item 2 (rejected uncited price): budget-extraction.spec.ts ('rejects a Line Item quoting 199.90 against a chunk that prints 189.90') and budget.http.spec.ts Scenario 3 (rejected item in no response or total; all rejected -> exactly one retry with feedback -> failed/verification_failed; malformed JSON retries once then fails).",
+      "Verification item 3 (identical totals): budget-math.spec.ts (same Line Items twice, byte-identical) and budget.http.spec.ts Scenario 4 (two fake-adapter Budgets on one project end with equal tier totals) and e2e/budget.spec.ts (second Budget has the same tier totals).",
+      "Verification item 4 (real LLM, flock /tmp/bricomission-gpu.lock, llama-server alone, comfyui stopped, AI_ADAPTERS=local): bash scripts/ai/budget-smoke.sh -> succeeded with four tiers in 38.22 s (1 attempt, 1234 prompt / 900 completion tokens) and again in 55.74 s (1428 completion tokens); every Line Item cites a catalog page; psql recomputation: budget_tier totals equal the re-summed budget_line_item rows (0 mismatches, 4 tier rows); 401/403/409 budget_in_progress checks ok. VRAM sampled with the model resident: peak +4 MiB over the 4717 MiB baseline. An earlier run with 8 items/tier hit the 1800-token cap and timed out at 120 s (fixed: 5 items/tier, maxTokens 1500; see spec Implementation Notes). GPU services stopped afterwards, api back on fake.",
+      "pnpm -r lint exit 0; pnpm -r test: api 338 / web 479 / api-client 3 passed (incl. OpenAPI drift, message parity for the new budget namespace in 11 locales, migration spec); pnpm --filter @bricomission/api openapi:export run, openapi.json + schema.ts regenerated (budget POST 501 -> 202/409/429/503, budgets GET routes, BudgetView schemas).",
+      "./init.sh exit 0 (workspace gate, compose gate, Web step, new line 'API GET /kitchen-projects/00000000-0000-4000-8000-000000000000/budgets (no token) -> 401').",
+      "pnpm test:e2e (fake LLM, CPU embedder up and infra/catalog/samples ingested): 155 passed, 1 skipped, including e2e/budget.spec.ts (claim with intent=budget lands on /budget and auto-starts, tier cards, expansion with items/citations/totals, history, es 390x844 and de/fi 360x780 layouts, mocked states) and the updated e2e/login-gate.spec.ts. ./scripts/keycloak-smoke.sh exit 0.",
+      "bash scripts/ai/budget-smoke.sh --no-gpu on the fake adapter with the real database and embedder: all checks passed (four tiers, psql totals match). psql: CHECK constraints reject a succeeded Budget without finished_at and an unknown error_code.",
+      "Validator fix 2026-11-14 (ADR 0002): SKU digits and bare integers no longer count as printed prices (quoted 300 for BM-SYN-WTP-300 and 600 for BM-SYN-CAB-060 -> price_not_in_source; regression test in budget-extraction.spec.ts). pnpm -r lint exit 0; pnpm -r test api 339 / web 479 / api-client 3; budget-smoke.sh --no-gpu all checks passed; embedder stopped.",
+      "Not run: Lighthouse (no PWA change); workspace gate offline (tests need no network).",
+      "Independent validator (2026-11-14): first verdict revise (price verifier accepted bare integers such as the 300 in BM-SYN-WTP-300); fixed with SKU-token stripping and decimal-only matching plus regression tests; re-validation verdict accept (lint 0, tests api 339 / web 479 / api-client 3, ./init.sh 0, e2e budget 3/3). Residual layouts recorded in docs/risks-and-open-questions.md."
+    ],
     "notes": "ADR 0002. Schema-constrained JSON output from llama-server. UI gate: Budget Tier Overview screen."
   },
   {

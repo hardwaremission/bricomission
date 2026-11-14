@@ -1,18 +1,13 @@
 import type { Readable } from 'node:stream';
-import { HttpException, HttpStatus, Inject, Injectable, Logger, NotFoundException, ServiceUnavailableException } from '@nestjs/common';
+import { HttpException, Inject, Injectable, Logger, NotFoundException, ServiceUnavailableException } from '@nestjs/common';
 import type { ClaimKitchenDraftResponse, KitchenProjectView } from '@bricomission/shared-types';
 import { StyleGalleryService } from '../style-gallery/style-gallery.service.js';
 import { hashDraftToken, isDraftTokenFormat } from './draft-token.js';
-import { draftError } from './kitchen-draft.errors.js';
 import { type Clock, KITCHEN_CLOCK } from './kitchen-projects.config.js';
 import { KITCHEN_DRAFT_REPOSITORY, type KitchenDraftRepository, type KitchenProjectRecord } from './kitchen-drafts.repository.js';
 import { KitchenDraftsService, type PhotoVariant, photoView } from './kitchen-drafts.service.js';
 import { moodboardItemView } from './moodboard/moodboard.js';
 import { MoodboardService } from './moodboard/moodboard.service.js';
-import { isReadyForGeneration } from './readiness.js';
-
-/** Costly actions still behind a placeholder (Renders are real since controlnet-render). */
-export type CostlyAction = 'budget';
 
 export function projectView(project: KitchenProjectRecord, gallery: StyleGalleryService): KitchenProjectView {
   const base = `/kitchen-projects/${project.id}`;
@@ -28,7 +23,7 @@ export function projectView(project: KitchenProjectRecord, gallery: StyleGallery
 
 /**
  * Claimed Kitchen Projects (feature login-gate-claim): the claim of the browser's anonymous draft
- * at the Login Gate, the owner's read view and content, and the Budget placeholder.
+ * at the Login Gate, the owner's read view and content, and content.
  * Database failures give 503; logs carry error class names only.
  */
 @Injectable()
@@ -65,18 +60,6 @@ export class KitchenProjectsService {
 
   moodboardContent(project: KitchenProjectRecord, itemId: string, variant: PhotoVariant): Promise<Readable> {
     return this.moodboard.content(project, itemId, variant);
-  }
-
-  /**
-   * Placeholder of a costly action: 409 `project_incomplete` when the project is not ready for
-   * generation, else 501 `not_available_yet`. It never calls the GPU job broker or an adapter;
-   * budget-tier-computation replaces the 501 and keeps the 409 rule (controlnet-render did so
-   * for Renders: see RendersService).
-   */
-  requestCostlyAction(project: KitchenProjectRecord, action: CostlyAction): never {
-    if (!isReadyForGeneration(project)) throw draftError(HttpStatus.CONFLICT, 'project_incomplete');
-    this.logger.debug(`Costly action ${action} not available yet`);
-    throw draftError(HttpStatus.NOT_IMPLEMENTED, 'not_available_yet');
   }
 
   private async db<T>(run: () => Promise<T>): Promise<T> {
