@@ -55,5 +55,72 @@
       "tryAgain": "Erneut versuchen",
       "backHome": "Zurück zur Startseite"
     }
+  },
+  "capture": {
+    "backToHome": "Zurück zur Startseite",
+    "step": "Schritt {current} von {total}",
+    "title": "Deine Küche",
+    "helper": "Füge Fotos und die Maße des Raums hinzu, den du renovieren möchtest.",
+    "photos": {
+      "title": "Fotos",
+      "rules": "JPG, PNG, WebP oder HEIC · bis 15 MB · bis 8 Fotos",
+      "add": "Fotos hinzufügen",
+      "tip": "Fotografiere aus den Ecken, damit der ganze Raum zu sehen ist.",
+      "alt": "Küchenfoto {n}",
+      "remove": "Foto {n} entfernen",
+      "retry": "Hochladen wiederholen",
+      "uploading": "Wird hochgeladen… {percent} %",
+      "processing": "Wird verarbeitet…",
+      "queued": "Wartet…",
+      "limitReached": "Du hast {max} Fotos hinzugefügt, das Maximum. Entferne eines, um ein weiteres hinzuzufügen.",
+      "errors": {
+        "tooLarge": "Dieses Foto ist größer als 15 MB.",
+        "unsupported": "Verwende JPG, PNG, WebP oder HEIC.",
+        "tooSmall": "Dieses Foto ist zu klein. Verwende eines mit mindestens 480 px Breite.",
+        "failed": "Wir konnten dieses Foto nicht hochladen."
+      }
+    },
+    "measurements": {
+      "title": "Maße",
+      "unit": "Einheit",
+      "fields": {
+        "lengthCm": "Länge",
+        "widthCm": "Breite",
+        "heightCm": "Höhe"
+      },
+      "rangeHint": "Länge und Breite zwischen {lwMin} und {lwMax} {unit} · Höhe zwischen {hMin} und {hMax} {unit}"
+    },
+    "units": {
+      "m": "m",
+      "cm": "cm"
+    },
+    "keypad": {
+      "label": "Maße eingeben",
+      "title": "Maße",
+      "close": "Schließen",
+      "empty": "—",
+      "decrease": "Um 1 Zentimeter verringern",
+      "increase": "Um 1 Zentimeter erhöhen",
+      "separator": "Dezimaltrennzeichen",
+      "backspace": "Letzte Ziffer löschen",
+      "clear": "Leeren",
+      "next": "Weiter: {field}",
+      "done": "Fertig",
+      "range": "Zwischen {min} und {max} {unit}",
+      "rangeError": "Zwischen {min} {unit} und {max} {unit}."
+    },
+    "continue": "Weiter",
+    "continueHint": "Füge mindestens ein Foto und alle drei Maße hinzu, um fortzufahren.",
+    "save": {
+      "saving": "Wird gespeichert…",
+      "saved": "Gespeichert",
+      "offline": "Nicht gespeichert: Du bist offline",
+      "failed": "Nicht gespeichert: Versuche es gleich noch einmal."
+    },
+    "alerts": {
+      "offline": "Du bist offline. Was du gespeichert hast, ist sicher; stelle die Verbindung wieder her, um weiterzumachen.",
+      "expired": "Dein vorheriger Entwurf ist nach 7 Tagen ohne Änderungen abgelaufen. Fang neu an.",
+      "dismiss": "Schließen"
+    }
   }
 }

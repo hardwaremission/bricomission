@@ -7,7 +7,8 @@
 # Keycloak serves realm BricoMission with the expected issuer, the bricomission login
 # theme and the web client bricomission-web (stale realm volumes get the reset command), and
 # that the web PWA serves a localized Home, Language Selection, its manifest, the /api proxy
-# and the sign-in routes (/auth/session, /auth/login -> Keycloak).
+# and the sign-in routes (/auth/session, /auth/login -> Keycloak), the Capture page and the
+# guarded kitchen draft route (404 without a draft cookie).
 # Never runs foreground or long-running dev servers, Playwright or Lighthouse.
 set -euo pipefail
 
@@ -207,6 +208,14 @@ case "$web_login" in
     echo "  GET /auth/login -> 303 to Keycloak (client bricomission-web, PKCE S256; web_session schema writable)" ;;
   *) web_fail "GET /auth/login gave '${web_login:-<none>}', expected 303 to the Keycloak authorization endpoint (database or WEB_* env?)" ;;
 esac
+# Kitchen capture (kitchen-capture-draft): the Capture page renders, and the draft route is
+# mounted behind the draft-token guard (no bm_draft cookie -> 404). No upload, no draft created.
+web_capture=$(curl -sS --max-time 10 -o /dev/null -w '%{http_code}' "${web_public}/kitchen-projects/new" 2>/dev/null || true)
+[ "$web_capture" = "200" ] || web_fail "GET /kitchen-projects/new gave '${web_capture:-<none>}', expected 200"
+echo "  GET /kitchen-projects/new -> 200"
+web_draft=$(curl -sS --max-time 10 -o /dev/null -w '%{http_code}' "${web_public}/api/kitchen-projects/drafts/current" 2>/dev/null || true)
+[ "$web_draft" = "404" ] || web_fail "GET /api/kitchen-projects/drafts/current (no cookie) gave '${web_draft:-<none>}', expected 404"
+echo "  GET /api/kitchen-projects/drafts/current (no draft cookie) -> 404"
 
 echo
 echo "Stack is up and healthy (detached)."

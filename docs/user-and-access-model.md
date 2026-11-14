@@ -52,7 +52,7 @@ The API is default-deny. Every route needs a valid Keycloak access token unless 
 
 ## Ownership Boundaries
 
-- A Kitchen Project belongs to one Homeowner. Anonymous drafts belong to a browser session until claimed at the Login Gate.
+- A Kitchen Project belongs to one Homeowner. Anonymous drafts belong to a browser until claimed at the Login Gate: the browser holds an opaque draft token in the HttpOnly cookie `bm_draft` (never readable by page scripts), the API stores only its SHA-256, and any other browser or client gets 404 for that draft and its photos (`kitchen-capture-draft`). A signed-in browser keeps using its anonymous draft until `login-gate-claim` adds ownership.
 - A Bid belongs to its Company; the creating Professional is its manager.
 - Contracts are visible to the Homeowner, all Professionals of the Company (manager edits/accepts, others read-only), and Administrators.
 
@@ -68,7 +68,7 @@ The API is default-deny. Every route needs a valid Keycloak access token unless 
 - Administrator disables an Account: Keycloak sessions are revoked; open Bids of that Professional stay with the Company and can be reassigned by an Administrator.
 - Company rejected or disabled: its open Bids move to `closed`; binding Contracts are unaffected.
 - Dossier expiry closes all Bids.
-- Anonymous drafts not claimed within 7 days are deleted (assumption).
+- Anonymous drafts expire 7 days after their last change (sliding expiry; developer decision 2026-11-13). The API deletes expired drafts and their stored photos on start and hourly; an expired draft answers 404 and the browser starts a new one on its next save.
 
 ## Edge Cases
 

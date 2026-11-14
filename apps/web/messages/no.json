@@ -55,5 +55,72 @@
       "tryAgain": "Prøv igjen",
       "backHome": "Tilbake til forsiden"
     }
+  },
+  "capture": {
+    "backToHome": "Tilbake til startsiden",
+    "step": "Steg {current} av {total}",
+    "title": "Kjøkkenet ditt",
+    "helper": "Legg til bilder og målene på rommet du vil pusse opp.",
+    "photos": {
+      "title": "Bilder",
+      "rules": "JPG, PNG, WebP eller HEIC · opptil 15 MB · opptil 8 bilder",
+      "add": "Legg til bilder",
+      "tip": "Ta bildene fra hjørnene så hele rommet synes.",
+      "alt": "Kjøkkenbilde {n}",
+      "remove": "Fjern bilde {n}",
+      "retry": "Prøv å laste opp igjen",
+      "uploading": "Laster opp… {percent} %",
+      "processing": "Behandler…",
+      "queued": "Venter…",
+      "limitReached": "Du har lagt til {max} bilder, som er maks. Fjern ett for å legge til et annet.",
+      "errors": {
+        "tooLarge": "Bildet er større enn 15 MB.",
+        "unsupported": "Bruk JPG, PNG, WebP eller HEIC.",
+        "tooSmall": "Bildet er for lite. Bruk et som er minst 480 px bredt.",
+        "failed": "Vi kunne ikke laste opp bildet."
+      }
+    },
+    "measurements": {
+      "title": "Mål",
+      "unit": "Enhet",
+      "fields": {
+        "lengthCm": "Lengde",
+        "widthCm": "Bredde",
+        "heightCm": "Høyde"
+      },
+      "rangeHint": "Lengde og bredde mellom {lwMin} og {lwMax} {unit} · høyde mellom {hMin} og {hMax} {unit}"
+    },
+    "units": {
+      "m": "m",
+      "cm": "cm"
+    },
+    "keypad": {
+      "label": "Skriv inn mål",
+      "title": "Mål",
+      "close": "Lukk",
+      "empty": "—",
+      "decrease": "Reduser med 1 centimeter",
+      "increase": "Øk med 1 centimeter",
+      "separator": "Desimalskilletegn",
+      "backspace": "Slett siste siffer",
+      "clear": "Tøm",
+      "next": "Neste: {field}",
+      "done": "Ferdig",
+      "range": "Mellom {min} og {max} {unit}",
+      "rangeError": "Mellom {min} {unit} og {max} {unit}."
+    },
+    "continue": "Fortsett",
+    "continueHint": "Legg til minst ett bilde og alle tre målene for å fortsette.",
+    "save": {
+      "saving": "Lagrer…",
+      "saved": "Lagret",
+      "offline": "Ikke lagret: du er frakoblet",
+      "failed": "Ikke lagret: prøv igjen om litt."
+    },
+    "alerts": {
+      "offline": "Du er frakoblet. Det du har lagret er trygt; koble til igjen for å fortsette.",
+      "expired": "Det forrige utkastet ditt utløp etter 7 dager uten endringer. Begynn på nytt.",
+      "dismiss": "Lukk"
+    }
   }
 }

@@ -55,5 +55,72 @@
       "tryAgain": "Försök igen",
       "backHome": "Tillbaka till startsidan"
     }
+  },
+  "capture": {
+    "backToHome": "Tillbaka till startsidan",
+    "step": "Steg {current} av {total}",
+    "title": "Ditt kök",
+    "helper": "Lägg till foton och måtten på rummet du vill renovera.",
+    "photos": {
+      "title": "Foton",
+      "rules": "JPG, PNG, WebP eller HEIC · upp till 15 MB · upp till 8 foton",
+      "add": "Lägg till foton",
+      "tip": "Fotografera från hörnen så att hela rummet syns.",
+      "alt": "Köksfoto {n}",
+      "remove": "Ta bort foto {n}",
+      "retry": "Försök ladda upp igen",
+      "uploading": "Laddar upp… {percent} %",
+      "processing": "Bearbetar…",
+      "queued": "Väntar…",
+      "limitReached": "Du har lagt till {max} foton, vilket är max. Ta bort ett för att lägga till ett annat.",
+      "errors": {
+        "tooLarge": "Fotot är större än 15 MB.",
+        "unsupported": "Använd JPG, PNG, WebP eller HEIC.",
+        "tooSmall": "Fotot är för litet. Använd ett som är minst 480 px brett.",
+        "failed": "Vi kunde inte ladda upp fotot."
+      }
+    },
+    "measurements": {
+      "title": "Mått",
+      "unit": "Enhet",
+      "fields": {
+        "lengthCm": "Längd",
+        "widthCm": "Bredd",
+        "heightCm": "Höjd"
+      },
+      "rangeHint": "Längd och bredd mellan {lwMin} och {lwMax} {unit} · höjd mellan {hMin} och {hMax} {unit}"
+    },
+    "units": {
+      "m": "m",
+      "cm": "cm"
+    },
+    "keypad": {
+      "label": "Ange mått",
+      "title": "Mått",
+      "close": "Stäng",
+      "empty": "—",
+      "decrease": "Minska med 1 centimeter",
+      "increase": "Öka med 1 centimeter",
+      "separator": "Decimaltecken",
+      "backspace": "Radera sista siffran",
+      "clear": "Rensa",
+      "next": "Nästa: {field}",
+      "done": "Klar",
+      "range": "Mellan {min} och {max} {unit}",
+      "rangeError": "Mellan {min} {unit} och {max} {unit}."
+    },
+    "continue": "Fortsätt",
+    "continueHint": "Lägg till minst ett foto och alla tre måtten för att fortsätta.",
+    "save": {
+      "saving": "Sparar…",
+      "saved": "Sparat",
+      "offline": "Inte sparat: du är offline",
+      "failed": "Inte sparat: försök igen om en stund."
+    },
+    "alerts": {
+      "offline": "Du är offline. Det du har sparat är säkert; anslut igen för att fortsätta.",
+      "expired": "Ditt tidigare utkast gick ut efter 7 dagar utan ändringar. Börja om.",
+      "dismiss": "Stäng"
+    }
   }
 }

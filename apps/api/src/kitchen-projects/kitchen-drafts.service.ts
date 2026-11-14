@@ -1,0 +1,180 @@
+import { randomUUID } from 'node:crypto';
+import type { Readable } from 'node:stream';
+import { HttpException, HttpStatus, Inject, Injectable, Logger, NotFoundException, ServiceUnavailableException } from '@nestjs/common';
+import type { KitchenDraftView, KitchenPhotoView, StartKitchenDraftResponse } from '@bricomission/shared-types';
+import { OBJECT_STORAGE, ObjectNotFoundError, type ObjectStorage } from '../storage/object-storage.js';
+import { generateDraftToken, hashDraftToken } from './draft-token.js';
+import { draftError, PHOTO_ERROR_STATUS } from './kitchen-draft.errors.js';
+import {
+  type Clock,
+  expiryFrom,
+  KITCHEN_CLOCK,
+  KITCHEN_DRAFT_CONFIG,
+  type KitchenDraftConfig,
+} from './kitchen-projects.config.js';
+import {
+  KITCHEN_DRAFT_REPOSITORY,
+  type KitchenDraftRecord,
+  type KitchenDraftRepository,
+  type KitchenPhotoRecord,
+} from './kitchen-drafts.repository.js';
+import { validateMeasurements } from './measurements.js';
+import { PHOTO_LIMITS, PhotoRejectedError, processPhoto } from './photo-processor.js';
+
+export type PhotoVariant = 'thumb' | 'full';
+
+const PHOTOS_PATH = '/kitchen-projects/drafts/current/photos';
+
+export function photoView(photo: KitchenPhotoRecord): KitchenPhotoView {
+  return {
+    id: photo.id,
+    position: photo.position,
+    width: photo.width,
+    height: photo.height,
+    thumbUrl: `${PHOTOS_PATH}/${photo.id}/content?variant=thumb`,
+    fullUrl: `${PHOTOS_PATH}/${photo.id}/content?variant=full`,
+  };
+}
+
+export function draftView(draft: KitchenDraftRecord): KitchenDraftView {
+  return {
+    id: draft.id,
+    status: draft.status,
+    measurements: { ...draft.measurements },
+    photos: draft.photos.map(photoView),
+    limits: { maxPhotos: PHOTO_LIMITS.maxPhotos, maxPhotoBytes: PHOTO_LIMITS.maxBytes },
+    expiresAt: draft.expiresAt.toISOString(),
+  };
+}
+
+export function photoKeys(projectId: string, photoId: string): { fullKey: string; thumbKey: string } {
+  const base = `kitchen-projects/${projectId}/photos/${photoId}`;
+  return { fullKey: `${base}/full.jpg`, thumbKey: `${base}/thumb.jpg` };
+}
+
+/**
+ * Anonymous kitchen drafts: creation (capacity cap), measurements, photo upload (validate,
+ * normalize, store two objects, then insert the row under a lock), photo content and delete.
+ * Every successful mutation moves `expiresAt` to now + DRAFT_TTL_DAYS. Database failures give
+ * 503; logs carry error class names only.
+ */
+@Injectable()
+export class KitchenDraftsService {
+  private readonly logger = new Logger(KitchenDraftsService.name);
+
+  constructor(
+    @Inject(KITCHEN_DRAFT_REPOSITORY) private readonly repo: KitchenDraftRepository,
+    @Inject(OBJECT_STORAGE) private readonly storage: ObjectStorage,
+    @Inject(KITCHEN_DRAFT_CONFIG) private readonly config: KitchenDraftConfig,
+    @Inject(KITCHEN_CLOCK) private readonly clock: Clock,
+  ) {}
+
+  async start(): Promise<StartKitchenDraftResponse> {
+    const now = this.clock();
+    const open = await this.db(() => this.repo.countOpen(now));
+    if (open >= this.config.maxOpen) throw draftError(HttpStatus.TOO_MANY_REQUESTS, 'draft_capacity');
+    const draftToken = generateDraftToken();
+    const draft = await this.db(() => this.repo.create({ tokenHash: hashDraftToken(draftToken), expiresAt: this.expiry(now) }));
+    return { draft: draftView(draft), draftToken };
+  }
+
+  async updateMeasurements(draft: KitchenDraftRecord, body: unknown): Promise<KitchenDraftView> {
+    const result = validateMeasurements(body);
+    if (!result.ok) throw draftError(HttpStatus.BAD_REQUEST, 'invalid_measurements', { fields: result.fields });
+    const updated = await this.db(() => this.repo.updateMeasurements(draft.id, result.value, this.expiry(this.clock())));
+    return draftView(updated);
+  }
+
+  async addPhoto(draft: KitchenDraftRecord, file: Buffer): Promise<KitchenPhotoView> {
+    // Cheap check before decoding; re-checked under the row lock on insert.
+    if (draft.photos.length >= PHOTO_LIMITS.maxPhotos) throw draftError(HttpStatus.CONFLICT, 'photo_limit_reached');
+    let processed;
+    try {
+      processed = await processPhoto(file);
+    } catch (error) {
+      if (error instanceof PhotoRejectedError) throw draftError(PHOTO_ERROR_STATUS[error.code], error.code);
+      throw error;
+    }
+    const photoId = randomUUID();
+    const keys = photoKeys(draft.id, photoId);
+    const stored: string[] = [];
+    try {
+      await this.storage.put(keys.fullKey, processed.full, 'image/jpeg');
+      stored.push(keys.fullKey);
+      await this.storage.put(keys.thumbKey, processed.thumb, 'image/jpeg');
+    } catch (error) {
+      this.logger.warn(`Photo store failed (${error instanceof Error ? error.name : 'unknown'})`);
+      // Only what was written needs removing (nothing when storage is simply down).
+      if (stored.length > 0) await this.deleteObjectsQuietly(stored);
+      throw draftError(HttpStatus.SERVICE_UNAVAILABLE, 'storage_unavailable');
+    }
+    let created: KitchenPhotoRecord | 'limit_reached';
+    try {
+      created = await this.repo.addPhoto(
+        draft.id,
+        { id: photoId, ...keys, width: processed.width, height: processed.height, byteSize: processed.full.length },
+        PHOTO_LIMITS.maxPhotos,
+        this.expiry(this.clock()),
+      );
+    } catch (error) {
+      this.logger.warn(`Photo insert failed (${error instanceof Error ? error.name : 'unknown'})`);
+      await this.deleteObjectsQuietly([keys.fullKey, keys.thumbKey]);
+      throw new ServiceUnavailableException();
+    }
+    if (created === 'limit_reached') {
+      await this.deleteObjectsQuietly([keys.fullKey, keys.thumbKey]);
+      throw draftError(HttpStatus.CONFLICT, 'photo_limit_reached');
+    }
+    return photoView(created);
+  }
+
+  async photoContent(draft: KitchenDraftRecord, photoId: string, variant: PhotoVariant): Promise<Readable> {
+    const photo = draft.photos.find((candidate) => candidate.id === photoId);
+    if (!photo) throw new NotFoundException();
+    try {
+      const { body } = await this.storage.getStream(variant === 'thumb' ? photo.thumbKey : photo.fullKey);
+      return body;
+    } catch (error) {
+      if (error instanceof ObjectNotFoundError) throw new NotFoundException();
+      this.logger.warn(`Photo read failed (${error instanceof Error ? error.name : 'unknown'})`);
+      throw draftError(HttpStatus.SERVICE_UNAVAILABLE, 'storage_unavailable');
+    }
+  }
+
+  async deletePhoto(draft: KitchenDraftRecord, photoId: string): Promise<void> {
+    const photo = draft.photos.find((candidate) => candidate.id === photoId);
+    if (!photo) throw new NotFoundException();
+    // Objects first (idempotent): a storage failure leaves the row, so a retry can finish.
+    try {
+      await this.storage.deleteMany([photo.fullKey, photo.thumbKey]);
+    } catch (error) {
+      this.logger.warn(`Photo object delete failed (${error instanceof Error ? error.name : 'unknown'})`);
+      throw draftError(HttpStatus.SERVICE_UNAVAILABLE, 'storage_unavailable');
+    }
+    const deleted = await this.db(() => this.repo.deletePhoto(draft.id, photoId, this.expiry(this.clock())));
+    if (!deleted) throw new NotFoundException();
+  }
+
+  private expiry(now: Date): Date {
+    return expiryFrom(now, this.config.ttlDays);
+  }
+
+  private async deleteObjectsQuietly(keys: string[]): Promise<void> {
+    try {
+      await this.storage.deleteMany(keys);
+    } catch (error) {
+      this.logger.warn(`Orphan photo objects left (${error instanceof Error ? error.name : 'unknown'})`);
+    }
+  }
+
+  private async db<T>(run: () => Promise<T>): Promise<T> {
+    try {
+      return await run();
+    } catch (error) {
+      if (error instanceof HttpException) throw error;
+      this.logger.warn(`Draft database call failed (${error instanceof Error ? error.name : 'unknown'})`);
+      throw new ServiceUnavailableException();
+    }
+  }
+}
+

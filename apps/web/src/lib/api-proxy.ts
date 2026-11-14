@@ -1,5 +1,7 @@
 import type { AccessResult } from './auth/session';
+import { readCookie } from './auth/session';
 import { hasSameOrigin, UNSAFE_METHODS } from './auth/origin';
+import { DRAFT_COOKIE, DRAFT_TOKEN_HEADER } from './kitchen-draft/draft-cookie';
 
 /**
  * Same-origin proxy from the browser's /api/* to the API (API_INTERNAL_URL). Not an open
@@ -7,7 +9,9 @@ import { hasSameOrigin, UNSAFE_METHODS } from './auth/origin';
  * original query; only an allowlist of request headers is forwarded (never cookies).
  * Authorization never comes from the browser: a client `Authorization` header is dropped and
  * the server session's access token (homeowner-password-login) is attached instead.
- * With a session cookie, unsafe methods need a same-origin Origin header (CSRF).
+ * The anonymous kitchen draft cookie `bm_draft` (kitchen-capture-draft) becomes the upstream
+ * `X-Draft-Token`; a client-sent `x-draft-token` is never forwarded (not in the allowlist).
+ * With a session or draft cookie, unsafe methods need a same-origin Origin header (CSRF).
  */
 export const FORWARDED_REQUEST_HEADERS = ['accept', 'accept-language', 'content-type', 'last-event-id'] as const;
 export const RETURNED_RESPONSE_HEADERS = ['content-type', 'cache-control', 'www-authenticate'] as const;
@@ -23,10 +27,6 @@ export interface ProxyOptions {
   clearSessionCookie?: () => string;
   fetchImpl?: typeof fetch;
   logError?: (message: string) => void;
-}
-
-function hasSessionCookie(cookieHeader: string | null): boolean {
-  return cookieHeader !== null && cookieHeader.split(';').some((part) => part.trim().startsWith(`${SESSION_COOKIE_NAME}=`));
 }
 
 function jsonError(status: number): Response {
@@ -64,8 +64,10 @@ export function createApiProxy({
     const path = upstreamPath(url.pathname);
     if (path === null) return jsonError(400);
     const cookieHeader = request.headers.get('cookie');
+    const draftToken = readCookie(cookieHeader, DRAFT_COOKIE);
     // CSRF: checked before any session lookup or upstream call.
-    if (UNSAFE_METHODS.has(request.method) && hasSessionCookie(cookieHeader) && !hasSameOrigin(request)) return jsonError(403);
+    const hasCredentialCookie = readCookie(cookieHeader, SESSION_COOKIE_NAME) !== null || draftToken !== null;
+    if (UNSAFE_METHODS.has(request.method) && hasCredentialCookie && !hasSameOrigin(request)) return jsonError(403);
     const target = `${baseUrl().replace(/\/+$/, '')}${path}${url.search}`;
 
     const access = await resolveAccessToken(cookieHeader);
@@ -77,6 +79,7 @@ export function createApiProxy({
       if (value !== null) headers.set(name, value);
     }
     if (access.kind === 'token') headers.set('authorization', `Bearer ${access.token}`);
+    if (draftToken !== null) headers.set(DRAFT_TOKEN_HEADER, draftToken);
     const hasBody = request.method !== 'GET' && request.method !== 'HEAD' && request.body !== null;
 
     let upstream: Response;

@@ -112,6 +112,54 @@ describe('createApiProxy', () => {
     });
   });
 
+  describe('anonymous kitchen draft cookie (kitchen-capture-draft)', () => {
+    const TOKEN = 'A'.repeat(43);
+
+    it('sends bm_draft upstream as X-Draft-Token and never forwards cookies', async () => {
+      const { proxy, fetchImpl } = setup();
+      await proxy(new Request('http://localhost:3100/api/kitchen-projects/drafts/current', { headers: { cookie: `NEXT_LOCALE=es; bm_draft=${TOKEN}` } }));
+      const sent = new Headers(fetchImpl.mock.calls[0]?.[1]?.headers);
+      expect(sent.get('x-draft-token')).toBe(TOKEN);
+      expect(sent.get('cookie')).toBeNull();
+    });
+
+    it('drops a client-sent X-Draft-Token', async () => {
+      const { proxy, fetchImpl } = setup();
+      await proxy(new Request('http://localhost:3100/api/kitchen-projects/drafts/current', { headers: { 'x-draft-token': TOKEN } }));
+      expect(new Headers(fetchImpl.mock.calls[0]?.[1]?.headers).get('x-draft-token')).toBeNull();
+    });
+
+    it('the cookie wins over a forged header', async () => {
+      const { proxy, fetchImpl } = setup();
+      await proxy(new Request('http://localhost:3100/api/kitchen-projects/drafts/current', { headers: { 'x-draft-token': 'B'.repeat(43), cookie: `bm_draft=${TOKEN}` } }));
+      expect(new Headers(fetchImpl.mock.calls[0]?.[1]?.headers).get('x-draft-token')).toBe(TOKEN);
+    });
+
+    it.each(['POST', 'PUT', 'DELETE'])('%s with bm_draft needs a same-origin Origin (403 before upstream)', async (method) => {
+      const { proxy, fetchImpl } = setup();
+      for (const origin of [undefined, 'http://evil.example', 'null']) {
+        const headers: Record<string, string> = { host: 'localhost:3100', cookie: `bm_draft=${TOKEN}` };
+        if (origin) headers.origin = origin;
+        const res = await proxy(new Request('http://localhost:3100/api/kitchen-projects/drafts/current/measurements', { method, headers }));
+        expect(res.status).toBe(403);
+      }
+      expect(fetchImpl).not.toHaveBeenCalled();
+      const ok = await proxy(
+        new Request('http://localhost:3100/api/kitchen-projects/drafts/current/measurements', {
+          method,
+          headers: { host: 'localhost:3100', origin: 'http://localhost:3100', cookie: `bm_draft=${TOKEN}` },
+        }),
+      );
+      expect(ok.status).toBe(200);
+    });
+
+    it('GET with bm_draft needs no Origin', async () => {
+      const { proxy } = setup();
+      const res = await proxy(new Request('http://localhost:3100/api/kitchen-projects/drafts/current', { headers: { host: 'localhost:3100', cookie: `bm_draft=${TOKEN}` } }));
+      expect(res.status).toBe(200);
+    });
+  });
+
   it('streams a POST body with method and content-type', async () => {
     const { proxy, fetchImpl } = setup(Response.json({ id: 1 }, { status: 202 }));
     const res = await proxy(

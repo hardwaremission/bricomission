@@ -90,3 +90,64 @@ export interface CatalogSearchResponse {
   query: string;
   results: CatalogSearchResult[];
 }
+
+// --- Kitchen capture draft (feature kitchen-capture-draft) ---
+
+/** Lifecycle state of a Kitchen Project. Later features add more states. */
+export type KitchenProjectStatus = 'draft';
+
+/** Room measurements in whole centimetres; null while not entered. */
+export interface KitchenMeasurements {
+  lengthCm: number | null;
+  widthCm: number | null;
+  heightCm: number | null;
+}
+
+/** One stored (normalized, metadata-free) kitchen photo. URLs are API-relative paths. */
+export interface KitchenPhotoView {
+  id: string;
+  /** 0-based, compacted on delete. */
+  position: number;
+  /** Size of the stored `full` JPEG (orientation applied). */
+  width: number;
+  height: number;
+  thumbUrl: string;
+  fullUrl: string;
+}
+
+/** Server-side upload limits of a draft. */
+export interface KitchenDraftLimits {
+  maxPhotos: number;
+  maxPhotoBytes: number;
+}
+
+/** Body of `GET /kitchen-projects/drafts/current` and of the draft mutations. */
+export interface KitchenDraftView {
+  id: string;
+  status: KitchenProjectStatus;
+  measurements: KitchenMeasurements;
+  photos: KitchenPhotoView[];
+  limits: KitchenDraftLimits;
+  /** ISO timestamp; slides 7 days on every change. */
+  expiresAt: string;
+}
+
+/** 201 body of `POST /kitchen-projects/drafts`. The token is shown exactly once. */
+export interface StartKitchenDraftResponse {
+  draft: KitchenDraftView;
+  draftToken: string;
+}
+
+/** Machine-readable `code` of kitchen draft error bodies. */
+export type KitchenDraftErrorCode =
+  | 'draft_capacity'
+  | 'invalid_measurements'
+  | 'photo_missing'
+  | 'photo_too_large'
+  | 'photo_unsupported_type'
+  | 'photo_too_small'
+  | 'photo_limit_reached'
+  | 'storage_unavailable';
+
+/** Per-field reason in a 400 `invalid_measurements` body. */
+export type KitchenMeasurementFieldError = 'not_integer' | 'out_of_range';

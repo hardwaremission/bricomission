@@ -55,5 +55,72 @@
       "tryAgain": "Prøv igen",
       "backHome": "Tilbage til forsiden"
     }
+  },
+  "capture": {
+    "backToHome": "Tilbage til forsiden",
+    "step": "Trin {current} af {total}",
+    "title": "Dit køkken",
+    "helper": "Tilføj fotos og målene på det rum, du vil renovere.",
+    "photos": {
+      "title": "Fotos",
+      "rules": "JPG, PNG, WebP eller HEIC · op til 15 MB · op til 8 fotos",
+      "add": "Tilføj fotos",
+      "tip": "Fotografér fra hjørnerne, så hele rummet er med.",
+      "alt": "Køkkenfoto {n}",
+      "remove": "Fjern foto {n}",
+      "retry": "Prøv at uploade igen",
+      "uploading": "Uploader… {percent} %",
+      "processing": "Behandler…",
+      "queued": "Venter…",
+      "limitReached": "Du har tilføjet {max} fotos, som er maksimum. Fjern et for at tilføje et andet.",
+      "errors": {
+        "tooLarge": "Fotoet er større end 15 MB.",
+        "unsupported": "Brug JPG, PNG, WebP eller HEIC.",
+        "tooSmall": "Fotoet er for lille. Brug et, der er mindst 480 px bredt.",
+        "failed": "Vi kunne ikke uploade fotoet."
+      }
+    },
+    "measurements": {
+      "title": "Mål",
+      "unit": "Enhed",
+      "fields": {
+        "lengthCm": "Længde",
+        "widthCm": "Bredde",
+        "heightCm": "Højde"
+      },
+      "rangeHint": "Længde og bredde mellem {lwMin} og {lwMax} {unit} · højde mellem {hMin} og {hMax} {unit}"
+    },
+    "units": {
+      "m": "m",
+      "cm": "cm"
+    },
+    "keypad": {
+      "label": "Indtast mål",
+      "title": "Mål",
+      "close": "Luk",
+      "empty": "—",
+      "decrease": "Formindsk med 1 centimeter",
+      "increase": "Forøg med 1 centimeter",
+      "separator": "Decimaltegn",
+      "backspace": "Slet sidste ciffer",
+      "clear": "Ryd",
+      "next": "Næste: {field}",
+      "done": "Færdig",
+      "range": "Mellem {min} og {max} {unit}",
+      "rangeError": "Mellem {min} {unit} og {max} {unit}."
+    },
+    "continue": "Fortsæt",
+    "continueHint": "Tilføj mindst ét foto og alle tre mål for at fortsætte.",
+    "save": {
+      "saving": "Gemmer…",
+      "saved": "Gemt",
+      "offline": "Ikke gemt: du er offline",
+      "failed": "Ikke gemt: prøv igen om et øjeblik."
+    },
+    "alerts": {
+      "offline": "Du er offline. Det, du har gemt, er i sikkerhed; opret forbindelse igen for at fortsætte.",
+      "expired": "Din tidligere kladde udløb efter 7 dage uden ændringer. Start forfra.",
+      "dismiss": "Luk"
+    }
   }
 }

@@ -232,6 +232,347 @@
           "catalog"
         ]
       }
+    },
+    "/kitchen-projects/drafts": {
+      "post": {
+        "operationId": "KitchenDraftsController_start",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StartKitchenDraftResponseDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "`draft_capacity`: too many open drafts",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KitchenDraftErrorDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Database unreachable"
+          }
+        },
+        "summary": "Start an anonymous kitchen draft and get its draft token (shown once)",
+        "tags": [
+          "kitchen-projects"
+        ]
+      }
+    },
+    "/kitchen-projects/drafts/current": {
+      "get": {
+        "operationId": "KitchenDraftsController_current",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KitchenDraftViewDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No draft for this token (missing, malformed, unknown or expired token), or the photo is not in it"
+          },
+          "503": {
+            "description": "Database unreachable"
+          }
+        },
+        "security": [
+          {
+            "draftToken": []
+          }
+        ],
+        "summary": "The draft of the X-Draft-Token",
+        "tags": [
+          "kitchen-projects"
+        ]
+      }
+    },
+    "/kitchen-projects/drafts/current/measurements": {
+      "put": {
+        "operationId": "KitchenDraftsController_updateMeasurements",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/KitchenMeasurementsDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KitchenDraftViewDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "`invalid_measurements` with per-field reasons",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvalidMeasurementsErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No draft for this token (missing, malformed, unknown or expired token), or the photo is not in it"
+          },
+          "503": {
+            "description": "Database unreachable"
+          }
+        },
+        "security": [
+          {
+            "draftToken": []
+          }
+        ],
+        "summary": "Replace the room measurements (whole centimetres, null = not entered)",
+        "tags": [
+          "kitchen-projects"
+        ]
+      }
+    },
+    "/kitchen-projects/drafts/current/photos": {
+      "post": {
+        "description": "The type is detected from the bytes. Stored as metadata-free JPEG full (<= 2560 px) and thumbnail (<= 512 px); the original is never stored.",
+        "operationId": "KitchenDraftsController_addPhoto",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "photo"
+                ],
+                "properties": {
+                  "photo": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KitchenPhotoViewDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed multipart body or `photo_missing`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KitchenDraftErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No draft for this token (missing, malformed, unknown or expired token), or the photo is not in it"
+          },
+          "409": {
+            "description": "`photo_limit_reached`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KitchenDraftErrorDto"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "`photo_too_large`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KitchenDraftErrorDto"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "`photo_unsupported_type` (also for files that do not decode)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KitchenDraftErrorDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "`photo_too_small`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KitchenDraftErrorDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "`storage_unavailable`, or database unreachable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KitchenDraftErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "draftToken": []
+          }
+        ],
+        "summary": "Upload one photo (JPEG, PNG, WebP or HEIC/HEIF; <= 15 MB; shortest edge >= 480 px; <= 50 MP; <= 8 per draft)",
+        "tags": [
+          "kitchen-projects"
+        ]
+      }
+    },
+    "/kitchen-projects/drafts/current/photos/{photoId}/content": {
+      "get": {
+        "operationId": "KitchenDraftsController_photoContent",
+        "parameters": [
+          {
+            "name": "photoId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "variant",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "thumb",
+                "full"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "JPEG bytes",
+            "content": {
+              "image/jpeg": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed photo id or variant"
+          },
+          "404": {
+            "description": "No draft for this token (missing, malformed, unknown or expired token), or the photo is not in it"
+          },
+          "503": {
+            "description": "`storage_unavailable`",
+            "content": {
+              "image/jpeg": {
+                "schema": {
+                  "$ref": "#/components/schemas/KitchenDraftErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "draftToken": []
+          }
+        ],
+        "summary": "A stored photo (metadata-free JPEG)",
+        "tags": [
+          "kitchen-projects"
+        ]
+      }
+    },
+    "/kitchen-projects/drafts/current/photos/{photoId}": {
+      "delete": {
+        "operationId": "KitchenDraftsController_deletePhoto",
+        "parameters": [
+          {
+            "name": "photoId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Deleted"
+          },
+          "400": {
+            "description": "Malformed photo id"
+          },
+          "404": {
+            "description": "No draft for this token (missing, malformed, unknown or expired token), or the photo is not in it"
+          },
+          "503": {
+            "description": "`storage_unavailable`, or database unreachable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KitchenDraftErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "draftToken": []
+          }
+        ],
+        "summary": "Delete a photo (both objects); later photos move up one position",
+        "tags": [
+          "kitchen-projects"
+        ]
+      }
     }
   },
   "info": {
@@ -249,6 +590,12 @@
         "bearerFormat": "JWT",
         "type": "http",
         "description": "Keycloak access token (realm BricoMission)"
+      },
+      "draftToken": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-Draft-Token",
+        "description": "Anonymous kitchen draft token (returned once by POST /kitchen-projects/drafts)"
       }
     },
     "schemas": {
@@ -526,6 +873,239 @@
         "required": [
           "query",
           "results"
+        ]
+      },
+      "KitchenMeasurementsDto": {
+        "type": "object",
+        "properties": {
+          "lengthCm": {
+            "type": "integer",
+            "nullable": true,
+            "minimum": 100,
+            "maximum": 2000,
+            "example": 420
+          },
+          "widthCm": {
+            "type": "integer",
+            "nullable": true,
+            "minimum": 100,
+            "maximum": 2000,
+            "example": 310
+          },
+          "heightCm": {
+            "type": "integer",
+            "nullable": true,
+            "minimum": 180,
+            "maximum": 600,
+            "example": 260
+          }
+        },
+        "required": [
+          "lengthCm",
+          "widthCm",
+          "heightCm"
+        ]
+      },
+      "KitchenPhotoViewDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "position": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "0-based, compacted on delete"
+          },
+          "width": {
+            "type": "integer",
+            "description": "Width of the stored full JPEG (orientation applied)"
+          },
+          "height": {
+            "type": "integer",
+            "description": "Height of the stored full JPEG (orientation applied)"
+          },
+          "thumbUrl": {
+            "type": "string",
+            "example": "/kitchen-projects/drafts/current/photos/0b6f.../content?variant=thumb",
+            "description": "API-relative path"
+          },
+          "fullUrl": {
+            "type": "string",
+            "example": "/kitchen-projects/drafts/current/photos/0b6f.../content?variant=full",
+            "description": "API-relative path"
+          }
+        },
+        "required": [
+          "id",
+          "position",
+          "width",
+          "height",
+          "thumbUrl",
+          "fullUrl"
+        ]
+      },
+      "KitchenDraftLimitsDto": {
+        "type": "object",
+        "properties": {
+          "maxPhotos": {
+            "type": "integer",
+            "example": 8
+          },
+          "maxPhotoBytes": {
+            "type": "integer",
+            "example": 15728640
+          }
+        },
+        "required": [
+          "maxPhotos",
+          "maxPhotoBytes"
+        ]
+      },
+      "KitchenDraftViewDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "draft"
+            ]
+          },
+          "measurements": {
+            "$ref": "#/components/schemas/KitchenMeasurementsDto"
+          },
+          "photos": {
+            "description": "Ordered by position",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/KitchenPhotoViewDto"
+            }
+          },
+          "limits": {
+            "$ref": "#/components/schemas/KitchenDraftLimitsDto"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Slides 7 days ahead on every change"
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "measurements",
+          "photos",
+          "limits",
+          "expiresAt"
+        ]
+      },
+      "StartKitchenDraftResponseDto": {
+        "type": "object",
+        "properties": {
+          "draft": {
+            "$ref": "#/components/schemas/KitchenDraftViewDto"
+          },
+          "draftToken": {
+            "type": "string",
+            "description": "Opaque draft token (43 characters, base64url). Returned only here; send it as X-Draft-Token."
+          }
+        },
+        "required": [
+          "draft",
+          "draftToken"
+        ]
+      },
+      "KitchenDraftErrorDto": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "integer"
+          },
+          "message": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string",
+            "enum": [
+              "draft_capacity",
+              "invalid_measurements",
+              "photo_missing",
+              "photo_too_large",
+              "photo_unsupported_type",
+              "photo_too_small",
+              "photo_limit_reached",
+              "storage_unavailable"
+            ]
+          }
+        },
+        "required": [
+          "statusCode",
+          "message",
+          "code"
+        ]
+      },
+      "MeasurementFieldErrorsDto": {
+        "type": "object",
+        "properties": {
+          "lengthCm": {
+            "type": "string",
+            "enum": [
+              "not_integer",
+              "out_of_range"
+            ]
+          },
+          "widthCm": {
+            "type": "string",
+            "enum": [
+              "not_integer",
+              "out_of_range"
+            ]
+          },
+          "heightCm": {
+            "type": "string",
+            "enum": [
+              "not_integer",
+              "out_of_range"
+            ]
+          }
+        }
+      },
+      "InvalidMeasurementsErrorDto": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "integer"
+          },
+          "message": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string",
+            "enum": [
+              "draft_capacity",
+              "invalid_measurements",
+              "photo_missing",
+              "photo_too_large",
+              "photo_unsupported_type",
+              "photo_too_small",
+              "photo_limit_reached",
+              "storage_unavailable"
+            ]
+          },
+          "fields": {
+            "$ref": "#/components/schemas/MeasurementFieldErrorsDto"
+          }
+        },
+        "required": [
+          "statusCode",
+          "message",
+          "code",
+          "fields"
         ]
       }
     }
