@@ -1,6 +1,6 @@
 import { existsSync, mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
-import { expect, test } from '@playwright/test';
+import { expect, test, newContext } from './fixtures';
 import { authOrigins, baseURL, completeKeycloakSignIn, guardLocalhost, HOMEOWNER, pageFetch } from './support';
 
 // Scenario 3 (homeowner-password-login): the web session survives a web container restart.
@@ -15,7 +15,7 @@ test('session persistence across a web restart', async ({ browser }) => {
   test.setTimeout(60_000);
   const WEB = new URL(baseURL()).origin;
   if (PHASE === 'save') {
-    const context = await browser.newContext({ baseURL: baseURL() });
+    const context = await newContext(browser, { baseURL: baseURL() });
     const blocked = await guardLocalhost(context, authOrigins());
     const page = await context.newPage();
     await page.goto('/auth/login?returnTo=%2F');
@@ -29,7 +29,7 @@ test('session persistence across a web restart', async ({ browser }) => {
   }
   expect(PHASE).toBe('check');
   expect(existsSync(STATE_FILE), `${STATE_FILE} from phase save`).toBe(true);
-  const context = await browser.newContext({ baseURL: baseURL(), storageState: STATE_FILE });
+  const context = await newContext(browser, { baseURL: baseURL(), storageState: STATE_FILE });
   const blocked = await guardLocalhost(context, authOrigins());
   const page = await context.newPage();
   await page.goto(`${WEB}/`);

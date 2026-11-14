@@ -1,4 +1,4 @@
-import { expect, test, type Browser, type BrowserContext, type Page } from '@playwright/test';
+import { expect, test, type Browser, type BrowserContext, type Page, newContext } from './fixtures';
 import {
   authOrigins,
   baseURL,
@@ -158,9 +158,9 @@ test.describe('anonymous behavior', () => {
     expect(await session.json()).toEqual({ signedIn: false });
   });
 
-  test('Scenario 9: the service worker never intercepts /auth/* (cache v2)', async ({ request }) => {
+  test('Scenario 9: the service worker never intercepts /auth/* (cache v3)', async ({ request }) => {
     const sw = await (await request.get('/sw.js')).text();
-    expect(sw).toContain("const VERSION = 'v2';");
+    expect(sw).toContain("const VERSION = 'v3';");
     expect(sw).toContain("url.pathname.startsWith('/auth/')");
   });
 
@@ -213,7 +213,7 @@ test.describe('anonymous behavior', () => {
 let signedInState: Awaited<ReturnType<BrowserContext['storageState']>> | null = null;
 
 async function signedInContext(browser: Browser, viewport: { width: number; height: number }, locale: Locale) {
-  const context = await browser.newContext({ baseURL: baseURL(), storageState: signedInState ?? undefined, viewport, isMobile: true, hasTouch: true });
+  const context = await newContext(browser, { baseURL: baseURL(), storageState: signedInState ?? undefined, viewport, isMobile: true, hasTouch: true });
   await setLocaleCookie(context, locale);
   return context;
 }
@@ -221,7 +221,7 @@ async function signedInContext(browser: Browser, viewport: { width: number; heig
 test.describe('signed-in layout', () => {
   test.beforeAll(async ({ browser }) => {
     test.setTimeout(60_000);
-    const context = await browser.newContext({ baseURL: baseURL() });
+    const context = await newContext(browser, { baseURL: baseURL() });
     const guard = await guardLocalhost(context, authOrigins());
     const page = await context.newPage();
     await signInFromHome(page, context.request);
@@ -303,7 +303,7 @@ test.describe('language selector on narrow screens', () => {
           const header = document.querySelector('header') as HTMLElement;
           return {
             header: { scroll: header.scrollWidth, client: header.clientWidth },
-            wordmark: rect('header > p'),
+            wordmark: rect('header [data-testid="wordmark"]'),
             selector: rect('[data-testid="locale-selector"]'),
             account: rect('[data-testid="account-signin"]'),
           };

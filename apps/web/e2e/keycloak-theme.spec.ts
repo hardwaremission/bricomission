@@ -1,4 +1,4 @@
-import { expect, test, type APIRequestContext, type Page } from '@playwright/test';
+import { expect, test, type APIRequestContext, type Page } from './fixtures';
 import {
   DEV_CLIENT,
   DEV_REDIRECT,
@@ -88,7 +88,17 @@ async function expectThemed(page: Page) {
   expect(sheets).toHaveLength(1);
   expect(sheets[0]).toMatch(STYLESHEET);
   expect(sheets[0]?.startsWith(KC_ORIGIN)).toBe(true);
-  await expect(page.getByTestId('wordmark')).toHaveText('BricoMission');
+  // brand-logo-animation: inline SVG wordmark logo (140x22, no text), the favicon pair, new colors.
+  const logo = page.getByTestId('wordmark');
+  await expect(logo).toHaveAccessibleName('BricoMission');
+  expect(await logo.evaluate((el) => el.tagName.toLowerCase())).toBe('svg');
+  expect(await logo.boundingBox()).toMatchObject({ width: 140, height: 22 });
+  const icons = await page.locator('link[rel="icon"]').evaluateAll((links) => links.map((l) => (l as HTMLLinkElement).href));
+  expect(icons).toHaveLength(2);
+  expect(icons[0]).toMatch(/\/img\/favicon\.svg$/);
+  expect(icons[1]).toMatch(/\/img\/favicon\.ico$/);
+  expect(icons.every((href) => href.startsWith(KC_ORIGIN))).toBe(true);
+  expect(await page.locator('body').evaluate((el) => getComputedStyle(el).color)).toBe('rgb(24, 34, 49)');
 }
 
 async function expectNoLanguagePicker(page: Page) {
@@ -103,6 +113,7 @@ test.describe('Scenario 2: sign in with password and email code', () => {
     });
     await openSignIn(page, 'en');
     await expectThemed(page);
+    await page.screenshot({ path: 'test-results/brand/keycloak-sign-in-header.png', clip: { x: 0, y: 0, width: 390, height: 120 } });
     await expectNoLanguagePicker(page);
     await expect(page.locator('html')).toHaveAttribute('lang', 'en');
     await expect(page.getByRole('heading', { level: 1 })).toHaveText(en.loginAccountTitle!);
@@ -128,6 +139,12 @@ test.describe('Scenario 2: sign in with password and email code', () => {
     }
     expect(mail.html).toContain(`>${mail.code}</td>`);
     expect(mail.html).not.toMatch(/https?:\/\//);
+    // brand-logo-animation: the logo is a data-URI PNG with alt text; new colors; the text part
+    // still carries the code on its own line.
+    expect(mail.html).toMatch(/<img src="data:image\/png;base64,[A-Za-z0-9+/=]+" alt="BricoMission" width="140" height="22"/);
+    expect(mail.html).toContain('color:#2968EC');
+    expect(mail.html).not.toMatch(/#1F4E79|#1C1C1E/i);
+    expect(mail.text.split(/\r?\n/).map((line) => line.trim())).toContain(mail.code);
 
     await page.locator('#emailCode').fill(mail.code);
     const callback = watchCallback(page);

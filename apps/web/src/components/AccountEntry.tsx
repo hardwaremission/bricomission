@@ -73,7 +73,7 @@ export function AccountEntry() {
           // A click on the backdrop (the dialog element itself) closes the sheet.
           if (event.target === event.currentTarget) close();
         }}
-        className="m-0 mt-auto max-h-dvh w-full max-w-none overflow-y-auto rounded-t-lg bg-surface p-0 text-text shadow-sheet backdrop:bg-[#1C1C1E66]"
+        className="m-0 mt-auto max-h-dvh w-full max-w-none overflow-y-auto rounded-t-lg bg-surface p-0 text-text shadow-sheet backdrop:bg-[#18223166]"
       >
         <div className="flex flex-col gap-md px-md pt-sm pb-[calc(var(--spacing-lg)+env(safe-area-inset-bottom))]">
           <div className="flex h-[52px] items-center justify-between">

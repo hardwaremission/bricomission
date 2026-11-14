@@ -15,7 +15,12 @@ const colors = [...colorsBlock.matchAll(/^ {2}(\w+): "(#[0-9A-Fa-f]{6})"/gm)].ma
 
 describe('DESIGN.md tokens in globals.css', () => {
   it('reads the DESIGN.md color tokens', () => {
-    expect(colors.length).toBeGreaterThanOrEqual(14);
+    expect(colors.length).toBeGreaterThanOrEqual(13);
+  });
+
+  it('has no accent color any more (brand-logo-animation)', () => {
+    expect(colors.map((c) => c.name)).not.toContain('accent');
+    expect(css).not.toContain('--color-accent');
   });
 
   it.each(colors)('$name -> $variable = $hex', ({ variable, hex }) => {

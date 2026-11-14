@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures';
 import { horizontalOverflow, LOCALES, setLocaleCookie, smallTargets } from './support';
 
 // Scenario 9: no external requests; mobile layout at 390 and 360 px in all 11 locales.

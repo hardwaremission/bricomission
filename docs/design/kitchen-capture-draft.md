@@ -2,6 +2,8 @@
 
 Approved by developer on 2026-11-14.
 
+> **Updated by `brand-logo-animation` on 2026-11-14 (approved by developer):** colors recolored to the new brand (primary `#2968EC`, text `#182231`, secondary `#E6EEFD`, focus `#2968EC`, overlay `#18223166`; `accent` removed) and the text wordmark replaced by the SVG wordmark logo 140×22. Logo, icons, favicon, email logo and splash: `docs/design/brand-logo-animation.md`. In the JSX exports the logo appears as an empty `Logo (wordmark SVG …)` frame; its artwork comes from the brand read-back.
+
 - Source of truth: `design/openpencil/bricomission_B2C_app.fig`, page **Capture**, designed and read back through the `open-pencil` MCP (OpenPencil 0.16.0).
 - Read-back exports (JSX round-trip format) in `design/openpencil/kitchen-capture-draft/`:
   - `1-capture-empty.jsx`, `2-capture-filled.jsx`, `3-measurement-keypad.jsx`, `4-capture-360-check.jsx` (screens)
@@ -47,7 +49,7 @@ Background `#FAFAF8`. Header (fixed), Content (scrolls under the sticky bar), Bo
 
 ## Measurement Keypad (frames 3 and 5)
 
-Bottom sheet over the page (overlay `#1C1C1E66`), same sheet pattern as the language/account sheets: column gap 16, pt 8, px 16, pb 24 + safe area, `surface`, radius 20 top corners, `elevation.sheet`. Dialog (`aria-label` "Enter measurements"), focus trapped.
+Bottom sheet over the page (overlay `#18223166`), same sheet pattern as the language/account sheets: column gap 16, pt 8, px 16, pb 24 + safe area, `surface`, radius 20 top corners, `elevation.sheet`. Dialog (`aria-label` "Enter measurements"), focus trapped.
 
 | Element | Spec | Copy (en) |
 | --- | --- | --- |

@@ -14,7 +14,8 @@
 - Keycloak theme: `keycloak-login-theme` is `passing` (implemented and self-verified, awaiting independent validation). Locale precedence decided (option a): Keycloak stores no account locale; `ui_locales` decides. `./init.sh` now also fails on a stale realm volume (no theme on the sign-in page) and prints the reset command.
 - Web sign-in: `homeowner-password-login` is `passing` (implemented and self-verified, awaiting independent validation). BFF client `bricomission-web`, sessions in schema `web_session`; realm volumes older than this feature need a reset (`./init.sh` detects it).
 - Kitchen capture: `kitchen-capture-draft` is `passing` (implemented and self-verified, awaiting independent validation). Capture screen at `/kitchen-projects/new`; anonymous drafts bound to the HttpOnly cookie `bm_draft`; photos (JPEG/PNG/WebP/HEIC) normalized to metadata-free JPEGs in the private MinIO bucket `bricomission-media`; HEIC decoded with `heic-decode`/`libheif-js` (sharp cannot decode HEVC); 7-day sliding expiry with an in-API sweeper. `./init.sh` Web step also checks the Capture page and the guarded draft route.
-- Last verified at: 2026-11-14 after `kitchen-capture-draft` (`./init.sh` exit 0, 6 healthy; workspace gate api 203 / web 364 / api-client 3, also offline; `pnpm test:e2e` 103 passed, 1 skipped). Before that: 2026-11-13 after `homeowner-password-login` and a realm reset (`./init.sh` exit 0 with 6 healthy services and the new Keycloak/Web auth checks; `pnpm test:e2e` 89 passed, 1 skipped; `./scripts/keycloak-smoke.sh` exit 0; `bash scripts/web/auth-persist-check.sh` exit 0)
+- Brand: `brand-logo-animation` is `passing` (implemented and self-verified, awaiting independent validation). New palette (primary `#2968EC`, text `#182231`, no `accent`), SVG logo in the web and Keycloak headers, white lettermark app icons, favicon pair, data-URI email logo, one-time welcome splash (`sessionStorage` per tab). Keycloak image tag `…-theme2` (rebuild with `docker compose up -d --build --wait keycloak`, no realm reset). E2E specs import `test` from `e2e/fixtures.ts` (splash skipped).
+- Last verified at: 2026-11-14 after `brand-logo-animation` (`./init.sh` exit 0, 6 healthy; workspace gate api 203 / web 416 / api-client 3; `pnpm test:e2e` 131 passed, 1 skipped; Lighthouse installable; `./scripts/keycloak-smoke.sh` exit 0). Before that: 2026-11-14 after `kitchen-capture-draft` (`./init.sh` exit 0, 6 healthy; workspace gate api 203 / web 364 / api-client 3, also offline; `pnpm test:e2e` 103 passed, 1 skipped). Before that: 2026-11-13 after `homeowner-password-login` and a realm reset (`./init.sh` exit 0 with 6 healthy services and the new Keycloak/Web auth checks; `pnpm test:e2e` 89 passed, 1 skipped; `./scripts/keycloak-smoke.sh` exit 0; `bash scripts/web/auth-persist-check.sh` exit 0)
 
 ## Session Log
 
@@ -219,3 +220,20 @@
 - State left: core stack (6 services) healthy with the new api and web images. Test drafts from curl and E2E runs exist in the dev database and bucket (they expire within 7 days and the sweeper removes them). No throwaway compose projects or buckets were created. Nothing committed.
 - Known risks: global-only abuse cap (`DRAFT_MAX_OPEN`), MinIO root credentials in the api, HEVC patents before any distribution (all recorded in `docs/risks-and-open-questions.md`).
 - Next best step: independent validation of `kitchen-capture-draft` (`feature-validator`).
+
+### Session 012
+
+- Date: 2026-11-14
+- Goal: implement `brand-logo-animation` (spec `docs/specs/brand-logo-animation.md`, approved read-back `docs/design/brand-logo-animation.md`) on branch `feature/brand-logo-animation`.
+- Completed:
+  - Palette swap in DESIGN.md, `globals.css`, the Keycloak CSS, the code email, the overlays (`#18223166`), the manifest and the viewport theme color (`#2968EC`). `accent` was removed.
+  - SVG `Wordmark` (140x22) plus `brand/{logo-paths.ts,Lettermark,LogoShapes}`; Keycloak `bm-logo.ftl` with favicon links; compose tag `…-theme2`.
+  - `scripts/render-brand-assets.ts` (replaces `render-icons.ts`): app icons, apple-touch, `favicon.svg`/`favicon.ico` (web and Keycloak), and the email logo data URI. Service worker `v3`.
+  - Welcome splash: `splash-script.ts` (inline head script), `WelcomeSplash.tsx`, `WelcomeSplash.module.css` and `splash-stages.ts`, wired in `layout.tsx`.
+  - Tests: unit tests `contrast`, `brand-assets` and `splash-script`; `tokens`/`manifest` updated. E2E: `e2e/fixtures.ts` (`skipSplash`, `newContext`), every spec migrated, new `splash.spec.ts` and `brand.spec.ts`, keycloak/pwa/auth specs updated.
+  - Docs: ARCHITECTURE.md, AGENTS.md, DESIGN.md, risks, and the spec's Implementation Notes.
+- Verification run (all green): lint; `pnpm -r test` (api 203, web 416, api-client 3); the render script twice (byte-identical); `./init.sh` exit 0; `pnpm test:e2e` 131 passed / 1 skipped; `bash scripts/web/lighthouse-pwa.sh` exit 0; `./scripts/keycloak-smoke.sh` exit 0; the greps from the spec. Details are in the `feature_list.json` evidence.
+- Not run (manual, developer): side-by-side comparison with `design/logo/*_animation.html`, Mailpit HTML view, a real Android/desktop install, and the favicon in light and dark OS themes. Evidence screenshots are in `apps/web/test-results/brand/` (git-ignored).
+- Deviations: see the spec's Implementation Notes. Main points: exact read-back viewBoxes and sizes, a full-square apple-touch icon, a `data-splash="skip"` attribute instead of a class, and `lm`/`wm` prefixes for the two colliding keyframe names.
+- Known risks (recorded in `docs/risks-and-open-questions.md`): data-URI email images can be blocked or raise spam scores, and the splash replays in each new tab.
+- Next best step: independent validation of `brand-logo-animation` (`feature-validator`).

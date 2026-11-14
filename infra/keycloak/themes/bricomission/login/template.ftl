@@ -1,7 +1,8 @@
 <#import "bm-icons.ftl" as icons>
+<#import "bm-logo.ftl" as logo>
 <#--
   BricoMission page shell (approved design: docs/design/keycloak-login-theme.md, "Shared Layout").
-  Header with the wordmark, then Content: Intro (optional badge, title, helper), the form-level
+  Header with the SVG wordmark logo (bm-logo.ftl), then Content: Intro (optional badge, title, helper), the form-level
   Alert, and the page body. No language picker: the locale comes from ui_locales (developer decision 2026-11-13: no stored Keycloak locale, the app language always wins).
   Sections a page may provide: "header" (title), "helper", "form", "info", "socialProviders".
   Base templates this theme does not override use the same macro and simply leave out "helper".
@@ -16,6 +17,8 @@
     <meta name="robots" content="noindex, nofollow">
     <meta name="color-scheme" content="light">
     <title>${bmTitle?markup_string?trim?no_esc} · ${msg("brandName")}</title>
+    <link rel="icon" href="${url.resourcesPath}/img/favicon.svg" type="image/svg+xml">
+    <link rel="icon" href="${url.resourcesPath}/img/favicon.ico" sizes="16x16 32x32 48x48">
     <#if properties.styles?has_content>
         <#list properties.styles?split(' ') as style>
             <link href="${url.resourcesPath}/${style}" rel="stylesheet">
@@ -26,7 +29,7 @@
 <body class="${properties.kcBodyClass!} ${bodyClass}" data-page-id="login-${pageId}">
 <div class="${properties.kcLoginClass!}">
     <header class="bm-header">
-        <p class="bm-wordmark" data-testid="wordmark">${msg("brandName")}</p>
+        <@logo.wordmark/>
     </header>
     <main class="bm-content ${contentClass}">
         <div class="bm-intro<#if badge?has_content> bm-intro--badge</#if>">

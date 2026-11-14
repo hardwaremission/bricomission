@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BricoMission — Animación Lettermark (BM)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg-canvas: #ffffff;
+      --grid-minor: rgba(24, 34, 49, 0.035);
+      --grid-major: rgba(24, 34, 49, 0.075);
+      --ink-primary: #182231;
+      --ink-accent: #2968ec;
+      --ui-surface: rgba(248, 250, 252, 0.9);
+      --ui-border: rgba(24, 34, 49, 0.12);
+      --ui-text: #182231;
+      --ui-muted: #64748b;
+    }
+
+    body.dark-mode {
+      --bg-canvas: #0f172a;
+      --grid-minor: rgba(248, 250, 252, 0.035);
+      --grid-major: rgba(248, 250, 252, 0.075);
+      --ink-primary: #f8fafc;
+      --ink-accent: #3b82f6;
+      --ui-surface: rgba(30, 41, 59, 0.85);
+      --ui-border: rgba(248, 250, 252, 0.14);
+      --ui-text: #f8fafc;
+      --ui-muted: #94a3b8;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: var(--bg-canvas);
+      color: var(--ui-text);
+      transition: background-color 0.45s cubic-bezier(0.16, 1, 0.3, 1), color 0.45s ease;
+      overflow-x: hidden;
+    }
+
+    /* Fondo de plano arquitectónico milimetrado */
+    .blueprint-grid {
+      background-image:
+        linear-gradient(to right, var(--grid-major) 1px, transparent 1px),
+        linear-gradient(to bottom, var(--grid-major) 1px, transparent 1px),
+        linear-gradient(to right, var(--grid-minor) 1px, transparent 1px),
+        linear-gradient(to bottom, var(--grid-minor) 1px, transparent 1px);
+      background-size: 96px 96px, 96px 96px, 24px 24px, 24px 24px;
+      background-position: center center;
+    }
+
+    /* Transiciones de colores SVG en modo oscuro/claro */
+    .svg-ink-fill {
+      fill: var(--ink-primary);
+      transition: fill 0.45s ease;
+    }
+
+    .svg-accent-fill {
+      fill: var(--ink-accent);
+      transition: fill 0.45s ease;
+    }
+
+    .svg-dim-stroke {
+      stroke: var(--ink-primary);
+      transition: stroke 0.45s ease;
+    }
+
+    /* Estilos base de elementos animados */
+    .dim-line {
+      stroke-dasharray: var(--len, 1500);
+      stroke-dashoffset: var(--len, 1500);
+    }
+
+    .dim-tick {
+      stroke-dasharray: 80;
+      stroke-dashoffset: 80;
+    }
+
+    .glyph-piece {
+      opacity: 0;
+      transform-box: fill-box;
+      will-change: transform, opacity;
+    }
+
+    /* Keyframes de dibujo de plano técnico */
+    @keyframes drawStroke {
+      0% {
+        stroke-dashoffset: var(--len, 1500);
+        opacity: 0.2;
+      }
+      100% {
+        stroke-dashoffset: 0;
+        opacity: 1;
+      }
+    }
+
+    @keyframes drawTick {
+      0% {
+        stroke-dashoffset: 80;
+        opacity: 0;
+      }
+      100% {
+        stroke-dashoffset: 0;
+        opacity: 1;
+      }
+    }
+
+    /* Ensamblaje modular de las piezas del monograma */
+    @keyframes slideUpSnap {
+      0% {
+        opacity: 0;
+        transform: translateY(65px) scaleY(0.92);
+      }
+      70% {
+        opacity: 1;
+        transform: translateY(-4px) scaleY(1.01);
+      }
+      100% {
+        opacity: 1;
+        transform: translateY(0) scaleY(1);
+      }
+    }
+
+    @keyframes slideDownSnap {
+      0% {
+        opacity: 0;
+        transform: translateY(-65px) scaleY(0.92);
+      }
+      70% {
+        opacity: 1;
+        transform: translateY(4px) scaleY(1.01);
+      }
+      100% {
+        opacity: 1;
+        transform: translateY(0) scaleY(1);
+      }
+    }
+
+    @keyframes slideRightSnap {
+      0% {
+        opacity: 0;
+        transform: translateX(-55px) scaleX(0.94);
+      }
+      72% {
+        opacity: 1;
+        transform: translateX(4px) scaleX(1.01);
+      }
+      100% {
+        opacity: 1;
+        transform: translateX(0) scaleX(1);
+      }
+    }
+
+    @keyframes diagDownSnap {
+      0% {
+        opacity: 0;
+        transform: translate(-42px, -78px);
+      }
+      75% {
+        opacity: 1;
+        transform: translate(2px, 4px);
+      }
+      100% {
+        opacity: 1;
+        transform: translate(0, 0);
+      }
+    }
+
+    @keyframes diagUpSnap {
+      0% {
+        opacity: 0;
+        transform: translate(-42px, 78px);
+      }
+      75% {
+        opacity: 1;
+        transform: translate(2px, -4px);
+      }
+      100% {
+        opacity: 1;
+        transform: translate(0, 0);
+      }
+    }
+
+    @keyframes cornerLock {
+      0% {
+        opacity: 0;
+        transform: translate(-28px, -28px) scale(0.84);
+      }
+      68% {
+        opacity: 1;
+        transform: translate(2px, 2px) scale(1.03);
+      }
+      100% {
+        opacity: 1;
+        transform: translate(0, 0) scale(1);
+      }
+    }
+
+    @keyframes pulseBeacon {
+      0%, 100% {
+        opacity: 1;
+        transform: scale(1);
+      }
+      50% {
+        opacity: 0.45;
+        transform: scale(0.85);
+      }
+    }
+
+    /* Coreografía activa al añadir clase .is-playing */
+    .is-playing .dim-main {
+      animation: drawStroke 0.75s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+      animation-delay: var(--d, 0s);
+    }
+
+    .is-playing .dim-ext {
+      animation: drawStroke 0.45s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+      animation-delay: var(--d, 0.2s);
+    }
+
+    .is-playing .dim-tick {
+      animation: drawTick 0.35s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+      animation-delay: var(--d, 0.45s);
+    }
+
+    .is-playing .anim-up {
+      animation: slideUpSnap 0.65s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      animation-delay: var(--d, 0.55s);
+    }
+
+    .is-playing .anim-down {
+      animation: slideDownSnap 0.65s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      animation-delay: var(--d, 0.65s);
+    }
+
+    .is-playing .anim-right {
+      animation: slideRightSnap 0.72s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      animation-delay: var(--d, 0.72s);
+    }
+
+    .is-playing .anim-diag-down {
+      animation: diagDownSnap 0.68s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      animation-delay: var(--d, 0.88s);
+    }
+
+    .is-playing .anim-diag-up {
+      animation: diagUpSnap 0.68s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      animation-delay: var(--d, 1.02s);
+    }
+
+    .is-playing .anim-corner {
+      animation: cornerLock 0.58s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      animation-delay: var(--d, 1.25s);
+    }
+
+    /* Estado pausado */
+    .is-paused * {
+      animation-play-state: paused !important;
+    }
+
+    .mono-tag {
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .control-bar {
+      background: var(--ui-surface);
+      border: 1px solid var(--ui-border);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+  </style>
+</head>
+<body class="blueprint-grid min-h-screen flex flex-col justify-between selection:bg-blue-600 selection:text-white">
+
+  <!-- Cabecera técnica minimalista -->
+  <header class="w-full max-w-6xl mx-auto px-6 pt-6 flex items-center justify-between text-xs">
+    <div class="flex items-center gap-2.5 mono-tag tracking-wider uppercase" style="color: var(--ui-muted);">
+      <span class="inline-block w-2 h-2 rounded-full bg-blue-600" style="animation: pulseBeacon 2.2s infinite;"></span>
+      <span>BM_LETTERMARK // CONSTRUCCIÓN MODULAR</span>
+    </div>
+    <div class="hidden sm:flex items-center gap-4 mono-tag" style="color: var(--ui-muted);">
+      <span>ESCALA 1:1</span>
+      <span>•</span>
+      <span id="status-label">ENSAMBLANDO...</span>
+    </div>
+  </header>
+
+  <!-- Escenario central del Lettermark -->
+  <main class="flex-1 flex items-center justify-center px-4 sm:px-8 py-8">
+    <div class="w-full max-w-3xl relative flex items-center justify-center">
+      <!-- Contenedor SVG con el diseño exacto del Lettermark BM -->
+      <svg id="bm-stage" class="w-full h-auto max-h-[62vh] overflow-visible select-none" xmlns="http://www.w3.org/2000/svg" viewBox="580 360 1610 910" fill="none" role="img" aria-label="Animación de construcción del monograma BM de BricoMission">
+        <title>BricoMission — Monograma BM</title>
+
+        <!-- CAPA 1: Cotas de plano arquitectónico (se trazan primero) -->
+        <g id="dimension-lines" class="svg-dim-stroke" stroke-width="3.2" stroke-linecap="square">
+          <!-- Cota vertical izquierda -->
+          <line class="dim-line dim-main" style="--len: 682; --d: 0.05s;" x1="676.5" y1="411" x2="676.5" y2="1093" />
+          <line class="dim-line dim-ext"  style="--len: 83;  --d: 0.22s;" x1="648" y1="438.5" x2="731" y2="438.5" />
+          <line class="dim-line dim-ext"  style="--len: 83;  --d: 0.28s;" x1="648" y1="1066.5" x2="731" y2="1066.5" />
+          <line class="dim-tick"          style="--d: 0.42s;" x1="654.5" y1="416.5" x2="698.5" y2="460.5" />
+          <line class="dim-tick"          style="--d: 0.46s;" x1="654.5" y1="1044.5" x2="698.5" y2="1088.5" />
+
+          <!-- Cota vertical derecha -->
+          <line class="dim-line dim-main" style="--len: 682; --d: 0.12s;" x1="2094.5" y1="411" x2="2094.5" y2="1093" />
+          <line class="dim-line dim-ext"  style="--len: 85;  --d: 0.26s;" x1="2039" y1="438.5" x2="2124" y2="438.5" />
+          <line class="dim-line dim-ext"  style="--len: 85;  --d: 0.32s;" x1="2039" y1="1066.5" x2="2124" y2="1066.5" />
+          <line class="dim-tick"          style="--d: 0.48s;" x1="2072.5" y1="416.5" x2="2116.5" y2="460.5" />
+          <line class="dim-tick"          style="--d: 0.52s;" x1="2072.5" y1="1044.5" x2="2116.5" y2="1088.5" />
+
+          <!-- Cota horizontal inferior -->
+          <line class="dim-line dim-main" style="--len: 1278; --d: 0.18s;" x1="747" y1="1172.5" x2="2025" y2="1172.5" />
+          <line class="dim-line dim-ext"  style="--len: 97;   --d: 0.34s;" x1="773.5" y1="1103" x2="773.5" y2="1200" />
+          <line class="dim-line dim-ext"  style="--len: 97;   --d: 0.38s;" x1="1996.5" y1="1103" x2="1996.5" y2="1200" />
+          <line class="dim-tick"          style="--d: 0.54s;" x1="751.5" y1="1194.5" x2="795.5" y2="1150.5" />
+          <line class="dim-tick"          style="--d: 0.58s;" x1="1974.5" y1="1194.5" x2="2018.5" y2="1150.5" />
+        </g>
+
+        <!-- CAPA 2: Estructura geométrica del monograma BM -->
+        <g id="glyphs" class="svg-ink-fill" fill-rule="evenodd">
+          <!-- B: asta vertical izquierda con corte diagonal de 45° -->
+          <path class="glyph-piece anim-up" style="--d: 0.52s;" d="M 771.21 1067.35 L 771.23 594.14 L 860.05 594.16 L 860.20 699.22 L 922.91 699.27 L 860.09 771.74 L 860.08 981.63 L 911.42 981.63 L 911.36 1067.32 Z" />
+
+          <!-- B: cuerpo modular derecho (doble arco) -->
+          <path class="glyph-piece anim-right" style="--d: 0.66s;" d="M 925.52 1067.32 L 925.48 981.60 L 1054.00 981.62 C 1082.98 981.68 1113.31 982.89 1141.00 973.14 C 1146.94 971.05 1152.43 968.28 1158.00 965.34 C 1163.48 962.45 1168.45 958.00 1173.00 953.83 C 1178.10 949.15 1183.73 944.06 1187.22 938.00 C 1200.44 915.06 1204.34 891.43 1201.73 865.00 C 1200.96 857.16 1199.67 849.53 1197.36 842.00 C 1191.11 821.65 1174.04 803.15 1155.00 793.88 C 1119.63 776.64 1079.51 777.76 1041.00 777.72 L 873.61 777.60 L 940.91 699.30 L 1044.00 699.27 C 1059.54 699.23 1075.62 699.74 1091.00 697.26 C 1097.10 696.28 1103.00 694.95 1109.00 693.63 C 1114.78 692.35 1120.61 690.56 1126.00 688.11 C 1136.71 683.22 1147.37 676.28 1154.84 667.00 L 1160.21 660.00 C 1163.70 653.79 1167.03 647.76 1169.36 641.00 C 1177.68 616.89 1176.18 588.00 1165.41 565.00 C 1159.59 552.56 1147.89 541.27 1136.00 534.62 C 1120.73 526.07 1103.35 522.21 1086.00 520.79 L 948.28 520.41 L 948.34 434.65 L 1050.00 434.74 C 1067.93 434.78 1086.14 433.85 1104.00 435.69 C 1118.12 437.15 1132.25 439.17 1146.00 442.61 C 1153.46 444.48 1160.70 446.98 1168.00 449.32 C 1182.22 453.88 1196.54 460.20 1209.00 468.55 C 1234.93 485.92 1254.44 511.48 1264.30 541.00 C 1270.69 560.11 1273.50 581.83 1273.34 602.00 L 1272.66 610.00 C 1271.56 637.81 1264.26 664.98 1248.42 688.00 C 1234.21 708.64 1212.33 721.24 1190.05 731.02 C 1199.76 734.25 1209.59 736.72 1219.00 740.83 C 1239.57 749.80 1258.90 764.67 1272.17 783.00 C 1279.22 792.73 1285.75 802.81 1290.26 814.00 C 1298.54 834.56 1302.99 857.76 1302.99 880.00 C 1302.99 896.84 1302.57 913.44 1299.34 930.00 C 1291.86 968.50 1270.19 1002.56 1238.00 1025.41 C 1220.89 1037.55 1201.79 1046.14 1182.00 1052.68 C 1160.12 1059.91 1137.13 1064.60 1114.00 1066.31 C 1091.73 1067.95 1069.33 1067.39 1047.00 1067.33 Z" />
+
+          <!-- M: asta vertical izquierda -->
+          <path class="glyph-piece anim-up" style="--d: 0.78s;" d="M 1451.34 1067.33 L 1356.69 1067.31 L 1356.86 598.10 L 1451.30 598.08 Z" />
+
+          <!-- M: palo oblicuo descendente -->
+          <path class="glyph-piece anim-diag-down" style="--d: 0.90s;" d="M 1628.50 912.34 L 1535.70 710.00 L 1456.89 535.53 L 1557.26 535.78 L 1680.36 812.00 L 1723.59 912.37 Z" />
+
+          <!-- M: palo oblicuo ascendente con cortes paralelos -->
+          <path class="glyph-piece anim-diag-up" style="--d: 1.02s;" d="M 1737.37 884.51 L 1689.52 774.96 L 1844.46 434.60 L 1936.17 434.64 L 1850.44 633.00 Z" />
+
+          <!-- M: asta vertical derecha -->
+          <path class="glyph-piece anim-down" style="--d: 1.12s;" d="M 1901.79 1067.34 L 1901.33 577.00 L 1963.42 434.57 L 1998.49 434.67 L 1998.00 1066.99 Z" />
+        </g>
+
+        <!-- CAPA 3: Acentos arquitectónicos en azul (#2968ec) que sellan las esquinas -->
+        <g id="accent-blue" class="svg-accent-fill">
+          <path class="glyph-piece anim-corner" style="--d: 1.28s;" d="M 771.14 580.34 L 771.25 434.69 L 934.32 434.82 L 934.33 520.39 L 859.85 520.50 L 859.85 580.33 Z" />
+          <path class="glyph-piece anim-corner" style="--d: 1.38s;" d="M 1451.25 584.30 L 1357.01 583.96 L 1356.87 434.65 L 1511.59 434.70 L 1550.73 521.95 L 1550.00 521.26 L 1549.00 521.98 L 1451.28 521.93 Z" />
+        </g>
+      </svg>
+    </div>
+  </main>
+
+  <!-- Barra de controles interactivos -->
+  <footer class="w-full max-w-6xl mx-auto px-6 pb-6 flex flex-wrap items-center justify-center gap-3">
+    <div class="control-bar rounded-2xl p-2 flex items-center gap-2 shadow-sm">
+      <button id="btn-replay" type="button" class="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-95 text-white text-sm font-medium flex items-center gap-2 transition cursor-pointer">
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+          <path d="M3 3v5h5" />
+        </svg>
+        <span>Repetir</span>
+      </button>
+
+      <button id="btn-pause" type="button" class="px-4 py-2.5 rounded-xl hover:bg-black/5 dark:hover:bg-white/10 active:scale-95 text-sm font-medium flex items-center gap-2 transition cursor-pointer">
+        <svg id="icon-pause" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="6" y="4" width="4" height="16" />
+          <rect x="14" y="4" width="4" height="16" />
+        </svg>
+        <span id="text-pause">Pausar</span>
+      </button>
+
+      <div class="h-5 w-px bg-current opacity-15 mx-1"></div>
+
+      <button id="btn-theme" type="button" class="px-3.5 py-2.5 rounded-xl hover:bg-black/5 dark:hover:bg-white/10 active:scale-95 text-sm font-medium flex items-center gap-2 transition cursor-pointer" title="Alternar tema claro/oscuro">
+        <svg id="icon-theme" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
+        </svg>
+        <span id="text-theme" class="hidden sm:inline">Modo oscuro</span>
+      </button>
+    </div>
+  </footer>
+
+  <script>
+    (function () {
+      const stage = document.getElementById('bm-stage');
+      const btnReplay = document.getElementById('btn-replay');
+      const btnPause = document.getElementById('btn-pause');
+      const textPause = document.getElementById('text-pause');
+      const iconPause = document.getElementById('icon-pause');
+      const btnTheme = document.getElementById('btn-theme');
+      const textTheme = document.getElementById('text-theme');
+      const statusLabel = document.getElementById('status-label');
+
+      let isPaused = false;
+      let statusTimer = null;
+
+      function startAnimation() {
+        isPaused = false;
+        stage.classList.remove('is-playing', 'is-paused');
+        textPause.textContent = 'Pausar';
+        iconPause.innerHTML = '<rect x="6" y="4" width="4" height="16" /><rect x="14" y="4" width="4" height="16" />';
+        statusLabel.textContent = 'TRAZANDO COTAS...';
+
+        // Forzar reflow para reiniciar todas las animaciones CSS limpiamente
+        void stage.getBoundingClientRect();
+        stage.classList.add('is-playing');
+
+        clearTimeout(statusTimer);
+        setTimeout(() => {
+          if (!isPaused) statusLabel.textContent = 'ENSAMBLANDO MÓDULOS...';
+        }, 550);
+        statusTimer = setTimeout(() => {
+          if (!isPaused) statusLabel.textContent = 'CONSTRUCCIÓN COMPLETADA';
+        }, 1950);
+      }
+
+      btnReplay.addEventListener('click', startAnimation);
+
+      btnPause.addEventListener('click', () => {
+        isPaused = !isPaused;
+        if (isPaused) {
+          stage.classList.add('is-paused');
+          textPause.textContent = 'Reanudar';
+          iconPause.innerHTML = '<polygon points="5 3 19 12 5 21 5 3" />';
+          statusLabel.textContent = 'EN PAUSA';
+        } else {
+          stage.classList.remove('is-paused');
+          textPause.textContent = 'Pausar';
+          iconPause.innerHTML = '<rect x="6" y="4" width="4" height="16" /><rect x="14" y="4" width="4" height="16" />';
+          statusLabel.textContent = 'REANUDADO';
+        }
+      });
+
+      btnTheme.addEventListener('click', () => {
+        const dark = document.body.classList.toggle('dark-mode');
+        textTheme.textContent = dark ? 'Modo claro' : 'Modo oscuro';
+      });
+
+      window.addEventListener('load', () => {
+        requestAnimationFrame(startAnimation);
+      });
+    })();
+  </script>
+</body>
+</html>

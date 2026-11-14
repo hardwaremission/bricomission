@@ -1,13 +1,13 @@
 /* global self, caches, fetch, URL */
 /* BricoMission service worker (hand-written; see ARCHITECTURE.md "apps/web").
- * - install: precache the manifest and icons only ("/" can redirect by locale).
+ * - install: precache the manifest, icons and favicons only ("/" can redirect by locale).
  * - navigations: network-first; 200 non-redirected responses are cached; offline serves
  *   the cached copy (ignoreVary: Next varies on RSC headers).
- * - /_next/static/*, fonts and icons: cache-first.
+ * - /_next/static/*, fonts, icons and /favicon.ico: cache-first.
  * - /api/*, /auth/* (sign-in, session state) and non-GET requests: never intercepted.
  * Bump VERSION to drop old caches on activate.
  */
-const VERSION = 'v2';
+const VERSION = 'v3';
 const CACHE = `bricomission-shell-${VERSION}`;
 const PRECACHE = [
   '/manifest.webmanifest',
@@ -15,6 +15,8 @@ const PRECACHE = [
   '/icons/icon-512.png',
   '/icons/icon-512-maskable.png',
   '/icons/apple-touch-icon.png',
+  '/icons/favicon.svg',
+  '/favicon.ico',
 ];
 
 self.addEventListener('install', (event) => {
@@ -40,6 +42,7 @@ function isCacheFirst(url) {
     url.pathname.startsWith('/_next/static/') ||
     url.pathname.startsWith('/icons/') ||
     url.pathname === '/manifest.webmanifest' ||
+    url.pathname === '/favicon.ico' ||
     /\.(?:woff2?|ttf|otf)$/.test(url.pathname)
   );
 }
