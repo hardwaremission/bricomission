@@ -168,5 +168,70 @@
       "expired": "La tua bozza precedente è scaduta dopo 7 giorni senza modifiche. Ricomincia.",
       "dismiss": "Chiudi"
     }
+  },
+  "generate": {
+    "backToMoodboard": "Torna al tuo stile",
+    "step": "Passo {current} di {total}",
+    "title": "Pronto a progettare",
+    "helper": "Controlla la tua cucina e scegli cosa creare. Ti chiederemo di accedere per salvare il tuo progetto.",
+    "summary": {
+      "kitchenTitle": "La tua cucina",
+      "styleTitle": "Il tuo stile",
+      "edit": "Modifica",
+      "editKitchen": "Modifica la tua cucina",
+      "editStyle": "Modifica il tuo stile",
+      "more": "+{count}",
+      "measurements": "{length} × {width} m · altezza {height} m",
+      "missing": "—",
+      "moodboardCount": "{count, plural, one {# elemento} other {# elementi}} nel tuo moodboard"
+    },
+    "cta": {
+      "render": "Genera la mia cucina",
+      "budget": "Ottieni il mio preventivo"
+    },
+    "hints": {
+      "capture": "Alla tua cucina mancano ancora una foto e tutte e tre le misure.",
+      "goToCapture": "Vai alla tua cucina",
+      "items": "Aggiungi almeno una cucina o una foto al tuo moodboard.",
+      "goToMoodboard": "Vai al tuo stile",
+      "start": "Prima inizia il tuo progetto di cucina.",
+      "startLink": "Inizia"
+    },
+    "gate": {
+      "title": "Accedi per continuare",
+      "body": "Per generare design e preventivi serve un account gratuito. Le tue foto, misure e il tuo moodboard vengono salvati lì.",
+      "signIn": "Accedi",
+      "register": "Crea account",
+      "footnote": "I nuovi account confermano l'e-mail con un codice di 6 cifre.",
+      "close": "Chiudi"
+    },
+    "claiming": "Salvataggio della tua cucina nel tuo account…",
+    "alerts": {
+      "wrongRole": "Questo account non può salvare progetti di cucina. Esci e usa un account privato.",
+      "signOut": "Esci",
+      "failed": "Non siamo riusciti a salvare la tua cucina nel tuo account. La tua bozza è al sicuro; riprova.",
+      "retry": "Riprova",
+      "offline": "Sei offline. La tua bozza è al sicuro; riconnettiti per salvarla nel tuo account.",
+      "expired": "La tua bozza precedente è scaduta dopo 7 giorni senza modifiche. Ricomincia.",
+      "start": "Inizia",
+      "dismiss": "Chiudi"
+    }
+  },
+  "project": {
+    "title": "Il tuo progetto di cucina",
+    "helper": "Design e preventivi arriveranno presto. Il tuo progetto resta qui, pronto per loro.",
+    "claimed": "La tua cucina è salvata nel tuo account.",
+    "dismiss": "Chiudi",
+    "newProject": "Inizia un nuovo progetto di cucina",
+    "availableSoon": "Disponibile a breve",
+    "signedOut": {
+      "title": "Accedi per vedere questo progetto di cucina",
+      "signIn": "Accedi"
+    },
+    "notFound": {
+      "title": "Non abbiamo trovato questo progetto di cucina",
+      "home": "Vai alla home"
+    },
+    "offline": "Sei offline. Il tuo progetto di cucina è al sicuro; riconnettiti per vederlo."
   }
 }

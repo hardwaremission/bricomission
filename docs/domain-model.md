@@ -42,6 +42,10 @@ Terms as defined in `CONTEXT.md`.
 **Kitchen Project**
 `draft` (anonymous allowed; expires 7 days after its last change unless claimed) → `claimed` (Login Gate passed, bound to the Account) → `budgeted` (Budget exists) → `diy_completed` (Shopping List generated) or `published` (Dossier created) → `contracted` (Contract binding).
 
+Claim rules (`login-gate-claim`): only a Homeowner (realm role `user`) claims, with the browser's draft token. The claim keeps the row (same id and content), sets the owner (Keycloak `sub`, there is no local Account table yet), `claimed_at`, and clears the expiry, so a claimed project is never swept. The token hash stays: the same Account repeating the claim gets the same project; another Account, or an unknown or expired token, gets 404. The draft routes no longer accept the token. A claimed project is read-only until later features add editing. A Homeowner owns 1-N Kitchen Projects (no limit).
+
+**Ready for generation**: at least one photo, all three Measurements and at least one Moodboard Item (the Moodboard Continue rule). The costly actions (Render, Budget) answer 409 `project_incomplete` otherwise; until `controlnet-render` and `budget-tier-computation` they answer 501 `not_available_yet`.
+
 **Dossier**
 `open` → `accepted` (Homeowner accepts a Bid) | `expired` (Bidding Window ends with no acceptance) | `withdrawn` (Homeowner). Content is immutable in every state.
 

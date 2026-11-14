@@ -1,7 +1,9 @@
 import type { KitchenMeasurements } from '@bricomission/shared-types';
 import {
   type AddMoodboardItemResult,
+  type ClaimResult,
   type KitchenDraftRecord,
+  type KitchenProjectRecord,
   type KitchenDraftRepository,
   type KitchenPhotoRecord,
   type MoodboardItemRecord,
@@ -12,9 +14,12 @@ import {
 
 interface Row {
   id: string;
+  status: 'draft' | 'claimed';
   tokenHash: Buffer;
+  ownerSub: string | null;
+  claimedAt: Date | null;
   measurements: KitchenMeasurements;
-  expiresAt: Date;
+  expiresAt: Date | null;
   photos: KitchenPhotoRecord[];
   moodboard: MoodboardItemRecord[];
 }
@@ -27,13 +32,23 @@ export class MemoryKitchenDraftRepository implements KitchenDraftRepository {
 
   async countOpen(now: Date): Promise<number> {
     this.maybeFail();
-    return [...this.rows.values()].filter((row) => row.expiresAt > now).length;
+    return [...this.rows.values()].filter((row) => row.status === 'draft' && row.expiresAt !== null && row.expiresAt > now).length;
   }
 
   async create({ tokenHash, expiresAt }: { tokenHash: Buffer; expiresAt: Date }): Promise<KitchenDraftRecord> {
     this.maybeFail();
     const id = `00000000-0000-4000-8000-${String(++this.seq).padStart(12, '0')}`;
-    const row: Row = { id, tokenHash: Buffer.from(tokenHash), measurements: { lengthCm: null, widthCm: null, heightCm: null }, expiresAt, photos: [], moodboard: [] };
+    const row: Row = {
+      id,
+      status: 'draft',
+      tokenHash: Buffer.from(tokenHash),
+      ownerSub: null,
+      claimedAt: null,
+      measurements: { lengthCm: null, widthCm: null, heightCm: null },
+      expiresAt,
+      photos: [],
+      moodboard: [],
+    };
     this.rows.set(id, row);
     return this.record(row);
   }
@@ -41,7 +56,7 @@ export class MemoryKitchenDraftRepository implements KitchenDraftRepository {
   async findActiveByTokenHash(tokenHash: Buffer, now: Date): Promise<KitchenDraftRecord | null> {
     this.maybeFail();
     const row = [...this.rows.values()].find((candidate) => candidate.tokenHash.equals(tokenHash));
-    return row && row.expiresAt > now ? this.record(row) : null;
+    return row && row.status === 'draft' && row.expiresAt !== null && row.expiresAt > now ? this.record(row) : null;
   }
 
   async updateMeasurements(id: string, measurements: KitchenMeasurements, expiresAt: Date): Promise<KitchenDraftRecord> {
@@ -103,7 +118,7 @@ export class MemoryKitchenDraftRepository implements KitchenDraftRepository {
   async findExpired(now: Date, limit: number): Promise<Array<{ id: string; keys: string[] }>> {
     this.maybeFail();
     return [...this.rows.values()]
-      .filter((row) => row.expiresAt <= now)
+      .filter((row) => row.status === 'draft' && row.expiresAt !== null && row.expiresAt <= now)
       .slice(0, limit)
       .map((row) => ({ id: row.id, keys: [...row.photos, ...row.moodboard].flatMap(objectKeys) }));
   }
@@ -111,22 +126,57 @@ export class MemoryKitchenDraftRepository implements KitchenDraftRepository {
   async deleteDrafts(ids: readonly string[]): Promise<number> {
     this.maybeFail();
     let count = 0;
-    for (const id of ids) if (this.rows.delete(id)) count++;
+    for (const id of ids) if (this.rows.get(id)?.status === 'draft' && this.rows.delete(id)) count++;
     return count;
+  }
+
+  async claimByTokenHash(tokenHash: Buffer, ownerSub: string, now: Date): Promise<ClaimResult> {
+    this.maybeFail();
+    const row = [...this.rows.values()].find((candidate) => candidate.tokenHash.equals(tokenHash));
+    if (!row) return 'not_found';
+    if (row.status === 'claimed') return row.ownerSub === ownerSub ? { record: this.project(row), created: false } : 'not_found';
+    if (row.expiresAt === null || row.expiresAt <= now) return 'not_found';
+    row.status = 'claimed';
+    row.ownerSub = ownerSub;
+    row.claimedAt = now;
+    row.expiresAt = null;
+    return { record: this.project(row), created: true };
+  }
+
+  async findOwned(id: string, ownerSub: string): Promise<KitchenProjectRecord | null> {
+    this.maybeFail();
+    const row = this.rows.get(id);
+    return row && row.status === 'claimed' && row.ownerSub === ownerSub ? this.project(row) : null;
   }
 
   private get(id: string): Row {
     const row = this.rows.get(id);
     if (!row) throw new Error('RecordNotFound');
+    // Mirrors the status CHECK: a claimed project cannot get an expiry from a draft mutation.
+    if (row.status !== 'draft') throw new Error('CheckViolation');
     return row;
   }
 
   private record(row: Row): KitchenDraftRecord {
+    if (row.status !== 'draft' || row.expiresAt === null) throw new Error('KitchenProjectNotDraft');
     return {
       id: row.id,
       status: 'draft',
       measurements: { ...row.measurements },
       expiresAt: row.expiresAt,
+      photos: [...row.photos].sort((a, b) => a.position - b.position).map((photo) => ({ ...photo })),
+      moodboard: [...row.moodboard].sort((a, b) => a.position - b.position).map((item) => ({ ...item })),
+    };
+  }
+
+  private project(row: Row): KitchenProjectRecord {
+    if (row.status !== 'claimed' || row.ownerSub === null || row.claimedAt === null) throw new Error('KitchenProjectNotClaimed');
+    return {
+      id: row.id,
+      status: 'claimed',
+      ownerSub: row.ownerSub,
+      claimedAt: row.claimedAt,
+      measurements: { ...row.measurements },
       photos: [...row.photos].sort((a, b) => a.position - b.position).map((photo) => ({ ...photo })),
       moodboard: [...row.moodboard].sort((a, b) => a.position - b.position).map((item) => ({ ...item })),
     };

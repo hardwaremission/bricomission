@@ -168,5 +168,70 @@
       "expired": "O seu rascunho anterior expirou após 7 dias sem alterações. Comece de novo.",
       "dismiss": "Fechar"
     }
+  },
+  "generate": {
+    "backToMoodboard": "Voltar ao seu estilo",
+    "step": "Passo {current} de {total}",
+    "title": "Pronto para projetar",
+    "helper": "Reveja a sua cozinha e escolha o que criar. Vamos pedir-lhe que inicie sessão para guardar o seu projeto.",
+    "summary": {
+      "kitchenTitle": "A sua cozinha",
+      "styleTitle": "O seu estilo",
+      "edit": "Editar",
+      "editKitchen": "Editar a sua cozinha",
+      "editStyle": "Editar o seu estilo",
+      "more": "+{count}",
+      "measurements": "{length} × {width} m · altura {height} m",
+      "missing": "—",
+      "moodboardCount": "{count, plural, one {# item} other {# itens}} no seu moodboard"
+    },
+    "cta": {
+      "render": "Gerar a minha cozinha",
+      "budget": "Obter o meu orçamento"
+    },
+    "hints": {
+      "capture": "A sua cozinha ainda precisa de uma foto e das três medidas.",
+      "goToCapture": "Ir para a sua cozinha",
+      "items": "Adicione pelo menos uma cozinha ou foto ao seu moodboard.",
+      "goToMoodboard": "Ir para o seu estilo",
+      "start": "Comece primeiro o seu projeto de cozinha.",
+      "startLink": "Começar"
+    },
+    "gate": {
+      "title": "Inicie sessão para continuar",
+      "body": "Gerar designs e orçamentos requer uma conta gratuita. As suas fotos, medidas e moodboard ficam guardados nela.",
+      "signIn": "Iniciar sessão",
+      "register": "Criar conta",
+      "footnote": "As novas contas confirmam o e-mail com um código de 6 dígitos.",
+      "close": "Fechar"
+    },
+    "claiming": "A guardar a sua cozinha na sua conta…",
+    "alerts": {
+      "wrongRole": "Esta conta não pode guardar projetos de cozinha. Termine sessão e use uma conta de particular.",
+      "signOut": "Terminar sessão",
+      "failed": "Não foi possível guardar a sua cozinha na sua conta. O seu rascunho está seguro; tente novamente.",
+      "retry": "Tentar novamente",
+      "offline": "Está offline. O seu rascunho está seguro; volte a ligar-se para o guardar na sua conta.",
+      "expired": "O seu rascunho anterior expirou após 7 dias sem alterações. Comece de novo.",
+      "start": "Começar",
+      "dismiss": "Fechar"
+    }
+  },
+  "project": {
+    "title": "O seu projeto de cozinha",
+    "helper": "Os designs e orçamentos chegam em breve. O seu projeto fica aqui, pronto para eles.",
+    "claimed": "A sua cozinha está guardada na sua conta.",
+    "dismiss": "Fechar",
+    "newProject": "Começar um novo projeto de cozinha",
+    "availableSoon": "Disponível em breve",
+    "signedOut": {
+      "title": "Inicie sessão para ver este projeto de cozinha",
+      "signIn": "Iniciar sessão"
+    },
+    "notFound": {
+      "title": "Não encontrámos este projeto de cozinha",
+      "home": "Ir para o início"
+    },
+    "offline": "Está offline. O seu projeto de cozinha está seguro; volte a ligar-se para o ver."
   }
 }

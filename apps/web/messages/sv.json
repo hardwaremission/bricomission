@@ -168,5 +168,70 @@
       "expired": "Ditt tidigare utkast gick ut efter 7 dagar utan ändringar. Börja om.",
       "dismiss": "Stäng"
     }
+  },
+  "generate": {
+    "backToMoodboard": "Tillbaka till din stil",
+    "step": "Steg {current} av {total}",
+    "title": "Redo att designa",
+    "helper": "Kontrollera ditt kök och välj vad du vill skapa. Vi ber dig logga in så att ditt projekt sparas.",
+    "summary": {
+      "kitchenTitle": "Ditt kök",
+      "styleTitle": "Din stil",
+      "edit": "Redigera",
+      "editKitchen": "Redigera ditt kök",
+      "editStyle": "Redigera din stil",
+      "more": "+{count}",
+      "measurements": "{length} × {width} m · höjd {height} m",
+      "missing": "—",
+      "moodboardCount": "{count, plural, one {# objekt} other {# objekt}} i din moodboard"
+    },
+    "cta": {
+      "render": "Generera mitt kök",
+      "budget": "Få min offert"
+    },
+    "hints": {
+      "capture": "Ditt kök behöver fortfarande ett foto och alla tre mått.",
+      "goToCapture": "Gå till ditt kök",
+      "items": "Lägg till minst ett kök eller foto i din moodboard.",
+      "goToMoodboard": "Gå till din stil",
+      "start": "Starta ditt köksprojekt först.",
+      "startLink": "Starta"
+    },
+    "gate": {
+      "title": "Logga in för att fortsätta",
+      "body": "För att generera designer och offerter behövs ett gratis konto. Dina foton, mått och din moodboard sparas där.",
+      "signIn": "Logga in",
+      "register": "Skapa konto",
+      "footnote": "Nya konton bekräftar sin e-post med en 6-siffrig kod.",
+      "close": "Stäng"
+    },
+    "claiming": "Sparar ditt kök i ditt konto…",
+    "alerts": {
+      "wrongRole": "Det här kontot kan inte spara köksprojekt. Logga ut och använd ett konto för privatpersoner.",
+      "signOut": "Logga ut",
+      "failed": "Vi kunde inte spara ditt kök i ditt konto. Ditt utkast är säkert; försök igen.",
+      "retry": "Försök igen",
+      "offline": "Du är offline. Ditt utkast är säkert; anslut igen för att spara det i ditt konto.",
+      "expired": "Ditt tidigare utkast gick ut efter 7 dagar utan ändringar. Börja om.",
+      "start": "Starta",
+      "dismiss": "Stäng"
+    }
+  },
+  "project": {
+    "title": "Ditt köksprojekt",
+    "helper": "Designer och offerter kommer snart. Ditt projekt stannar här, redo för dem.",
+    "claimed": "Ditt kök är sparat i ditt konto.",
+    "dismiss": "Stäng",
+    "newProject": "Starta ett nytt köksprojekt",
+    "availableSoon": "Kommer snart",
+    "signedOut": {
+      "title": "Logga in för att se det här köksprojektet",
+      "signIn": "Logga in"
+    },
+    "notFound": {
+      "title": "Vi kunde inte hitta det här köksprojektet",
+      "home": "Gå till startsidan"
+    },
+    "offline": "Du är offline. Ditt köksprojekt är säkert; anslut igen för att se det."
   }
 }

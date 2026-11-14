@@ -168,5 +168,70 @@
       "expired": "Din tidligere kladde udløb efter 7 dage uden ændringer. Start forfra.",
       "dismiss": "Luk"
     }
+  },
+  "generate": {
+    "backToMoodboard": "Tilbage til din stil",
+    "step": "Trin {current} af {total}",
+    "title": "Klar til at designe",
+    "helper": "Tjek dit køkken, og vælg, hvad du vil skabe. Vi beder dig logge ind, så dit projekt bliver gemt.",
+    "summary": {
+      "kitchenTitle": "Dit køkken",
+      "styleTitle": "Din stil",
+      "edit": "Rediger",
+      "editKitchen": "Rediger dit køkken",
+      "editStyle": "Rediger din stil",
+      "more": "+{count}",
+      "measurements": "{length} × {width} m · højde {height} m",
+      "missing": "—",
+      "moodboardCount": "{count, plural, one {# element} other {# elementer}} i dit moodboard"
+    },
+    "cta": {
+      "render": "Generér mit køkken",
+      "budget": "Få mit tilbud"
+    },
+    "hints": {
+      "capture": "Dit køkken mangler stadig et foto og alle tre mål.",
+      "goToCapture": "Gå til dit køkken",
+      "items": "Tilføj mindst ét køkken eller foto til dit moodboard.",
+      "goToMoodboard": "Gå til din stil",
+      "start": "Start dit køkkenprojekt først.",
+      "startLink": "Start"
+    },
+    "gate": {
+      "title": "Log ind for at fortsætte",
+      "body": "Det kræver en gratis konto at generere design og tilbud. Dine fotos, mål og dit moodboard gemmes på den.",
+      "signIn": "Log ind",
+      "register": "Opret konto",
+      "footnote": "Nye konti bekræfter deres e-mail med en 6-cifret kode.",
+      "close": "Luk"
+    },
+    "claiming": "Gemmer dit køkken på din konto…",
+    "alerts": {
+      "wrongRole": "Denne konto kan ikke gemme køkkenprojekter. Log ud, og brug en privatkonto.",
+      "signOut": "Log ud",
+      "failed": "Vi kunne ikke gemme dit køkken på din konto. Dit udkast er sikkert; prøv igen.",
+      "retry": "Prøv igen",
+      "offline": "Du er offline. Dit udkast er sikkert; opret forbindelse igen for at gemme det på din konto.",
+      "expired": "Dit tidligere udkast udløb efter 7 dage uden ændringer. Start forfra.",
+      "start": "Start",
+      "dismiss": "Luk"
+    }
+  },
+  "project": {
+    "title": "Dit køkkenprojekt",
+    "helper": "Design og tilbud kommer snart. Dit projekt bliver her, klar til dem.",
+    "claimed": "Dit køkken er gemt på din konto.",
+    "dismiss": "Luk",
+    "newProject": "Start et nyt køkkenprojekt",
+    "availableSoon": "Kommer snart",
+    "signedOut": {
+      "title": "Log ind for at se dette køkkenprojekt",
+      "signIn": "Log ind"
+    },
+    "notFound": {
+      "title": "Vi kunne ikke finde dette køkkenprojekt",
+      "home": "Gå til forsiden"
+    },
+    "offline": "Du er offline. Dit køkkenprojekt er sikkert; opret forbindelse igen for at se det."
   }
 }

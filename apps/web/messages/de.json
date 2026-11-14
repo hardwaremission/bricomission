@@ -168,5 +168,70 @@
       "expired": "Dein vorheriger Entwurf ist nach 7 Tagen ohne Änderungen abgelaufen. Fang neu an.",
       "dismiss": "Schließen"
     }
+  },
+  "generate": {
+    "backToMoodboard": "Zurück zu deinem Stil",
+    "step": "Schritt {current} von {total}",
+    "title": "Bereit zum Gestalten",
+    "helper": "Prüfe deine Küche und wähle, was du erstellen möchtest. Wir bitten dich, dich anzumelden, damit dein Projekt gespeichert wird.",
+    "summary": {
+      "kitchenTitle": "Deine Küche",
+      "styleTitle": "Dein Stil",
+      "edit": "Bearbeiten",
+      "editKitchen": "Deine Küche bearbeiten",
+      "editStyle": "Deinen Stil bearbeiten",
+      "more": "+{count}",
+      "measurements": "{length} × {width} m · Höhe {height} m",
+      "missing": "—",
+      "moodboardCount": "{count, plural, one {# Element} other {# Elemente}} in deinem Moodboard"
+    },
+    "cta": {
+      "render": "Meine Küche generieren",
+      "budget": "Mein Angebot erhalten"
+    },
+    "hints": {
+      "capture": "Deiner Küche fehlen noch ein Foto und alle drei Maße.",
+      "goToCapture": "Zu deiner Küche",
+      "items": "Füge deinem Moodboard mindestens eine Küche oder ein Foto hinzu.",
+      "goToMoodboard": "Zu deinem Stil",
+      "start": "Starte zuerst dein Küchenprojekt.",
+      "startLink": "Starten"
+    },
+    "gate": {
+      "title": "Melde dich an, um fortzufahren",
+      "body": "Für Designs und Angebote brauchst du ein kostenloses Konto. Deine Fotos, Maße und dein Moodboard werden darin gespeichert.",
+      "signIn": "Anmelden",
+      "register": "Konto erstellen",
+      "footnote": "Neue Konten bestätigen ihre E-Mail mit einem 6-stelligen Code.",
+      "close": "Schließen"
+    },
+    "claiming": "Deine Küche wird in deinem Konto gespeichert…",
+    "alerts": {
+      "wrongRole": "Dieses Konto kann keine Küchenprojekte speichern. Melde dich ab und nutze ein Konto für Privatkunden.",
+      "signOut": "Abmelden",
+      "failed": "Wir konnten deine Küche nicht in deinem Konto speichern. Dein Entwurf ist sicher; versuche es erneut.",
+      "retry": "Erneut versuchen",
+      "offline": "Du bist offline. Dein Entwurf ist sicher; verbinde dich wieder, um ihn in deinem Konto zu speichern.",
+      "expired": "Dein vorheriger Entwurf ist nach 7 Tagen ohne Änderungen abgelaufen. Starte neu.",
+      "start": "Starten",
+      "dismiss": "Schließen"
+    }
+  },
+  "project": {
+    "title": "Dein Küchenprojekt",
+    "helper": "Designs und Angebote kommen bald. Dein Projekt bleibt hier und ist bereit dafür.",
+    "claimed": "Deine Küche ist in deinem Konto gespeichert.",
+    "dismiss": "Schließen",
+    "newProject": "Neues Küchenprojekt starten",
+    "availableSoon": "Bald verfügbar",
+    "signedOut": {
+      "title": "Melde dich an, um dieses Küchenprojekt zu sehen",
+      "signIn": "Anmelden"
+    },
+    "notFound": {
+      "title": "Wir konnten dieses Küchenprojekt nicht finden",
+      "home": "Zur Startseite"
+    },
+    "offline": "Du bist offline. Dein Küchenprojekt ist sicher; verbinde dich wieder, um es zu sehen."
   }
 }

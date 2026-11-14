@@ -1,5 +1,5 @@
 import { HttpException, HttpStatus } from '@nestjs/common';
-import type { KitchenDraftErrorCode } from '@bricomission/shared-types';
+import type { KitchenDraftErrorCode, KitchenProjectErrorCode } from '@bricomission/shared-types';
 
 const MESSAGES: Record<number, string> = {
   [HttpStatus.BAD_REQUEST]: 'Bad Request',
@@ -9,10 +9,11 @@ const MESSAGES: Record<number, string> = {
   [HttpStatus.UNPROCESSABLE_ENTITY]: 'Unprocessable Entity',
   [HttpStatus.TOO_MANY_REQUESTS]: 'Too Many Requests',
   [HttpStatus.SERVICE_UNAVAILABLE]: 'Service Unavailable',
+  [HttpStatus.NOT_IMPLEMENTED]: 'Not Implemented',
 };
 
 /** Nest-style generic error body plus a machine-readable `code` (never internals). */
-export function draftError(status: HttpStatus, code: KitchenDraftErrorCode, extra: Record<string, unknown> = {}): HttpException {
+export function draftError(status: HttpStatus, code: KitchenDraftErrorCode | KitchenProjectErrorCode, extra: Record<string, unknown> = {}): HttpException {
   return new HttpException({ statusCode: status, message: MESSAGES[status] ?? 'Error', code, ...extra }, status);
 }
 

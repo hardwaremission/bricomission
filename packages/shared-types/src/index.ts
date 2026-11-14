@@ -93,8 +93,11 @@ export interface CatalogSearchResponse {
 
 // --- Kitchen capture draft (feature kitchen-capture-draft) ---
 
-/** Lifecycle state of a Kitchen Project. Later features add more states. */
-export type KitchenProjectStatus = 'draft';
+/**
+ * Lifecycle state of a Kitchen Project: `draft` (anonymous, expires) and `claimed` (bound to an
+ * Account at the Login Gate, never expires; login-gate-claim). Later features add more states.
+ */
+export type KitchenProjectStatus = 'draft' | 'claimed';
 
 /** Room measurements in whole centimetres; null while not entered. */
 export interface KitchenMeasurements {
@@ -126,7 +129,8 @@ export interface KitchenDraftLimits {
 /** Body of `GET /kitchen-projects/drafts/current` and of the draft mutations. */
 export interface KitchenDraftView {
   id: string;
-  status: KitchenProjectStatus;
+  /** Draft routes only ever return drafts. */
+  status: 'draft';
   measurements: KitchenMeasurements;
   photos: KitchenPhotoView[];
   /** Moodboard Items ordered by position (moodboard-selection). */
@@ -154,6 +158,36 @@ export type KitchenDraftErrorCode =
   | 'storage_unavailable'
   | 'moodboard_limit_reached'
   | 'gallery_image_unknown';
+
+// --- Login Gate and claim (feature login-gate-claim) ---
+
+/**
+ * A claimed Kitchen Project as its owner sees it (`GET /kitchen-projects/:projectId`). Photo and
+ * Moodboard upload URLs point at the owner content routes; gallery items keep the public
+ * gallery URLs. URLs are API-relative paths.
+ */
+export interface KitchenProjectView {
+  id: string;
+  status: 'claimed';
+  measurements: KitchenMeasurements;
+  photos: KitchenPhotoView[];
+  moodboard: MoodboardItemView[];
+  /** ISO timestamp of the claim; unchanged by a repeated claim. */
+  claimedAt: string;
+}
+
+/** 200 body of `POST /kitchen-projects/drafts/current/claim` (and of the web BFF route). */
+export interface ClaimKitchenDraftResponse {
+  project: KitchenProjectView;
+}
+
+/** Machine-readable `code` of owned Kitchen Project error bodies. */
+export type KitchenProjectErrorCode =
+  /** 409: not ready for generation (needs a photo, all three measurements and a Moodboard Item). */
+  | 'project_incomplete'
+  /** 501: the costly action is not implemented yet (controlnet-render, budget-tier-computation). */
+  | 'not_available_yet'
+  | 'storage_unavailable';
 
 /** Per-field reason in a 400 `invalid_measurements` body. */
 export type KitchenMeasurementFieldError = 'not_integer' | 'out_of_range';

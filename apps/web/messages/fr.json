@@ -168,5 +168,70 @@
       "expired": "Votre brouillon précédent a expiré après 7 jours sans modification. Recommencez.",
       "dismiss": "Fermer"
     }
+  },
+  "generate": {
+    "backToMoodboard": "Retour à votre style",
+    "step": "Étape {current} sur {total}",
+    "title": "Prêt à concevoir",
+    "helper": "Vérifiez votre cuisine et choisissez ce que vous voulez créer. Nous vous demanderons de vous connecter pour enregistrer votre projet.",
+    "summary": {
+      "kitchenTitle": "Votre cuisine",
+      "styleTitle": "Votre style",
+      "edit": "Modifier",
+      "editKitchen": "Modifier votre cuisine",
+      "editStyle": "Modifier votre style",
+      "more": "+{count}",
+      "measurements": "{length} × {width} m · hauteur {height} m",
+      "missing": "—",
+      "moodboardCount": "{count, plural, one {# élément} other {# éléments}} dans votre moodboard"
+    },
+    "cta": {
+      "render": "Générer ma cuisine",
+      "budget": "Obtenir mon devis"
+    },
+    "hints": {
+      "capture": "Il manque encore une photo et les trois mesures de votre cuisine.",
+      "goToCapture": "Aller à votre cuisine",
+      "items": "Ajoutez au moins une cuisine ou une photo à votre moodboard.",
+      "goToMoodboard": "Aller à votre style",
+      "start": "Commencez d'abord votre projet de cuisine.",
+      "startLink": "Commencer"
+    },
+    "gate": {
+      "title": "Connectez-vous pour continuer",
+      "body": "Générer des designs et des devis nécessite un compte gratuit. Vos photos, mesures et moodboard y sont enregistrés.",
+      "signIn": "Se connecter",
+      "register": "Créer un compte",
+      "footnote": "Les nouveaux comptes confirment leur e-mail avec un code à 6 chiffres.",
+      "close": "Fermer"
+    },
+    "claiming": "Enregistrement de votre cuisine dans votre compte…",
+    "alerts": {
+      "wrongRole": "Ce compte ne peut pas enregistrer de projets de cuisine. Déconnectez-vous et utilisez un compte particulier.",
+      "signOut": "Se déconnecter",
+      "failed": "Nous n'avons pas pu enregistrer votre cuisine dans votre compte. Votre brouillon est en sécurité ; réessayez.",
+      "retry": "Réessayer",
+      "offline": "Vous êtes hors ligne. Votre brouillon est en sécurité ; reconnectez-vous pour l'enregistrer dans votre compte.",
+      "expired": "Votre brouillon précédent a expiré après 7 jours sans modification. Recommencez.",
+      "start": "Commencer",
+      "dismiss": "Fermer"
+    }
+  },
+  "project": {
+    "title": "Votre projet de cuisine",
+    "helper": "Les designs et les devis arrivent bientôt. Votre projet reste ici, prêt pour eux.",
+    "claimed": "Votre cuisine est enregistrée dans votre compte.",
+    "dismiss": "Fermer",
+    "newProject": "Commencer un nouveau projet de cuisine",
+    "availableSoon": "Bientôt disponible",
+    "signedOut": {
+      "title": "Connectez-vous pour voir ce projet de cuisine",
+      "signIn": "Se connecter"
+    },
+    "notFound": {
+      "title": "Nous n'avons pas trouvé ce projet de cuisine",
+      "home": "Aller à l'accueil"
+    },
+    "offline": "Vous êtes hors ligne. Votre projet de cuisine est en sécurité ; reconnectez-vous pour le voir."
   }
 }

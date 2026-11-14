@@ -317,6 +317,117 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/kitchen-projects/drafts/current/claim": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Claim the X-Draft-Token's draft for the caller (Login Gate)
+         * @description The same row becomes `claimed`: owner = token `sub`, `claimedAt` set, no expiry; id, photos, measurements and Moodboard are kept. Repeating the claim with the same Account returns the same body. The draft routes no longer accept the token afterwards.
+         */
+        post: operations["KitchenProjectsController_claim"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/kitchen-projects/{projectId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A claimed Kitchen Project of the caller (read-only) */
+        get: operations["KitchenProjectsController_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/kitchen-projects/{projectId}/photos/{photoId}/content": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A stored kitchen photo of an owned project (metadata-free JPEG) */
+        get: operations["KitchenProjectsController_photoContent"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/kitchen-projects/{projectId}/moodboard/items/{itemId}/content": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A Moodboard reference upload of an owned project (gallery items use the public gallery route) */
+        get: operations["KitchenProjectsController_moodboardContent"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/kitchen-projects/{projectId}/renders": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Generate a Render of the kitchen (costly; placeholder)
+         * @description Placeholder until controlnet-render: it never calls the GPU job broker or an AI adapter. That feature keeps the path, the guards and the 409 rule.
+         */
+        post: operations["KitchenProjectsController_requestRender"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/kitchen-projects/{projectId}/budget": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Compute the Budget of the kitchen (costly; placeholder)
+         * @description Placeholder until budget-tier-computation: it never calls the GPU job broker or an AI adapter. That feature keeps the path, the guards and the 409 rule.
+         */
+        post: operations["KitchenProjectsController_requestBudget"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -577,6 +688,34 @@ export interface components {
              * @example scandinavian-01
              */
             galleryImageId: string;
+        };
+        KitchenProjectViewDto: {
+            /**
+             * Format: uuid
+             * @description Same id as the draft it was claimed from
+             */
+            id: string;
+            /** @enum {string} */
+            status: "claimed";
+            measurements: components["schemas"]["KitchenMeasurementsDto"];
+            /** @description Ordered by position; URLs point at GET /kitchen-projects/{projectId}/photos/{photoId}/content */
+            photos: components["schemas"]["KitchenPhotoViewDto"][];
+            /** @description Ordered by position; upload URLs point at GET /kitchen-projects/{projectId}/moodboard/items/{itemId}/content, gallery URLs at the public gallery route */
+            moodboard: components["schemas"]["MoodboardItemViewDto"][];
+            /**
+             * Format: date-time
+             * @description Time of the claim; a repeated claim does not change it
+             */
+            claimedAt: string;
+        };
+        ClaimKitchenDraftResponseDto: {
+            project: components["schemas"]["KitchenProjectViewDto"];
+        };
+        KitchenProjectErrorDto: {
+            statusCode: number;
+            message: string;
+            /** @enum {string} */
+            code: "project_incomplete" | "not_available_yet" | "storage_unavailable";
         };
     };
     responses: never;
@@ -1388,6 +1527,374 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["KitchenDraftErrorDto"];
                 };
+            };
+        };
+    };
+    KitchenProjectsController_claim: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClaimKitchenDraftResponseDto"];
+                };
+            };
+            /** @description Missing, invalid or expired bearer token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Caller lacks the user (Homeowner) realm role */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Missing, malformed, unknown or expired draft token, or a project claimed by another Account */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Database unreachable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    KitchenProjectsController_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Id of a Kitchen Project the caller owns */
+                projectId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KitchenProjectViewDto"];
+                };
+            };
+            /** @description Malformed project id */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Missing, invalid or expired bearer token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Caller lacks the user (Homeowner) realm role */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unknown project, still a draft, or owned by another Account (same generic body) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Database unreachable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    KitchenProjectsController_photoContent: {
+        parameters: {
+            query: {
+                variant: "thumb" | "full";
+            };
+            header?: never;
+            path: {
+                photoId: string;
+                /** @description Id of a Kitchen Project the caller owns */
+                projectId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description JPEG bytes */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "image/jpeg": string;
+                };
+            };
+            /** @description Malformed project id */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Missing, invalid or expired bearer token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Caller lacks the user (Homeowner) realm role */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unknown project, still a draft, or owned by another Account (same generic body) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /**
+             * @description `storage_unavailable`, or database unreachable
+             *
+             *     Database unreachable
+             */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    KitchenProjectsController_moodboardContent: {
+        parameters: {
+            query: {
+                variant: "thumb" | "full";
+            };
+            header?: never;
+            path: {
+                itemId: string;
+                /** @description Id of a Kitchen Project the caller owns */
+                projectId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description JPEG bytes */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "image/jpeg": string;
+                };
+            };
+            /** @description Malformed project id */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Missing, invalid or expired bearer token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Caller lacks the user (Homeowner) realm role */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unknown project, still a draft, or owned by another Account (same generic body) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /**
+             * @description `storage_unavailable`, or database unreachable
+             *
+             *     Database unreachable
+             */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    KitchenProjectsController_requestRender: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Id of a Kitchen Project the caller owns */
+                projectId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Malformed project id */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Missing, invalid or expired bearer token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Caller lacks the user (Homeowner) realm role */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unknown project, still a draft, or owned by another Account (same generic body) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description `project_incomplete`: needs a photo, all three measurements and a Moodboard Item */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KitchenProjectErrorDto"];
+                };
+            };
+            /** @description `not_available_yet` */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KitchenProjectErrorDto"];
+                };
+            };
+            /** @description Database unreachable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    KitchenProjectsController_requestBudget: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Id of a Kitchen Project the caller owns */
+                projectId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Malformed project id */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Missing, invalid or expired bearer token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Caller lacks the user (Homeowner) realm role */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unknown project, still a draft, or owned by another Account (same generic body) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description `project_incomplete`: needs a photo, all three measurements and a Moodboard Item */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KitchenProjectErrorDto"];
+                };
+            };
+            /** @description `not_available_yet` */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KitchenProjectErrorDto"];
+                };
+            };
+            /** @description Database unreachable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

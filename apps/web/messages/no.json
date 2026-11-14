@@ -168,5 +168,70 @@
       "expired": "Det forrige utkastet ditt utløp etter 7 dager uten endringer. Begynn på nytt.",
       "dismiss": "Lukk"
     }
+  },
+  "generate": {
+    "backToMoodboard": "Tilbake til stilen din",
+    "step": "Steg {current} av {total}",
+    "title": "Klar til å designe",
+    "helper": "Sjekk kjøkkenet ditt og velg hva du vil lage. Vi ber deg logge inn så prosjektet ditt blir lagret.",
+    "summary": {
+      "kitchenTitle": "Kjøkkenet ditt",
+      "styleTitle": "Din stil",
+      "edit": "Rediger",
+      "editKitchen": "Rediger kjøkkenet ditt",
+      "editStyle": "Rediger stilen din",
+      "more": "+{count}",
+      "measurements": "{length} × {width} m · høyde {height} m",
+      "missing": "—",
+      "moodboardCount": "{count, plural, one {# element} other {# elementer}} i moodboardet ditt"
+    },
+    "cta": {
+      "render": "Generer kjøkkenet mitt",
+      "budget": "Få tilbudet mitt"
+    },
+    "hints": {
+      "capture": "Kjøkkenet ditt mangler fortsatt et bilde og alle tre målene.",
+      "goToCapture": "Gå til kjøkkenet ditt",
+      "items": "Legg til minst ett kjøkken eller bilde i moodboardet ditt.",
+      "goToMoodboard": "Gå til stilen din",
+      "start": "Start kjøkkenprosjektet ditt først.",
+      "startLink": "Start"
+    },
+    "gate": {
+      "title": "Logg inn for å fortsette",
+      "body": "Å generere design og tilbud krever en gratis konto. Bildene, målene og moodboardet ditt lagres der.",
+      "signIn": "Logg inn",
+      "register": "Opprett konto",
+      "footnote": "Nye kontoer bekrefter e-posten med en 6-sifret kode.",
+      "close": "Lukk"
+    },
+    "claiming": "Lagrer kjøkkenet ditt på kontoen din…",
+    "alerts": {
+      "wrongRole": "Denne kontoen kan ikke lagre kjøkkenprosjekter. Logg ut og bruk en privatkonto.",
+      "signOut": "Logg ut",
+      "failed": "Vi kunne ikke lagre kjøkkenet ditt på kontoen din. Utkastet ditt er trygt; prøv igjen.",
+      "retry": "Prøv igjen",
+      "offline": "Du er frakoblet. Utkastet ditt er trygt; koble til igjen for å lagre det på kontoen din.",
+      "expired": "Det forrige utkastet ditt utløp etter 7 dager uten endringer. Start på nytt.",
+      "start": "Start",
+      "dismiss": "Lukk"
+    }
+  },
+  "project": {
+    "title": "Kjøkkenprosjektet ditt",
+    "helper": "Design og tilbud kommer snart. Prosjektet ditt blir her, klart for dem.",
+    "claimed": "Kjøkkenet ditt er lagret på kontoen din.",
+    "dismiss": "Lukk",
+    "newProject": "Start et nytt kjøkkenprosjekt",
+    "availableSoon": "Kommer snart",
+    "signedOut": {
+      "title": "Logg inn for å se dette kjøkkenprosjektet",
+      "signIn": "Logg inn"
+    },
+    "notFound": {
+      "title": "Vi fant ikke dette kjøkkenprosjektet",
+      "home": "Gå til forsiden"
+    },
+    "offline": "Du er frakoblet. Kjøkkenprosjektet ditt er trygt; koble til igjen for å se det."
   }
 }

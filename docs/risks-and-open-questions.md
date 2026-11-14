@@ -65,6 +65,9 @@ None. Discovery is sufficient to derive the harness (`/harness-starter`).
 | Welcome splash replays per tab (`brand-logo-animation`) | `sessionStorage` is per tab, so every new tab or window plays it again (up to ~3.2 s, skippable with a tap or key) | Accepted by the developer (2026-11-14); reloads, client navigation and Keycloak round trips in the same tab do not replay it |
 | Style Gallery looks AI-generated (`moodboard-selection`) | Small artifacts (odd chair legs, repeated details) can look artificial in the demo | Developer approval of the contact sheet (`design/openpencil/moodboard-selection/gallery-contact-sheet.png`) before commit; regenerate single ids with `scripts/style-gallery/generate.sh <id>` |
 | Style Gallery assets size | About 3.2 MB of JPEGs in git and in the api image | Accepted; full images capped at 1280 px (q82), thumbs 512 px (q80) |
+| No "My Kitchen Projects" list (`login-gate-claim`) | A Homeowner finds a claimed project again only by its URL (`/kitchen-projects/<id>`) | Accepted for this slice (OQ-7); a later feature adds `GET /kitchen-projects` and a list |
+| Orphaned claimed projects (`login-gate-claim`) | Deleting a Keycloak user leaves its Kitchen Projects (rows and MinIO objects) owned by a `sub` nobody holds | Accepted for the MVP; `admin-user-management` should delete or reassign them |
+| Owner key is the Keycloak `sub` (`login-gate-claim`) | If `google-sso-login` links accounts in a way that yields a different `sub`, earlier projects are not visible to the linked account | `google-sso-login` must link the Google identity to the existing Keycloak user (same `sub`), or migrate `owner_sub` |
 | Disk space for models | Stack fails | Optional: move Docker data-root and model weights to a data NVMe (see docs/technical-discovery.md); otherwise monitor free space on the 465 GB system disk |
 
 ## Research Tasks

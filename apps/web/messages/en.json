@@ -168,5 +168,70 @@
       "expired": "Your previous draft expired after 7 days without changes. Start again.",
       "dismiss": "Close"
     }
+  },
+  "generate": {
+    "backToMoodboard": "Back to your style",
+    "step": "Step {current} of {total}",
+    "title": "Ready to design",
+    "helper": "Check your kitchen and choose what to create. We'll ask you to sign in so your project is saved.",
+    "summary": {
+      "kitchenTitle": "Your kitchen",
+      "styleTitle": "Your style",
+      "edit": "Edit",
+      "editKitchen": "Edit your kitchen",
+      "editStyle": "Edit your style",
+      "more": "+{count}",
+      "measurements": "{length} × {width} m · height {height} m",
+      "missing": "—",
+      "moodboardCount": "{count, plural, one {# item} other {# items}} in your moodboard"
+    },
+    "cta": {
+      "render": "Generate my kitchen",
+      "budget": "Get my budget"
+    },
+    "hints": {
+      "capture": "Your kitchen still needs a photo and all three measurements.",
+      "goToCapture": "Go to your kitchen",
+      "items": "Add at least one kitchen or photo to your moodboard.",
+      "goToMoodboard": "Go to your style",
+      "start": "Start your kitchen project first.",
+      "startLink": "Start"
+    },
+    "gate": {
+      "title": "Sign in to continue",
+      "body": "Generating designs and budgets needs a free account. Your photos, measurements and moodboard are saved to it.",
+      "signIn": "Sign in",
+      "register": "Create account",
+      "footnote": "New accounts confirm their email with a 6-digit code.",
+      "close": "Close"
+    },
+    "claiming": "Saving your kitchen to your account…",
+    "alerts": {
+      "wrongRole": "This account can't save kitchen projects. Sign out and use a homeowner account.",
+      "signOut": "Sign out",
+      "failed": "We couldn't save your kitchen to your account. Your draft is safe; try again.",
+      "retry": "Try again",
+      "offline": "You're offline. Your draft is safe; reconnect to save it to your account.",
+      "expired": "Your previous draft expired after 7 days without changes. Start again.",
+      "start": "Start",
+      "dismiss": "Close"
+    }
+  },
+  "project": {
+    "title": "Your kitchen project",
+    "helper": "Designs and budgets are coming soon. Your project stays here, ready for them.",
+    "claimed": "Your kitchen is saved to your account.",
+    "dismiss": "Close",
+    "newProject": "Start a new kitchen project",
+    "availableSoon": "Available soon",
+    "signedOut": {
+      "title": "Sign in to see this kitchen project",
+      "signIn": "Sign in"
+    },
+    "notFound": {
+      "title": "We couldn't find this kitchen project",
+      "home": "Go to Home"
+    },
+    "offline": "You're offline. Your kitchen project is safe; reconnect to see it."
   }
 }

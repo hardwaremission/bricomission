@@ -168,5 +168,70 @@
       "expired": "Tu borrador anterior caducó tras 7 días sin cambios. Empieza de nuevo.",
       "dismiss": "Cerrar"
     }
+  },
+  "generate": {
+    "backToMoodboard": "Volver a tu estilo",
+    "step": "Paso {current} de {total}",
+    "title": "Listo para diseñar",
+    "helper": "Revisa tu cocina y elige qué crear. Te pediremos que inicies sesión para guardar tu proyecto.",
+    "summary": {
+      "kitchenTitle": "Tu cocina",
+      "styleTitle": "Tu estilo",
+      "edit": "Editar",
+      "editKitchen": "Editar tu cocina",
+      "editStyle": "Editar tu estilo",
+      "more": "+{count}",
+      "measurements": "{length} × {width} m · altura {height} m",
+      "missing": "—",
+      "moodboardCount": "{count, plural, one {# elemento} other {# elementos}} en tu moodboard"
+    },
+    "cta": {
+      "render": "Generar mi cocina",
+      "budget": "Obtener mi presupuesto"
+    },
+    "hints": {
+      "capture": "A tu cocina aún le falta una foto y las tres medidas.",
+      "goToCapture": "Ir a tu cocina",
+      "items": "Añade al menos una cocina o una foto a tu moodboard.",
+      "goToMoodboard": "Ir a tu estilo",
+      "start": "Primero empieza tu proyecto de cocina.",
+      "startLink": "Empezar"
+    },
+    "gate": {
+      "title": "Inicia sesión para continuar",
+      "body": "Para generar diseños y presupuestos necesitas una cuenta gratuita. Tus fotos, medidas y moodboard se guardan en ella.",
+      "signIn": "Iniciar sesión",
+      "register": "Crear cuenta",
+      "footnote": "Las cuentas nuevas confirman su correo con un código de 6 dígitos.",
+      "close": "Cerrar"
+    },
+    "claiming": "Guardando tu cocina en tu cuenta…",
+    "alerts": {
+      "wrongRole": "Esta cuenta no puede guardar proyectos de cocina. Cierra sesión y usa una cuenta de particular.",
+      "signOut": "Cerrar sesión",
+      "failed": "No pudimos guardar tu cocina en tu cuenta. Tu borrador está a salvo; inténtalo de nuevo.",
+      "retry": "Reintentar",
+      "offline": "Estás sin conexión. Tu borrador está a salvo; vuelve a conectarte para guardarlo en tu cuenta.",
+      "expired": "Tu borrador anterior caducó tras 7 días sin cambios. Empieza de nuevo.",
+      "start": "Empezar",
+      "dismiss": "Cerrar"
+    }
+  },
+  "project": {
+    "title": "Tu proyecto de cocina",
+    "helper": "Los diseños y presupuestos llegarán pronto. Tu proyecto se queda aquí, listo para ellos.",
+    "claimed": "Tu cocina está guardada en tu cuenta.",
+    "dismiss": "Cerrar",
+    "newProject": "Empezar un nuevo proyecto de cocina",
+    "availableSoon": "Disponible pronto",
+    "signedOut": {
+      "title": "Inicia sesión para ver este proyecto de cocina",
+      "signIn": "Iniciar sesión"
+    },
+    "notFound": {
+      "title": "No encontramos este proyecto de cocina",
+      "home": "Ir al inicio"
+    },
+    "offline": "Estás sin conexión. Tu proyecto de cocina está a salvo; vuelve a conectarte para verlo."
   }
 }

@@ -122,8 +122,11 @@ export class MoodboardService {
     return moodboardItemView(result.item, this.gallery);
   }
 
-  /** Upload items only: gallery images are served by the public gallery route. */
-  async content(draft: KitchenDraftRecord, itemId: string, variant: PhotoVariant): Promise<Readable> {
+  /**
+   * Upload items only: gallery images are served by the public gallery route. Also serves the
+   * owner content route of claimed projects (only `moodboard` is read).
+   */
+  async content(draft: Pick<KitchenDraftRecord, 'moodboard'>, itemId: string, variant: PhotoVariant): Promise<Readable> {
     const item = draft.moodboard.find((candidate) => candidate.id === itemId);
     const key = variant === 'thumb' ? item?.thumbKey : item?.fullKey;
     if (!item || item.source !== 'upload' || !key) throw new NotFoundException();

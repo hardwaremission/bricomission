@@ -247,10 +247,11 @@ export function MoodboardScreen() {
 
         <section className="flex flex-col gap-3">
           <div className="flex flex-col gap-2">
-            <p className="text-small leading-5 font-semibold text-text-muted">{t('step', { current: 2, total: 2 })}</p>
+            <p className="text-small leading-5 font-semibold text-text-muted">{t('step', { current: 2, total: 3 })}</p>
             <div className="flex h-1 gap-1" aria-hidden="true">
               <span className="grow rounded-pill bg-primary" />
               <span className="grow rounded-pill bg-primary" />
+              <span className="grow rounded-pill bg-border" />
             </div>
           </div>
           <h1 className="text-h1 font-bold text-text">{t('title')}</h1>
