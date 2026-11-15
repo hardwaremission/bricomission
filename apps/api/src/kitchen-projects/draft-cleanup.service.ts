@@ -1,5 +1,8 @@
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger, Optional } from '@nestjs/common';
 import type { OnApplicationBootstrap, OnApplicationShutdown } from '@nestjs/common';
+import { DIAGNOSTICS, type Diagnostics } from '../diagnostics/diagnostics.types.js';
+import { projectStep } from '../diagnostics/narrate/project.js';
+import { NULL_DIAGNOSTICS } from '../diagnostics/null-diagnostics.js';
 import { OBJECT_STORAGE, type ObjectStorage } from '../storage/object-storage.js';
 import { type Clock, KITCHEN_CLOCK, KITCHEN_DRAFT_CONFIG, type KitchenDraftConfig } from './kitchen-projects.config.js';
 import { KITCHEN_DRAFT_REPOSITORY, type KitchenDraftRepository } from './kitchen-drafts.repository.js';
@@ -25,6 +28,7 @@ export class DraftCleanupService implements OnApplicationBootstrap, OnApplicatio
     @Inject(OBJECT_STORAGE) private readonly storage: ObjectStorage,
     @Inject(KITCHEN_DRAFT_CONFIG) private readonly config: KitchenDraftConfig,
     @Inject(KITCHEN_CLOCK) private readonly clock: Clock,
+    @Optional() @Inject(DIAGNOSTICS) private readonly diagnostics: Diagnostics = NULL_DIAGNOSTICS,
   ) {}
 
   onApplicationBootstrap(): void {
@@ -70,7 +74,10 @@ export class DraftCleanupService implements OnApplicationBootstrap, OnApplicatio
     } catch (error) {
       this.logger.warn(`Draft cleanup failed (${error instanceof Error ? error.name : 'unknown'})`);
     }
-    if (deleted > 0) this.logger.log(`Deleted ${deleted} expired kitchen draft(s)`);
+    if (deleted > 0) {
+      this.logger.log(`Deleted ${deleted} expired kitchen draft(s)`);
+      projectStep(this.diagnostics, `sweeper deleted ${deleted} expired draft${deleted === 1 ? '' : 's'}`, { deleted }, true);
+    }
     return deleted;
   }
 }

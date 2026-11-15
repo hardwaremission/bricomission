@@ -1,5 +1,7 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Optional } from '@nestjs/common';
 import type { CatalogSearchResponse, CatalogSearchResult } from '@bricomission/shared-types';
+import { DIAGNOSTICS, type Diagnostics } from '../diagnostics/diagnostics.types.js';
+import { NULL_DIAGNOSTICS } from '../diagnostics/null-diagnostics.js';
 import { CATALOG_REPOSITORY, type CatalogChunkHit, type CatalogRepository } from './catalog.repository.js';
 import { EMBEDDER, type Embedder } from './embedding/embedder.js';
 
@@ -66,6 +68,7 @@ export class CatalogSearchService {
   constructor(
     @Inject(CATALOG_REPOSITORY) private readonly repository: CatalogRepository,
     @Inject(EMBEDDER) private readonly embedder: Embedder,
+    @Optional() @Inject(DIAGNOSTICS) private readonly diagnostics: Diagnostics = NULL_DIAGNOSTICS,
   ) {}
 
   async search(params: CatalogSearchParams): Promise<CatalogSearchResponse> {
@@ -76,6 +79,15 @@ export class CatalogSearchService {
       this.repository.searchByTerms(skuTokens, vector, this.embedder.model, limit),
       this.repository.searchByVector(vector, this.embedder.model, limit),
     ]);
+    if (this.diagnostics.enabled) {
+      this.diagnostics.emit({
+        from: 'data-access',
+        to: 'postgres',
+        kind: 'sql',
+        summary: `catalog vector search (HNSW cosine, top ${limit}): ${vectorHits.length} hits`,
+        payload: { operation: 'vector search', limit, query, hits: vectorHits.map((hit) => ({ catalog: hit.catalogName, page: hit.pageNumber, score: Number(hit.score.toFixed(4)) })), skuTokens },
+      });
+    }
     const seen = new Set<string>();
     const results: CatalogSearchResult[] = [];
     const add = (hit: CatalogChunkHit, matchedSku: boolean): void => {

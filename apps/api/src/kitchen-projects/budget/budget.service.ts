@@ -1,11 +1,14 @@
 import { randomUUID } from 'node:crypto';
-import { HttpException, HttpStatus, Inject, Injectable, Logger, NotFoundException, ServiceUnavailableException } from '@nestjs/common';
+import { HttpException, HttpStatus, Inject, Injectable, Logger, NotFoundException, Optional, ServiceUnavailableException } from '@nestjs/common';
 import type { BudgetErrorCode, BudgetListResponse, BudgetView, CreateBudgetResponse } from '@bricomission/shared-types';
 import { contentText, type LlmAdapter } from '../../ai/adapters/llm-adapter.js';
 import { LLM_ADAPTER } from '../../ai/ai.tokens.js';
 import { GpuJobFailedError, GpuQueueFullError } from '../../ai/jobs/gpu-job-broker.errors.js';
 import { GpuJobBrokerService } from '../../ai/jobs/gpu-job-broker.service.js';
 import { CatalogSearchService } from '../../catalog/catalog-search.service.js';
+import { DIAGNOSTICS, type Diagnostics } from '../../diagnostics/diagnostics.types.js';
+import * as narrate from '../../diagnostics/narrate/budget.js';
+import { NULL_DIAGNOSTICS } from '../../diagnostics/null-diagnostics.js';
 import { OBJECT_STORAGE, type ObjectStorage } from '../../storage/object-storage.js';
 import { draftError } from '../kitchen-draft.errors.js';
 import type { KitchenProjectRecord } from '../kitchen-drafts.repository.js';
@@ -66,6 +69,7 @@ export class BudgetService {
     @Inject(KITCHEN_CLOCK) private readonly clock: Clock,
     private readonly broker: GpuJobBrokerService,
     private readonly search: CatalogSearchService,
+    @Optional() @Inject(DIAGNOSTICS) private readonly diagnostics: Diagnostics = NULL_DIAGNOSTICS,
   ) {}
 
   async create(project: KitchenProjectRecord, ownerSub: string): Promise<CreateBudgetResponse> {
@@ -164,9 +168,12 @@ export class BudgetService {
   }
 
   /** Catalog RAG search per query (limit 5 each); any failure is `embedding_unavailable`, before any row or broker submit. */
-  private async retrieve(queries: readonly string[]): Promise<RetrievalHits[]> {
+  private async retrieve(queries: readonly string[], extra = false): Promise<RetrievalHits[]> {
+    narrate.retrievalQueries(this.diagnostics, queries, extra, QUERY_LIMIT);
     try {
-      return await Promise.all(queries.map(async (query) => (await this.search.search({ query, limit: QUERY_LIMIT })).results));
+      const hits = await Promise.all(queries.map(async (query) => (await this.search.search({ query, limit: QUERY_LIMIT })).results));
+      narrate.retrievalResults(this.diagnostics, hits);
+      return hits;
     } catch (error) {
       this.logger.warn(`Budget catalog search failed (${error instanceof Error ? error.name : 'unknown'})`);
       throw draftError(HttpStatus.SERVICE_UNAVAILABLE, 'embedding_unavailable');
@@ -187,10 +194,12 @@ export class BudgetService {
     try {
       const inventories = await this.readInventories(budget, simulation.renders, ownerSub, first);
       const merged = mergeInventories(inventories);
+      narrate.inventoryMerged(this.diagnostics, merged);
       await this.repo.setProgress(budget.id, 'pricing', budget.progressTotal, budget.progressTotal).catch(() => undefined);
       const { chunks, queries } = await this.finalChunks(baseHits, baseQueries, merged);
       const bands = assignPriceBands(chunks);
       this.logger.log(`Budget retrieval: ${queries.length} queries, ${chunks.length} chunks, ${merged.length} inventory categories`);
+      narrate.submitJob(this.diagnostics, 'submit llm job (price four tiers)', { kind: 'llm', task: 'budget', chunks: chunks.length });
       const handle = await this.submit(first, ownerSub, budget.id, ({ signal }) => this.price(budget, project, chunks, merged, bands, signal, state));
       await handle.result;
     } catch (error) {
@@ -215,7 +224,8 @@ export class BudgetService {
         continue;
       }
       try {
-        const handle = await this.submit(first, ownerSub, budget.id, ({ signal }) => this.readInventory(budget, render, signal));
+        narrate.submitJob(this.diagnostics, `submit llm job (read image ${renders.indexOf(render) + 1} of ${renders.length})`, { kind: 'llm', task: 'inventory' });
+        const handle = await this.submit(first, ownerSub, budget.id, ({ signal }) => this.readInventory(budget, render, signal, renders.indexOf(render) + 1, renders.length));
         const inventory = (await handle.result) as RenderInventory | null;
         if (inventory) found.push(inventory);
       } catch (error) {
@@ -229,10 +239,11 @@ export class BudgetService {
   }
 
   /** The job body of one inventory read: image scaled to <= 768 px, vision call, parse, cache on the Render. */
-  private async readInventory(budget: BudgetRecord, render: RenderRecord, signal: AbortSignal): Promise<RenderInventory | null> {
+  private async readInventory(budget: BudgetRecord, render: RenderRecord, signal: AbortSignal, index: number, total: number): Promise<RenderInventory | null> {
     await this.repo.markRunning(budget.id, this.clock());
     if (!render.fullKey) return null;
     const image = await scaleReference(await this.readObject(render.fullKey));
+    if (this.diagnostics.enabled) await narrate.readingImage(this.diagnostics, { index, total, image });
     const result = await this.llm.complete({ messages: buildInventoryMessages(image), jsonSchema: INVENTORY_SCHEMA, maxTokens: INVENTORY_MAX_TOKENS, task: 'inventory' }, signal);
     if (signal.aborted) return null;
     const inventory = parseInventory(result.text);
@@ -248,7 +259,7 @@ export class BudgetService {
     let hits = baseHits;
     if (extra.length > 0) {
       try {
-        hits = [...baseHits, ...(await this.retrieve(extra))];
+        hits = [...baseHits, ...(await this.retrieve(extra, true))];
       } catch {
         return { chunks: selectChunks(baseHits, this.config.chunkLimit, undefined, baseQueries), queries: baseQueries };
       }
@@ -302,12 +313,18 @@ export class BudgetService {
       if (signal.aborted) return; // timed out meanwhile: the failure path owns the row
       const extraction: Extraction = extractBudget(result.text, chunks);
       if (!isComplete(extraction)) {
+        narrate.verifyAndCompute(this.diagnostics, { attempt, maxAttempts: this.config.maxAttempts, tiers: null, rejected: extraction.rejected, ordered: null, wellFormed: extraction.wellFormed });
         feedback = buildFeedback(extraction);
         continue;
       }
       const tiers = buildTiers(extraction.items, budget.vatBps);
       lastComplete = tiers;
-      if (isStrictlyOrdered(tiers)) return this.succeed(budget, { tiers, relabeled: false, prompt, attempts: attempt, promptTokens, completionTokens });
+      const ordered = isStrictlyOrdered(tiers);
+      narrate.verifyAndCompute(this.diagnostics, { attempt, maxAttempts: this.config.maxAttempts, tiers, rejected: extraction.rejected, ordered, wellFormed: true });
+      if (ordered) {
+        narrate.verifiedResult(this.diagnostics, { tiers, relabeled: false, attempts: attempt });
+        return this.succeed(budget, { tiers, relabeled: false, prompt, attempts: attempt, promptTokens, completionTokens });
+      }
       feedback = buildOrderFeedback(tiers);
     }
     const relabeled = lastComplete ? relabelByTotal(lastComplete) : null;
@@ -316,6 +333,7 @@ export class BudgetService {
       throw new Error('budget verification failed');
     }
     this.logger.warn('Budget tiers relabelled by total rank after the last attempt');
+    narrate.verifiedResult(this.diagnostics, { tiers: relabeled, relabeled: true, attempts: this.config.maxAttempts });
     return this.succeed(budget, { tiers: relabeled, relabeled: true, prompt, attempts: this.config.maxAttempts, promptTokens, completionTokens });
   }
 

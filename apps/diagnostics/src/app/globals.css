@@ -1,0 +1,159 @@
+@import "tailwindcss";
+@import "@xyflow/react/dist/style.css";
+
+/* Inter and JetBrains Mono, self-hosted (OFL, @fontsource-variable): latin subset, bundled at build time.
+   The dashboard makes no network request outside its own origin. */
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url("../../node_modules/@fontsource-variable/inter/files/inter-latin-wght-normal.woff2") format("woff2-variations");
+}
+@font-face {
+  font-family: "JetBrains Mono";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 800;
+  src: url("../../node_modules/@fontsource-variable/jetbrains-mono/files/jetbrains-mono-latin-wght-normal.woff2") format("woff2-variations");
+}
+
+/* docs/design/diagnostics-dashboard.md, "Visual language". Dark blueprint palette: none of the light app tokens. */
+@theme {
+  --color-page: #080E1A;
+  --color-canvas: #0B1220;
+  --color-panel: #0E1626;
+  --color-node: #101A2B;
+  --color-well: #0A1020;
+  --color-line: #2A3A55;
+  --color-line-panel: #1C2A44;
+  --color-strong: #E6EDF7;
+  --color-body: #CBD5E1;
+  --color-muted: #8A9BB5;
+  --color-dim: #7E8DA6;
+  --color-brand: #2968EC;
+  --color-active: #5B9BFF;
+  --color-chip: #16233A;
+  --color-chip-text: #9DB4D8;
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+  background: #080E1A;
+  color: #CBD5E1;
+  font-family: var(--font-sans);
+  overflow: hidden;
+}
+
+button {
+  cursor: pointer;
+}
+button:focus-visible,
+[role="button"]:focus-visible {
+  outline: 2px solid #5B9BFF;
+  outline-offset: 2px;
+}
+
+/* React Flow chrome, restyled to the blueprint palette (no shadows on nodes or lines). */
+.react-flow {
+  --xy-background-color: #0B1220;
+  --xy-node-boxshadow-default: none;
+  --xy-node-boxshadow-hover: none;
+  --xy-node-boxshadow-selected: none;
+  --xy-attribution-background-color: transparent;
+  background: #0B1220;
+}
+.react-flow__node {
+  cursor: default;
+}
+.react-flow__node.bm-clickable {
+  cursor: pointer;
+}
+.react-flow__attribution a {
+  color: #64748B;
+}
+.react-flow__handle.bm-anchor {
+  opacity: 0;
+  pointer-events: none;
+  width: 1px;
+  height: 1px;
+  min-width: 0;
+  min-height: 0;
+  border: 0;
+}
+
+/* Micro labels are 9 px in the design at 100 %; at a smaller fit-view zoom they grow so the effective size stays 9 px.
+   Everything that must make room for the bigger label derives from the same scale, and every term is 0 at 100 %,
+   so the 1:1 layout is exactly the design:
+     --bm-micro-scale  1 at 100 % or more, 1 / zoom below (about 1.42 at 1440x1080, 1.44 at 1366x768)
+     --bm-micro-grow   scale - 1
+     --bm-fit          0 at 100 %, 1 as soon as the graph is scaled down (a step, for values the design fixes at 1:1)
+     --bm-tile-shift   how far the value and bar of a metric tile move down: the label line is 11.25 px x scale
+                       and the design puts the value at 11 px, hence the extra 0.25 px once scaled */
+.bm-graph {
+  --bm-zoom: 1;
+  --bm-micro-scale: calc(1 / min(1, var(--bm-zoom)));
+  --bm-micro-grow: calc(var(--bm-micro-scale) - 1);
+  --bm-fit: min(1, calc(1000 * var(--bm-micro-grow)));
+  --bm-tile-shift: calc(11.25px * var(--bm-micro-grow) + 0.25px * var(--bm-fit));
+}
+.bm-micro {
+  font-size: calc(9px * var(--bm-micro-scale));
+  line-height: 1.25;
+  white-space: nowrap;
+}
+/* APPROX tag: 7 px in the design at 100 %; scaled down it follows the micro labels (9 px effective). */
+.bm-micro-tag {
+  font-size: calc(7px * var(--bm-micro-scale) + 2px * var(--bm-micro-scale) * var(--bm-fit));
+  line-height: calc(10px * var(--bm-micro-scale));
+  white-space: nowrap;
+}
+
+/* Travelling light packet: a short white dash moved along the polyline. No blur, glow or drop shadow. */
+@keyframes bm-packet {
+  from { stroke-dashoffset: var(--bm-from); }
+  to { stroke-dashoffset: var(--bm-to); }
+}
+.bm-packet {
+  animation-name: bm-packet;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+@keyframes bm-fade {
+  from { opacity: 1; }
+  to { opacity: 0.2; }
+}
+.bm-response {
+  animation: bm-fade 1s linear forwards;
+}
+.bm-marks {
+  display: none;
+}
+@keyframes bm-spin {
+  to { transform: rotate(360deg); }
+}
+.bm-spin {
+  animation: bm-spin 1.2s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bm-packet {
+    display: none;
+  }
+  .bm-marks {
+    display: inline;
+  }
+  .bm-response,
+  .bm-spin {
+    animation: none;
+  }
+}
+
+.bm-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: #2A3A55 transparent;
+}

@@ -1,6 +1,8 @@
 import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { createRemoteJWKSet } from 'jose';
+import { DIAGNOSTICS, type Diagnostics } from '../diagnostics/diagnostics.types.js';
+import { instrumentKeyResolver } from '../diagnostics/instrument/keycloak.js';
 import { AUTH_CONFIG, loadAuthConfig } from './auth.config.js';
 import type { AuthConfig } from './auth.config.js';
 import { AuthGuard } from './auth.guard.js';
@@ -22,8 +24,11 @@ export const JWKS_TIMEOUT_MS = 3000;
     {
       // Lazy: the JWKS is fetched on the first verification, so the API boots without Keycloak.
       provide: KEY_RESOLVER,
-      useFactory: (config: AuthConfig) => createRemoteJWKSet(new URL(config.jwksUrl), { timeoutDuration: JWKS_TIMEOUT_MS }),
-      inject: [AUTH_CONFIG],
+      useFactory: (config: AuthConfig, diagnostics?: Diagnostics) => {
+        const jwks = createRemoteJWKSet(new URL(config.jwksUrl), { timeoutDuration: JWKS_TIMEOUT_MS });
+        return diagnostics?.enabled ? instrumentKeyResolver(jwks, diagnostics) : jwks;
+      },
+      inject: [AUTH_CONFIG, { token: DIAGNOSTICS, optional: true }],
     },
     TokenVerifier,
     { provide: APP_GUARD, useClass: AuthGuard },

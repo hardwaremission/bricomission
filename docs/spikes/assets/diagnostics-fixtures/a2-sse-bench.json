@@ -1,0 +1,98 @@
+{
+ "next-pipe + nest @Sse": {
+  "first": "hello",
+  "n": 324,
+  "replayBurstLatencyMax": 8241,
+  "steadyLatency": {
+   "p50": 0,
+   "p95": 1,
+   "max": 1
+  },
+  "maxInterArrivalMs": 51,
+  "pings": 3,
+  "external": 0
+ },
+ "next-manual + nest @Sse": {
+  "first": "hello",
+  "n": 486,
+  "replayBurstLatencyMax": 16364,
+  "steadyLatency": {
+   "p50": 0,
+   "p95": 1,
+   "max": 1
+  },
+  "maxInterArrivalMs": 52,
+  "pings": 3,
+  "external": 0
+ },
+ "next-pipe + raw @Res": {
+  "first": "hello",
+  "n": 647,
+  "replayBurstLatencyMax": 24474,
+  "steadyLatency": {
+   "p50": 0,
+   "p95": 1,
+   "max": 1
+  },
+  "maxInterArrivalMs": 52,
+  "pings": 0,
+  "external": 0
+ },
+ "next-manual + raw @Res": {
+  "first": "hello",
+  "n": 809,
+  "replayBurstLatencyMax": 32591,
+  "steadyLatency": {
+   "p50": 0,
+   "p95": 1,
+   "max": 1
+  },
+  "maxInterArrivalMs": 52,
+  "pings": 0,
+  "external": 0
+ },
+ "reconnect sse": {
+  "opens": 2,
+  "errors": 2,
+  "ticks": 952,
+  "dup": 0,
+  "gaps": 0,
+  "hellos": 2,
+  "firstIds": [
+   1,
+   2
+  ],
+  "idsAround40": [
+   39,
+   40,
+   41,
+   42,
+   43,
+   44,
+   45,
+   46
+  ]
+ },
+ "reconnect raw": {
+  "opens": 4,
+  "errors": 4,
+  "ticks": 1207,
+  "dup": 0,
+  "gaps": 0,
+  "hellos": 4,
+  "firstIds": [
+   1,
+   2
+  ],
+  "idsAround40": [
+   39,
+   40,
+   41,
+   42,
+   43,
+   44,
+   45,
+   46
+  ]
+ }
+}

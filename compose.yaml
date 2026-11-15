@@ -151,6 +151,8 @@ services:
       # Simulations (simulations-ux-overhaul): model id sent to llama-server router mode (also the vision cache key)
       # and the base IP-Adapter weight per reference for blend mode ip_adapter / both (blend mode itself is a platform setting).
       LLM_MODEL: ${LLM_MODEL:-qwen3-vl}
+      # Shown by the diagnostics topology only (the llama-server command reads the same variable for -c).
+      LLAMA_CTX_SIZE: ${LLAMA_CTX_SIZE:-16384}
       SIMULATION_IPADAPTER_BASE_WEIGHT: ${SIMULATION_IPADAPTER_BASE_WEIGHT:-0.6}
       SIMULATION_BOTH_BASE_WEIGHT: ${SIMULATION_BOTH_BASE_WEIGHT:-0.4}
       # ControlNet tuning (2026-11-15): canny thresholds, canny strength/end, depth assist (0 = off).
@@ -185,6 +187,15 @@ services:
       DRAFT_TTL_DAYS: ${DRAFT_TTL_DAYS:-7}
       DRAFT_CLEANUP_INTERVAL_MS: ${DRAFT_CLEANUP_INTERVAL_MS:-3600000}
       DRAFT_MAX_OPEN: ${DRAFT_MAX_OPEN:-2000}
+      # Diagnostics (diagnostics-dashboard): off unless DIAGNOSTICS_ENABLED=true; the token (at least 16
+      # characters, header X-Diagnostics-Token) guards /diagnostics/*. Dev default, local use only.
+      DIAGNOSTICS_ENABLED: ${DIAGNOSTICS_ENABLED:-false}
+      DIAGNOSTICS_TOKEN: ${DIAGNOSTICS_TOKEN:-bm-diagnostics-dev-token}
+      DIAGNOSTICS_BUFFER_SIZE: ${DIAGNOSTICS_BUFFER_SIZE:-1000}
+      DIAGNOSTICS_BUFFER_MAX_MB: ${DIAGNOSTICS_BUFFER_MAX_MB:-32}
+    volumes:
+      # Model names shown in the diagnostics topology (read-only; absent file = router id only).
+      - ./infra/ai/llama-models.ini:/cfg/llama-models.ini:ro
     ports:
       - "127.0.0.1:${API_PORT:-3000}:3000"
     healthcheck:
@@ -214,6 +225,11 @@ services:
       KEYCLOAK_WEB_CLIENT_SECRET: ${BM_WEB_CLIENT_SECRET:-bm-web-dev-secret}
       # AES-256-GCM key for tokens at rest (base64, 32 bytes). Dev default: local use only.
       WEB_SESSION_KEY: ${WEB_SESSION_KEY:-SmSKlZZ67zH0iPvgrQkG8MuWdgcXgBOojZ2sFimNMvE=}
+      # Diagnostics (diagnostics-dashboard): the BFF mints/forwards the correlation id and posts
+      # metadata-only events to the API only when DIAGNOSTICS_ENABLED=true (same dev token as the api).
+      DIAGNOSTICS_ENABLED: ${DIAGNOSTICS_ENABLED:-false}
+      DIAGNOSTICS_TOKEN: ${DIAGNOSTICS_TOKEN:-bm-diagnostics-dev-token}
+      DIAGNOSTICS_INGEST_URL: http://api:3000/diagnostics/ingest
     ports:
       - "127.0.0.1:${WEB_PORT:-3100}:3000"
     healthcheck:
@@ -240,6 +256,89 @@ services:
       NEXT_TELEMETRY_DISABLED: "1"
     volumes:
       - .:/repo
+
+  # --- Diagnostics (profile "diagnostics"; feature diagnostics-dashboard, ADR 0006) ---
+  # Diagnostics metrics agent (profile "diagnostics", feature diagnostics-dashboard). Read-only
+  # sampler of host and per-container CPU/RAM/VRAM/GPU for the diagnostics dashboard.
+  # Privileges (spike A1, each one required and tested; ADR 0006):
+  #   pid: host + cgroup: host   see every container's PIDs and host-absolute cgroup paths
+  #   user: root + SYS_PTRACE    read /proc/<pid>/fd of llama-server and ComfyUI (VRAM per container)
+  #   /sys read-only             cgroup v2 counters, amdgpu card files, KFD sysfs
+  #   Docker socket              GET /containers/json and one inspect only (code allowlist); the
+  #                              ":ro" protects the socket file, not the Docker API
+  # No published port: only the compose network reaches :3300, and every data route needs
+  # X-Diagnostics-Token. The agent writes nothing (read_only root, no volumes of its own).
+  diagnostics-agent:
+    build:
+      context: .
+      dockerfile: apps/diagnostics-agent/Dockerfile
+    profiles: ["diagnostics"]
+    restart: unless-stopped
+    pid: host
+    cgroup: host
+    user: root
+    read_only: true
+    cap_drop:
+      - ALL
+    cap_add:
+      - SYS_PTRACE
+    security_opt:
+      - no-new-privileges:true
+    tmpfs:
+      - /tmp
+    environment:
+      PORT: 3300
+      DIAGNOSTICS_TOKEN: ${DIAGNOSTICS_TOKEN:-bm-diagnostics-dev-token}
+      LLAMA_MODELS_INI: /cfg/llama-models.ini
+    volumes:
+      - /sys:/sys:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./infra/ai/llama-models.ini:/cfg/llama-models.ini:ro
+    healthcheck:
+      # 200 only while a sample was produced in the last 5 s (no token needed, no data returned).
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3300/healthz').then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1))"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 5s
+
+  # Diagnostics dashboard (profile "diagnostics", feature diagnostics-dashboard): separate desktop web,
+  # no login, published on 127.0.0.1 only. Its server holds DIAGNOSTICS_TOKEN and proxies the API event
+  # stream, the API topology and the agent metrics stream to the browser (the token never reaches the
+  # browser). No depends_on: the page explains by itself when the API runs without DIAGNOSTICS_ENABLED
+  # (API DISABLED), when the token differs (TOKEN MISMATCH) or when the agent is down (NO AGENT).
+  diagnostics:
+    build:
+      context: .
+      dockerfile: apps/diagnostics/Dockerfile
+    profiles: ["diagnostics"]
+    restart: unless-stopped
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    tmpfs:
+      - /tmp
+    environment:
+      API_INTERNAL_URL: http://api:3000
+      AGENT_URL: http://diagnostics-agent:3300
+      # Read-only probe of the inbox list (ID, Created, Subject, masked To) for the inferred
+      # keycloak > mailpit event; never the snippet or the body.
+      MAILPIT_URL: http://mailpit:8025
+      DIAGNOSTICS_TOKEN: ${DIAGNOSTICS_TOKEN:-bm-diagnostics-dev-token}
+      # live (default) or replay (plays apps/diagnostics/replay/demo-simulation-budget.ndjson).
+      DIAGNOSTICS_SOURCE: ${DIAGNOSTICS_SOURCE:-live}
+      # Capacity of the API ring buffer, for the log footer "buffer n / N".
+      DIAGNOSTICS_BUFFER_SIZE: ${DIAGNOSTICS_BUFFER_SIZE:-1000}
+    ports:
+      - "127.0.0.1:${DIAGNOSTICS_PORT:-3200}:3000"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 15s
 
   # --- Local AI (profile "ai"; see docs/spikes/local-ai-gpu-spike.md) ---
   llama-server:

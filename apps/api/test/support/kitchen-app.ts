@@ -36,6 +36,13 @@ import { BUDGET_REPOSITORY } from '../../src/kitchen-projects/budget/budget.repo
 import { MemoryBudgetRepository } from './memory-budget-repository.js';
 import { GPU_BROKER_OPTIONS } from '../../src/ai/ai.tokens.js';
 import { DEFAULT_GPU_BROKER_OPTIONS, type GpuBrokerOptions } from '../../src/ai/jobs/gpu-broker.options.js';
+import { DIAGNOSTICS } from '../../src/diagnostics/diagnostics.types.js';
+import { correlationMiddleware } from '../../src/diagnostics/correlation.js';
+import { DiagnosticsService } from '../../src/diagnostics/diagnostics.service.js';
+import { createHttpEntryMiddleware } from '../../src/diagnostics/http-entry.js';
+import { InstrumentedImageAdapter } from '../../src/diagnostics/instrument/image.js';
+import { InstrumentedLlmAdapter } from '../../src/diagnostics/instrument/llm.js';
+import { InstrumentedObjectStorage } from '../../src/diagnostics/instrument/storage.js';
 import { createTestKeys, signToken, type TestKeys } from './tokens.js';
 
 export const DRAFTS = '/kitchen-projects/drafts';
@@ -63,6 +70,8 @@ export interface KitchenAppOptions {
   budgets?: MemoryBudgetRepository;
   /** Chunks the Catalog search returns for every query (default: the sample catalog's worktop and cabinet lines), or an error to throw. */
   catalogHits?: CatalogHit[] | Error;
+  /** Run with a real DiagnosticsService (fake adapters, in-memory storage wrapped like the enabled app does). */
+  diagnostics?: boolean;
 }
 
 export type CatalogHit = { chunkId: string; documentId: string; catalogName: string; fileName: string; pageNumber: number; text: string; score: number; matchedSku: boolean };
@@ -131,7 +140,12 @@ export async function createKitchenApp(options: KitchenAppOptions = {}) {
   const config: KitchenDraftConfig = { ttlDays: 7, cleanupIntervalMs: 0, maxOpen: 2000 };
   const clock = { now: new Date('2026-11-15T10:00:00.000Z') };
   const keys: TestKeys = await createTestKeys('kc-test-key');
-  const moduleRef = await Test.createTestingModule({ imports: [AppModule] })
+  const diagnostics = options.diagnostics
+    ? new DiagnosticsService({ token: 'test-diagnostics-token-123', adapters: 'fake', bufferSize: 20_000, bufferMaxBytes: 256 * 1024 * 1024, heartbeatMs: 15_000, env: {}, now: () => Date.now(), ingestPerSecond: 200 })
+    : undefined;
+  let builder = Test.createTestingModule({ imports: [AppModule] });
+  if (diagnostics) builder = builder.overrideProvider(DIAGNOSTICS).useValue(diagnostics);
+  const moduleRef = await builder
     .overrideProvider(PrismaService)
     .useValue({ $queryRaw: vi.fn(), $disconnect: vi.fn() })
     .overrideProvider(KEY_RESOLVER)
@@ -139,7 +153,7 @@ export async function createKitchenApp(options: KitchenAppOptions = {}) {
     .overrideProvider(KITCHEN_DRAFT_REPOSITORY)
     .useValue(repo)
     .overrideProvider(OBJECT_STORAGE)
-    .useValue(storage)
+    .useValue(diagnostics ? new InstrumentedObjectStorage(storage, diagnostics) : storage)
     .overrideProvider(KITCHEN_DRAFT_CONFIG)
     .useValue(config)
     .overrideProvider(KITCHEN_CLOCK)
@@ -155,7 +169,7 @@ export async function createKitchenApp(options: KitchenAppOptions = {}) {
     .overrideProvider(SIMULATION_CONFIG)
     .useValue(simulationConfig)
     .overrideProvider(IMAGE_ADAPTER)
-    .useValue(image)
+    .useValue(diagnostics ? new InstrumentedImageAdapter(image, diagnostics, true) : image)
     .overrideProvider(RENDER_CONFIG)
     .useValue(renderConfig)
     .overrideProvider(BUDGET_REPOSITORY)
@@ -163,13 +177,14 @@ export async function createKitchenApp(options: KitchenAppOptions = {}) {
     .overrideProvider(BUDGET_CONFIG)
     .useValue(budgetConfig)
     .overrideProvider(LLM_ADAPTER)
-    .useValue(llm)
+    .useValue(diagnostics ? new InstrumentedLlmAdapter(llm, diagnostics, { simulated: true, model: 'qwen3-vl' }) : llm)
     .overrideProvider(CatalogSearchService)
     .useValue(search)
     .overrideProvider(GPU_BROKER_OPTIONS)
     .useValue({ ...DEFAULT_GPU_BROKER_OPTIONS, ...options.broker })
     .compile();
   const app: INestApplication = configureApp(moduleRef.createNestApplication({ logger: false }));
+  if (diagnostics) app.use(correlationMiddleware, createHttpEntryMiddleware(diagnostics));
   await app.init();
   const jpeg = await makeImage(800, 600, 'jpeg');
   const http = () => request(app.getHttpServer());
@@ -291,7 +306,7 @@ export async function createKitchenApp(options: KitchenAppOptions = {}) {
     return simulations.seed({ id, kitchenProjectId: projectId, selected: options.selected ?? true }, records);
   }
 
-  return { ownedProject, seedReadySimulation, bearer, createSimulation, settleSimulation, selectedSimulation, app, moduleRef, repo, renders, simulations, traits, platformSettings, simulationConfig, budgets, llm, budgetConfig, searchCalls, image, renderConfig, storage, config, clock, keys, http, token, seedDraft, claim, jpeg };
+  return { diagnostics, ownedProject, seedReadySimulation, bearer, createSimulation, settleSimulation, selectedSimulation, app, moduleRef, repo, renders, simulations, traits, platformSettings, simulationConfig, budgets, llm, budgetConfig, searchCalls, image, renderConfig, storage, config, clock, keys, http, token, seedDraft, claim, jpeg };
 }
 
 export type KitchenApp = Awaited<ReturnType<typeof createKitchenApp>>;

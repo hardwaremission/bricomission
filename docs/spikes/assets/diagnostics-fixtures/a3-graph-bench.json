@@ -1,0 +1,134 @@
+{
+ "active=0&churn=0": {
+  "nodes": 25,
+  "edges": 25,
+  "handles": 150,
+  "frames": 601,
+  "fps": 60.1,
+  "frameMs": {
+   "p50": 16.7,
+   "p95": 16.7,
+   "p99": 16.8,
+   "max": 16.8
+  },
+  "over20ms": 0,
+  "over33ms": 0,
+  "mainThreadBusyPct": 0.4,
+  "allProcessesCpuCores": 0.01,
+  "jsHeapMB": 5.2,
+  "hosts": [
+   "localhost:3201"
+  ],
+  "external": 0
+ },
+ "active=6&dots=1&churn=10": {
+  "nodes": 25,
+  "edges": 25,
+  "handles": 150,
+  "frames": 600,
+  "fps": 60,
+  "frameMs": {
+   "p50": 16.7,
+   "p95": 16.7,
+   "p99": 16.8,
+   "max": 16.8
+  },
+  "over20ms": 0,
+  "over33ms": 0,
+  "mainThreadBusyPct": 10.3,
+  "allProcessesCpuCores": 1.48,
+  "jsHeapMB": 8.2,
+  "hosts": [
+   "localhost:3201"
+  ],
+  "external": 0
+ },
+ "active=6&dots=1&glow=0&churn=10": {
+  "nodes": 25,
+  "edges": 25,
+  "handles": 150,
+  "frames": 600,
+  "fps": 60,
+  "frameMs": {
+   "p50": 16.7,
+   "p95": 16.8,
+   "p99": 16.8,
+   "max": 16.8
+  },
+  "over20ms": 0,
+  "over33ms": 0,
+  "mainThreadBusyPct": 7.8,
+  "allProcessesCpuCores": 0.9,
+  "jsHeapMB": 7.8,
+  "hosts": [
+   "localhost:3201"
+  ],
+  "external": 0
+ },
+ "active=25&dots=0&churn=0": {
+  "nodes": 25,
+  "edges": 25,
+  "handles": 150,
+  "frames": 431,
+  "fps": 43.1,
+  "frameMs": {
+   "p50": 16.7,
+   "p95": 33.4,
+   "p99": 33.4,
+   "max": 33.4
+  },
+  "over20ms": 170,
+  "over33ms": 26,
+  "mainThreadBusyPct": 4,
+  "allProcessesCpuCores": 3.65,
+  "jsHeapMB": 5.5,
+  "hosts": [
+   "localhost:3201"
+  ],
+  "external": 0
+ },
+ "active=25&dots=1&churn=30": {
+  "nodes": 25,
+  "edges": 25,
+  "handles": 150,
+  "frames": 408,
+  "fps": 40.8,
+  "frameMs": {
+   "p50": 16.8,
+   "p95": 33.4,
+   "p99": 33.4,
+   "max": 33.5
+  },
+  "over20ms": 193,
+  "over33ms": 28,
+  "mainThreadBusyPct": 18.5,
+  "allProcessesCpuCores": 3.88,
+  "jsHeapMB": 12.4,
+  "hosts": [
+   "localhost:3201"
+  ],
+  "external": 0
+ },
+ "active=25&dots=1&glow=0&churn=30": {
+  "nodes": 25,
+  "edges": 25,
+  "handles": 150,
+  "frames": 601,
+  "fps": 60.1,
+  "frameMs": {
+   "p50": 16.7,
+   "p95": 16.7,
+   "p99": 16.8,
+   "max": 16.8
+  },
+  "over20ms": 0,
+  "over33ms": 0,
+  "mainThreadBusyPct": 16.1,
+  "allProcessesCpuCores": 2.1,
+  "jsHeapMB": 6.9,
+  "hosts": [
+   "localhost:3201"
+  ],
+  "external": 0
+ }
+}

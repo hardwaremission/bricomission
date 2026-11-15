@@ -1,4 +1,4 @@
-import { Inject, Injectable, Logger, type OnModuleDestroy, type OnModuleInit } from '@nestjs/common';
+import { Inject, Injectable, Logger, type OnModuleDestroy, type OnModuleInit, Optional } from '@nestjs/common';
 import type {
   GpuJobErrorCode,
   GpuJobEvent,
@@ -7,6 +7,9 @@ import type {
   GpuJobView,
 } from '@bricomission/shared-types';
 import { Observable, Subject } from 'rxjs';
+import { type CorrelationContext, currentCorrelation, runWithCorrelation } from '../../diagnostics/correlation.js';
+import { DIAGNOSTICS, type Diagnostics, type DiagnosticsSpanHandle } from '../../diagnostics/diagnostics.types.js';
+import { NULL_DIAGNOSTICS } from '../../diagnostics/null-diagnostics.js';
 import { GPU_BROKER_OPTIONS } from '../ai.tokens.js';
 import { GpuJobFailedError, GpuQueueFullError } from './gpu-job-broker.errors.js';
 import type { GpuBrokerOptions } from './gpu-broker.options.js';
@@ -56,6 +59,10 @@ interface JobRecord {
   reject: (error: GpuJobFailedError) => void;
   abort: AbortController | null;
   timer: NodeJS.Timeout | null;
+  /** Diagnostics correlation context of the submitter, re-entered when the job starts (it may start inside another job's finish). */
+  ctx: CorrelationContext | undefined;
+  /** Open diagnostics span (`gpu-broker` > `ai-adapters`) while the job runs. */
+  diagSpan?: DiagnosticsSpanHandle;
 }
 
 /**
@@ -78,6 +85,7 @@ export class GpuJobBrokerService implements GpuJobBroker, OnModuleInit, OnModule
   constructor(
     @Inject(GPU_BROKER_OPTIONS) private readonly options: GpuBrokerOptions,
     private readonly residency: GpuResidencyHook,
+    @Optional() @Inject(DIAGNOSTICS) private readonly diagnostics: Diagnostics = NULL_DIAGNOSTICS,
   ) {}
 
   onModuleInit(): void {
@@ -127,6 +135,7 @@ export class GpuJobBrokerService implements GpuJobBroker, OnModuleInit, OnModule
       reject,
       abort: null,
       timer: null,
+      ctx: currentCorrelation(),
     };
     this.jobs.set(job.id, job);
     this.queue.push(job);
@@ -185,7 +194,7 @@ export class GpuJobBrokerService implements GpuJobBroker, OnModuleInit, OnModule
   private pump(): void {
     while (this.queue.length > 0 && this.canStart(this.queue[0])) {
       const job = this.queue.shift() as JobRecord;
-      this.start(job);
+      runWithCorrelation(job.ctx, () => this.start(job));
     }
     this.refreshQueued();
   }
@@ -287,6 +296,32 @@ export class GpuJobBrokerService implements GpuJobBroker, OnModuleInit, OnModule
     };
     job.history.push(event);
     job.subject.next(event);
+    if (this.diagnostics.enabled) this.reportDiagnostics(job);
+  }
+
+  /** Dashboard view of a job event: waiting is a self event, running/done/failed is one span towards the adapters. */
+  private reportDiagnostics(job: JobRecord): void {
+    const short = job.id.slice(0, 8);
+    const payload = { jobId: short, kind: job.kind, position: job.position, waitingFor: job.waitingFor, queueLength: this.queue.length };
+    if (job.status === 'queued') {
+      if (job.waitingFor !== null) {
+        this.diagnostics.emit({ from: 'gpu-broker', to: 'gpu-broker', kind: 'queue', summary: `${job.kind} job ${short} queued at position ${job.position}, waiting for ${job.waitingFor}`, payload });
+      }
+      return;
+    }
+    if (job.status === 'running') {
+      job.diagSpan = this.diagnostics.span({ from: 'gpu-broker', to: 'ai-adapters', kind: 'queue', summary: `run ${job.kind} job ${short}`, payload });
+      return;
+    }
+    const ms = job.finishedAt !== null && job.startedAt !== null ? job.finishedAt - job.startedAt : undefined;
+    const failed = job.status === 'failed';
+    job.diagSpan?.end({
+      summary: failed ? `${job.kind} job ${short} failed (${job.errorCode ?? 'adapter_error'})` : `${job.kind} job ${short} done`,
+      payload: { ...payload, errorCode: job.errorCode, ms },
+      ok: !failed,
+      durationMs: ms,
+    });
+    job.diagSpan = undefined;
   }
 }
 

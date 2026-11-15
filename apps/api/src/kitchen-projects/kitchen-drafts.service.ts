@@ -1,7 +1,10 @@
 import { randomUUID } from 'node:crypto';
 import type { Readable } from 'node:stream';
-import { HttpException, HttpStatus, Inject, Injectable, Logger, NotFoundException, ServiceUnavailableException } from '@nestjs/common';
+import { HttpException, HttpStatus, Inject, Injectable, Logger, NotFoundException, Optional, ServiceUnavailableException } from '@nestjs/common';
 import type { KitchenDraftView, KitchenPhotoView, StartKitchenDraftResponse } from '@bricomission/shared-types';
+import { DIAGNOSTICS, type Diagnostics } from '../diagnostics/diagnostics.types.js';
+import { photoProcessed } from '../diagnostics/narrate/project.js';
+import { NULL_DIAGNOSTICS } from '../diagnostics/null-diagnostics.js';
 import { OBJECT_STORAGE, ObjectNotFoundError, type ObjectStorage } from '../storage/object-storage.js';
 import { StyleGalleryService } from '../style-gallery/style-gallery.service.js';
 import { generateDraftToken, hashDraftToken } from './draft-token.js';
@@ -22,7 +25,7 @@ import {
 } from './kitchen-drafts.repository.js';
 import { validateMeasurements } from './measurements.js';
 import { type GalleryLookup, MOODBOARD_LIMITS, moodboardItemView } from './moodboard/moodboard.js';
-import { PHOTO_LIMITS, PhotoRejectedError, processPhoto } from './photo-processor.js';
+import { PHOTO_LIMITS, PhotoRejectedError, processPhoto, sniffImageType } from './photo-processor.js';
 
 export type PhotoVariant = 'thumb' | 'full';
 
@@ -84,6 +87,7 @@ export class KitchenDraftsService {
     @Inject(KITCHEN_DRAFT_CONFIG) private readonly config: KitchenDraftConfig,
     @Inject(KITCHEN_CLOCK) private readonly clock: Clock,
     private readonly gallery: StyleGalleryService,
+    @Optional() @Inject(DIAGNOSTICS) private readonly diagnostics: Diagnostics = NULL_DIAGNOSTICS,
   ) {}
 
   view(draft: KitchenDraftRecord): KitchenDraftView {
@@ -122,6 +126,9 @@ export class KitchenDraftsService {
     } catch (error) {
       if (error instanceof PhotoRejectedError) throw draftError(PHOTO_ERROR_STATUS[error.code], error.code);
       throw error;
+    }
+    if (this.diagnostics.enabled) {
+      await photoProcessed(this.diagnostics, { source: sniffImageType(file), bytesIn: file.length, width: processed.width, height: processed.height, fullBytes: processed.full.length, thumbBytes: processed.thumb.length, image: processed.thumb });
     }
     const photoId = randomUUID();
     const keys = photoKeys(draft.id, photoId);

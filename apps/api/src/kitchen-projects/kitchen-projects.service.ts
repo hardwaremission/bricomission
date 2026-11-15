@@ -1,6 +1,9 @@
 import type { Readable } from 'node:stream';
-import { HttpException, Inject, Injectable, Logger, NotFoundException, ServiceUnavailableException } from '@nestjs/common';
+import { HttpException, Inject, Injectable, Logger, NotFoundException, Optional, ServiceUnavailableException } from '@nestjs/common';
 import type { ClaimKitchenDraftResponse, KitchenProjectView } from '@bricomission/shared-types';
+import { DIAGNOSTICS, type Diagnostics } from '../diagnostics/diagnostics.types.js';
+import { projectStep } from '../diagnostics/narrate/project.js';
+import { NULL_DIAGNOSTICS } from '../diagnostics/null-diagnostics.js';
 import { StyleGalleryService } from '../style-gallery/style-gallery.service.js';
 import { hashDraftToken, isDraftTokenFormat } from './draft-token.js';
 import { type Clock, KITCHEN_CLOCK } from './kitchen-projects.config.js';
@@ -36,6 +39,7 @@ export class KitchenProjectsService {
     private readonly gallery: StyleGalleryService,
     private readonly drafts: KitchenDraftsService,
     private readonly moodboard: MoodboardService,
+    @Optional() @Inject(DIAGNOSTICS) private readonly diagnostics: Diagnostics = NULL_DIAGNOSTICS,
   ) {}
 
   /**
@@ -47,6 +51,7 @@ export class KitchenProjectsService {
     if (!isDraftTokenFormat(draftToken)) throw new NotFoundException();
     const result = await this.db(() => this.repo.claimByTokenHash(hashDraftToken(draftToken), ownerSub, this.clock()));
     if (result === 'not_found') throw new NotFoundException();
+    projectStep(this.diagnostics, 'claim draft', { photos: result.record.photos.length, moodboardItems: result.record.moodboard.length });
     return { project: this.view(result.record) };
   }
 

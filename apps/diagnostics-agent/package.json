@@ -1,0 +1,20 @@
+{
+  "name": "@bricomission/diagnostics-agent",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "BricoMission diagnostics metrics agent: read-only host and per-container CPU/RAM/VRAM/GPU sampler (Node stdlib only, no runtime dependencies).",
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "lint": "eslint . && tsc --noEmit -p tsconfig.json",
+    "test": "vitest run --reporter=verbose",
+    "start": "node dist/main.js"
+  },
+  "devDependencies": {
+    "@bricomission/shared-types": "workspace:*",
+    "@types/node": "26.6.6",
+    "typescript": "6.0.3",
+    "vite": "8.3.8",
+    "vitest": "5.1.0"
+  }
+}

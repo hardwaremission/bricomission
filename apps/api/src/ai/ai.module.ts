@@ -7,6 +7,10 @@ import { FakeLlmAdapter } from './adapters/fake-llm.adapter.js';
 import type { ImageAdapter } from './adapters/image-adapter.js';
 import { DEFAULT_LLM_MODEL, LlamaServerLlmAdapter } from './adapters/llama-server-llm.adapter.js';
 import type { LlmAdapter } from './adapters/llm-adapter.js';
+import { DIAGNOSTICS } from '../diagnostics/diagnostics.types.js';
+import type { Diagnostics } from '../diagnostics/diagnostics.types.js';
+import { InstrumentedImageAdapter } from '../diagnostics/instrument/image.js';
+import { InstrumentedLlmAdapter } from '../diagnostics/instrument/llm.js';
 import { gpuBrokerOptionsFromEnv } from './jobs/gpu-broker.options.js';
 import { GpuJobBrokerService } from './jobs/gpu-job-broker.service.js';
 import { GpuJobsDebugController } from './jobs/gpu-jobs-debug.controller.js';
@@ -40,19 +44,23 @@ export class AiModule {
       { provide: AI_ENDPOINTS, useFactory: (): AiEndpointsProvider => new EnvAiEndpointsProvider(env) },
       {
         provide: LLM_ADAPTER,
-        inject: [AI_ENDPOINTS],
-        useFactory: (endpoints: AiEndpointsProvider): LlmAdapter =>
-          useLocal
+        inject: [AI_ENDPOINTS, { token: DIAGNOSTICS, optional: true }],
+        useFactory: (endpoints: AiEndpointsProvider, diagnostics?: Diagnostics): LlmAdapter => {
+          const adapter: LlmAdapter = useLocal
             ? new LlamaServerLlmAdapter(endpoints, llmModel)
-            : new FakeLlmAdapter({ delayMs: delayFromEnv(env.AI_FAKE_LLM_DELAY_MS, FAKE_LLM_DELAY_MS), budgetOrder: env.AI_FAKE_BUDGET_ORDER === 'misordered' ? 'misordered' : 'ordered' }),
+            : new FakeLlmAdapter({ delayMs: delayFromEnv(env.AI_FAKE_LLM_DELAY_MS, FAKE_LLM_DELAY_MS), budgetOrder: env.AI_FAKE_BUDGET_ORDER === 'misordered' ? 'misordered' : 'ordered' });
+          return diagnostics?.enabled ? new InstrumentedLlmAdapter(adapter, diagnostics, { simulated: !useLocal, model: llmModel }) : adapter;
+        },
       },
       {
         provide: IMAGE_ADAPTER,
-        inject: [AI_ENDPOINTS],
-        useFactory: (endpoints: AiEndpointsProvider): ImageAdapter =>
-          useLocal
+        inject: [AI_ENDPOINTS, { token: DIAGNOSTICS, optional: true }],
+        useFactory: (endpoints: AiEndpointsProvider, diagnostics?: Diagnostics): ImageAdapter => {
+          const adapter: ImageAdapter = useLocal
             ? new ComfyUiImageAdapter(endpoints)
-            : new FakeImageAdapter({ delayMs: delayFromEnv(env.AI_FAKE_IMAGE_DELAY_MS, FAKE_IMAGE_DELAY_MS) }),
+            : new FakeImageAdapter({ delayMs: delayFromEnv(env.AI_FAKE_IMAGE_DELAY_MS, FAKE_IMAGE_DELAY_MS) });
+          return diagnostics?.enabled ? new InstrumentedImageAdapter(adapter, diagnostics, !useLocal) : adapter;
+        },
       },
       {
         provide: LLM_UNLOADER,

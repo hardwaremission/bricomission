@@ -106,6 +106,11 @@ if ! docker compose config -q; then
   echo "ERROR: compose.yaml is invalid (docker compose config -q failed)" >&2
   exit 1
 fi
+# The diagnostics profile is never started here; only its compose definition is validated.
+if ! docker compose --profile diagnostics config -q; then
+  echo "ERROR: the diagnostics compose profile is invalid (docker compose --profile diagnostics config -q failed)" >&2
+  exit 1
+fi
 if ! docker compose up -d --build --wait --wait-timeout 300; then
   echo "ERROR: stack is not healthy:" >&2
   docker compose ps -a >&2 || true
@@ -253,6 +258,16 @@ api_budgets=$(curl -sS --max-time 10 -o /dev/null -w '%{http_code}' "http://127.
 echo "  API GET /kitchen-projects/00000000-0000-4000-8000-000000000000/budgets (no token) -> 401"
 
 echo
+echo "Diagnostics (off by default; the dashboard profile is never started by this script):"
+echo "  docker compose --profile diagnostics config -q -> ok"
+diag_topology=$(curl -sS --max-time 10 -o /dev/null -w '%{http_code}' "http://127.0.0.1:${api_port}/diagnostics/topology" 2>/dev/null || true)
+case "$diag_topology" in
+  404) echo "  API GET /diagnostics/topology (no token) -> 404 (module off: DIAGNOSTICS_ENABLED is not true)" ;;
+  401) echo "  [info] API GET /diagnostics/topology (no token) -> 401: diagnostics are ENABLED by your environment or .env (default is off)" ;;
+  *) web_fail "API GET /diagnostics/topology without a token gave '${diag_topology:-<none>}', expected 404 (off) or 401 (enabled)" ;;
+esac
+
+echo
 echo "Stack is up and healthy (detached)."
 echo "  Web:      http://localhost:${web_port}/  (PWA; language from the browser or the NEXT_LOCALE cookie; sign in from the Home header)"
 echo "  API:      http://127.0.0.1:${api_port}/health"
@@ -274,6 +289,10 @@ echo "  docker compose --profile ai-fetch run --rm ai-fetch   # one-time model d
 echo "  docker compose --profile ai up -d --wait               # llama-server + comfyui on the GPU"
 echo "  AI_ADAPTERS=local docker compose up -d --wait api      # API Renders through ComfyUI (then: bash scripts/ai/simulation-smoke.sh)"
 echo "  docker compose --profile ai stop llama-server comfyui  # stop only the GPU services (keeps volumes)"
+echo "Diagnostics dashboard (opt-in, desktop web on 127.0.0.1:3200, no login; never started by this script):"
+echo "  DIAGNOSTICS_ENABLED=true docker compose --profile diagnostics up -d --build --wait  # api + web emit events, dashboard + metrics agent"
+echo "  ${PNPM[*]} test:e2e:diagnostics                                                    # dashboard E2E (needs the line above, the embedder and the sample Catalog)"
+echo "  docker compose --profile diagnostics stop diagnostics diagnostics-agent && docker compose up -d --wait  # stop it, diagnostics off again"
 echo "Catalog RAG (opt-in, CPU-only embedder; never started by this script):"
 echo "  docker compose --profile rag-fetch run --rm embedder-fetch  # one-time embedding weight download (~640 MB)"
 echo "  docker compose --profile rag up -d --wait embedder          # CPU embedder (no GPU devices)"

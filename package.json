@@ -9,6 +9,7 @@
     "lint": "pnpm -r lint",
     "test": "pnpm -r test",
     "test:e2e": "bash scripts/web/e2e.sh",
+    "test:e2e:diagnostics": "bash scripts/diagnostics/e2e.sh",
     "lighthouse:pwa": "bash scripts/web/lighthouse-pwa.sh"
   },
   "devDependencies": {

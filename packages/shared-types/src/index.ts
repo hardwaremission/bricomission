@@ -459,3 +459,211 @@ export interface BudgetListResponse {
   /** Budgets of the selected Simulation, newest first: the current one plus an active or failed recompute (at most 2). */
   budgets: BudgetView[];
 }
+
+// ---------------------------------------------------------------------------
+// Diagnostics dashboard (feature diagnostics-dashboard). Type-only contracts of the
+// diagnostics event stream, the architecture topology and the ingest route.
+// ---------------------------------------------------------------------------
+
+/** The 23 graph nodes (browser, 8 containers and 14 API modules). Ids equal `design/openpencil/diagnostics-dashboard/layout-reference.json`. */
+export type DiagnosticsNodeId =
+  | 'browser'
+  | 'web'
+  | 'api-guards'
+  | 'project-service'
+  | 'style-gallery'
+  | 'simulation-runner'
+  | 'budget-engine'
+  | 'image-pipeline'
+  | 'style-engine'
+  | 'gpu-broker'
+  | 'budget-math'
+  | 'catalog-search'
+  | 'residency-hook'
+  | 'ai-adapters'
+  | 'storage-client'
+  | 'data-access'
+  | 'keycloak'
+  | 'mailpit'
+  | 'llama-server'
+  | 'comfyui'
+  | 'embedder'
+  | 'minio'
+  | 'postgres';
+
+/** What a communication is about. */
+export type DiagnosticsKind =
+  | 'http'
+  | 'auth'
+  | 'guard'
+  | 'sql'
+  | 'object'
+  | 'llm'
+  | 'image'
+  | 'embed'
+  | 'queue'
+  | 'residency'
+  | 'step'
+  | 'compute'
+  | 'mail'
+  | 'session';
+
+/** Typed pin (and structural edge) colours of the blueprint graph. */
+export type DiagnosticsPinType = 'http' | 'sql' | 'object' | 'llm' | 'image' | 'embed' | 'auth' | 'mail' | 'queue' | 'compute' | 'step';
+
+/**
+ * Pairs a request with its response. The `end` event repeats `from` and `to` of the `start` event;
+ * the dashboard draws the response in the reverse direction. The edge stays active while a span is open.
+ */
+export interface DiagnosticsSpan {
+  id: string;
+  phase: 'start' | 'end';
+}
+
+/**
+ * One communication between two nodes. `from === to` is a self event (the node glows, no edge).
+ * `id` is the numeric server sequence as a string (also the SSE `id`). `payload` is JSON that already
+ * went through redaction: never tokens, cookies, secrets, passwords, `styleSeed` or image bytes.
+ */
+export interface DiagnosticsEvent {
+  id: string;
+  /** Epoch milliseconds. */
+  ts: number;
+  /** 16 hex characters, or `system` for boot-time work. */
+  correlationId: string;
+  from: DiagnosticsNodeId;
+  to: DiagnosticsNodeId;
+  kind: DiagnosticsKind;
+  summary: string;
+  payload: Record<string, unknown>;
+  span?: DiagnosticsSpan;
+  durationMs?: number;
+  /** `false` marks a failed communication (red edge, node in error). */
+  ok?: boolean;
+  /** Produced by the fake adapters (dashed edge). */
+  simulated?: boolean;
+  /** Derived by polling another system (for example Mailpit), not seen directly. */
+  inferred?: boolean;
+  /** High-frequency status polling: coalesced in the log, drawn at low intensity. */
+  poll?: boolean;
+}
+
+/** An event as sent to `POST /diagnostics/ingest` (the server assigns `id`). */
+export type DiagnosticsIngestEvent = Omit<DiagnosticsEvent, 'id'>;
+
+/** First frame of `GET /diagnostics/stream` (`event: hello`, no SSE id). A changed `bootId` means: discard client state. */
+export interface DiagnosticsHello {
+  bootId: string;
+  enabled: true;
+  adapters: 'fake' | 'local';
+  oldestSeq: number;
+  newestSeq: number;
+  bufferCount: number;
+}
+
+export type DiagnosticsNodeKind = 'client' | 'container' | 'ai-gpu' | 'ai-cpu' | 'module';
+
+export type DiagnosticsGroupId = 'client' | 'web' | 'api' | 'identity_mail' | 'ai_inference' | 'data';
+
+/** Section of an API module (the 3 px strip colour of the design). */
+export type DiagnosticsModuleSection = 'request' | 'generation' | 'budget' | 'gpu' | 'infra';
+
+export interface DiagnosticsTopologyGroup {
+  id: DiagnosticsGroupId;
+  label: string;
+}
+
+export interface DiagnosticsTopologyModel {
+  role: string;
+  name: string;
+}
+
+export interface DiagnosticsTopologyNode {
+  id: DiagnosticsNodeId;
+  label: string;
+  group: DiagnosticsGroupId;
+  kind: DiagnosticsNodeKind;
+  /** Only for `module` nodes. */
+  section?: DiagnosticsModuleSection;
+  /** Pin ids are `in:<type>` and `out:<type>`: one per pin type the node receives or sends. */
+  pins: { in: DiagnosticsPinType[]; out: DiagnosticsPinType[] };
+  /** Read from real configuration (never hard-coded in the dashboard). */
+  models: DiagnosticsTopologyModel[];
+}
+
+export interface DiagnosticsTopologyEdge {
+  /** `<from>-<to>`. */
+  id: string;
+  from: DiagnosticsNodeId;
+  to: DiagnosticsNodeId;
+  kind: DiagnosticsPinType;
+  fromPin: string;
+  toPin: string;
+}
+
+/** Body of `GET /diagnostics/topology`. */
+export interface DiagnosticsTopology {
+  bootId: string;
+  groups: DiagnosticsTopologyGroup[];
+  nodes: DiagnosticsTopologyNode[];
+  edges: DiagnosticsTopologyEdge[];
+}
+
+// Metrics agent (`apps/diagnostics-agent`, internal port 3300). Every number is measured;
+// `null` means "not measurable here" and is shown as `n/a`, never replaced by a guess.
+
+/** Container state from the Docker list: `unhealthy` = running with a failing healthcheck; `absent` = no container of the service. */
+export type DiagnosticsContainerState = 'running' | 'unhealthy' | 'exited' | 'absent';
+
+/** Host totals (exact). `cpuPct` is the share of all host threads (0-100). */
+export interface DiagnosticsHostMetrics {
+  cpuPct: number | null;
+  /** Number of host CPU threads (`cpuN` lines of `/proc/stat`). */
+  threads: number | null;
+  ramUsedMiB: number | null;
+  ramTotalMiB: number | null;
+  vramUsedMiB: number | null;
+  vramTotalMiB: number | null;
+  /** Card-wide `gpu_busy_percent` (exact). */
+  gpuBusyPct: number | null;
+}
+
+/** One compose service. CPU, RAM and VRAM are exact; `gpuPct` is an attribution of the card-wide busy % and carries `approx: true`. */
+export interface DiagnosticsContainerMetrics {
+  state: DiagnosticsContainerState;
+  /** Share of all host threads (0-100); `cores` is the same usage in cores (`docker stats` % / 100). */
+  cpuPct: number | null;
+  cores: number | null;
+  /** `memory.current - inactive_file`, as `docker stats`. */
+  ramMiB: number | null;
+  /** Sum of `drm-memory-vram` over every PID of the cgroup, distinct `drm-client-id` (kfd `vram_*` fallback). */
+  vramMiB: number | null;
+  gpuPct: number | null;
+  /** Present (always `true`) when `gpuPct` is the card-wide busy % attributed by KFD compute-unit occupancy or VRAM share. */
+  approx?: true;
+}
+
+/** One sample per second (`GET /metrics`, `event: metrics` of `GET /metrics/stream`). Keys of `containers` are compose service names (`api` feeds the API box and the `shared` module widgets). */
+export interface DiagnosticsMetricsSample {
+  ts: number;
+  host: DiagnosticsHostMetrics;
+  containers: Record<string, DiagnosticsContainerMetrics>;
+}
+
+export interface DiagnosticsAgentCapabilities {
+  cgroupV2: boolean;
+  amdgpuFdinfo: boolean;
+  kfdSysfs: boolean;
+  dockerSocket: boolean;
+}
+
+/** Body of the agent's `GET /topology` and of its stream's `event: hello`. */
+export interface DiagnosticsAgentTopology {
+  bootId: string;
+  /** Compose project the agent belongs to (only its containers are reported); `null` when unknown. */
+  project: string | null;
+  intervalMs: number;
+  capabilities: DiagnosticsAgentCapabilities;
+  /** Model files of `llama-models.ini`: router id, `model` and `mmproj` base names. */
+  models: { id: string; model: string | null; mmproj: string | null }[];
+}

@@ -6,7 +6,7 @@ designAssets:
     - design/openpencil/bricomission_B2C_app.fig (page Home approved 2026-11-13; page Auth – Keycloak approved 2026-11-13; page Capture approved 2026-11-14; page Moodboard approved 2026-11-14; page Brand approved 2026-11-14 and all B2C pages recolored; page Generate approved 2026-11-14; other screens added per screen via open-pencil MCP)
     - design/openpencil/bricomission_B2B_dashboard.fig (to be created; Phase 2)
     - design/openpencil/bricomission_admin.fig (to be created; Phase 2)
-    - design/openpencil/bricomission_diagnostics.fig (to be created; MVP, added 2026-11-15)
+    - design/openpencil/bricomission_diagnostics.fig (approved 2026-11-15; read-back docs/design/diagnostics-dashboard.md, exports in design/openpencil/diagnostics-dashboard/)
   generatedConcepts: []
 colors:
   primary: "#2968EC"
@@ -180,4 +180,4 @@ WCAG 2.2 AA: text contrast ≥ 4.5:1, visible `focus` ring, all actions keyboard
 ## Open Design Questions
 
 - Logo and wordmark: resolved 2026-11-14 (`design/logo/`, page **Brand**).
-- Dark mode: not in MVP for the app. The `diagnostics-dashboard` (desktop, MVP, added 2026-11-15) has its own file `design/openpencil/bricomission_diagnostics.fig` with a dark blueprint look; it must not clash with the app tokens above, and its palette and components are defined by its read-back when designed. Only the welcome splash and the favicon follow `prefers-color-scheme`; pages and Keycloak stay light.
+- Dark mode: not in MVP for the app. The `diagnostics-dashboard` (desktop, MVP, added 2026-11-15) has its own file `design/openpencil/bricomission_diagnostics.fig` with a dark blueprint look; it must not clash with the app tokens above. Its palette, components and layout are defined only by its read-back `docs/design/diagnostics-dashboard.md` (approved 2026-11-15) and live in `apps/diagnostics/src/graph/tokens.ts` and `apps/diagnostics/src/app/globals.css`; none of the app tokens above apply to it. Only the welcome splash and the favicon follow `prefers-color-scheme`; pages and Keycloak stay light.
