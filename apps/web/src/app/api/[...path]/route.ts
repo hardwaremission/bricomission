@@ -1,6 +1,7 @@
 import { createApiProxy } from '../../../lib/api-proxy';
 import { readAuthConfig } from '../../../lib/auth/config';
 import { authRuntime } from '../../../lib/auth/runtime';
+import { sharedDiagnostics } from '../../../lib/diagnostics/emitter';
 import { clearCookie, SESSION_COOKIE } from '../../../lib/auth/session';
 
 // Runtime env (not next.config rewrites, which standalone output bakes in at build time).
@@ -12,6 +13,7 @@ const proxy = createApiProxy({
   // the request carries a bm_session cookie.
   resolveAccessToken: (cookieHeader) => authRuntime().sessions.getValidAccessToken(cookieHeader),
   clearSessionCookie: () => clearCookie(SESSION_COOKIE, readAuthConfig().webPublicUrl.startsWith('https:')),
+  diagnostics: sharedDiagnostics(),
 });
 
 export const GET = proxy;

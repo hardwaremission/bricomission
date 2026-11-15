@@ -37,7 +37,7 @@ The three roles are defined and seeded in the Keycloak realm. The Professional a
 - **Data & files**: PostgreSQL; MinIO (S3-compatible) object storage.
 - **AI**: provider-agnostic layer with hot-swappable endpoints — local models via Ollama / lemonade-server on an AMD Radeon 9070 XT, cloud fallback; ControlNet image pipeline.
 - **Real time**: Server-Sent Events for bid notifications *[Phase 2]*.
-- **Diagnostics dashboard** (MVP, planned): separate localhost-only desktop web with a live blueprint-style graph of every container and API module, a narrated log and per-module CPU/RAM/VRAM/GPU widgets.
+- **Diagnostics dashboard** (MVP, built): separate localhost-only desktop web (`http://localhost:3200`, no login) with a live blueprint-style graph of every container and API module, a narrated log with the real prompts, and CPU/RAM/VRAM/GPU widgets per container. `./launch-demo.sh` starts it with the demo; `docs/adr/0006-diagnostics-telemetry-and-metrics-agent.md` records its design and the privileges of its metrics agent.
 - **Infrastructure**: every service runs in Docker containers orchestrated with Docker Compose v2.
 - **Offline demo**: everything runs locally with no cloud dependencies.
 - **Dev machine**: Linux CachyOS, Ryzen 9 5950X, 64 GB RAM, Radeon RX 9070 XT 16 GB. VRAM limits which local models can be loaded at the same time.

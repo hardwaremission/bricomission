@@ -6,7 +6,7 @@ Host hardware and VRAM limits: doc section 1.4 of `Documentación del Proyecto_B
 
 Mobile-first PWA for Homeowners; the same PWA serves the B2B dashboard and the Admin Dashboard (desktop-friendly), both [Phase 2] since 2026-11-15 (their roles exist in Keycloak, their functions are not built in the delivered MVP).
 
-MVP addition (2026-11-15, planned, not built): `diagnostics-dashboard`, a separate desktop web (own URL and port on 127.0.0.1, own Compose profile, no login) that draws every container and API module as a blueprint-style node graph, animates the connections that are working, narrates each hop in a collapsible log, and shows CPU %, RAM, VRAM and GPU % per module. It is diagnostic only. Its technical design is decided in its feature spec. Framework-agnostic REST API reused later by a native iOS app.
+MVP addition (2026-11-15, built; ADR 0006, `ARCHITECTURE.md` section "Diagnostics"): `diagnostics-dashboard`, a separate desktop web (own URL and port on 127.0.0.1, own Compose profile, no login) that draws every container and API module as a blueprint-style node graph, animates the connections that are working, narrates each hop in a collapsible log, and shows CPU %, RAM, VRAM and GPU % per container (API modules share the API container's values). It is diagnostic only. Compose services `diagnostics` (127.0.0.1:3200) and `diagnostics-agent` (no published port), profile `diagnostics`, off by default (`DIAGNOSTICS_ENABLED`). Framework-agnostic REST API reused later by a native iOS app.
 
 ## Candidate Stack
 
@@ -113,7 +113,7 @@ Changed in `simulations-ux-overhaul` (ADR 0005): a Budget belongs to the selecte
 
 ## Observability
 
-Structured JSON logs from API (request id, user id, AI call duration, tokens, quota usage). Admin Dashboard shows token and image usage per user and per service [Phase 2]. No external monitoring in MVP; the planned `diagnostics-dashboard` (2026-11-15) is the live, local, diagnostic view of module activity and CPU/RAM/VRAM/GPU.
+Structured JSON logs from API (request id, user id, AI call duration, tokens, quota usage). Admin Dashboard shows token and image usage per user and per service [Phase 2]. No external monitoring in MVP; the `diagnostics-dashboard` (2026-11-15, ADR 0006) is the live, local, diagnostic view of module activity and CPU/RAM/VRAM/GPU: an own in-memory event bus over SSE with correlation ids and a read-only metrics agent, no OpenTelemetry, nothing persisted.
 
 ## Constraints
 

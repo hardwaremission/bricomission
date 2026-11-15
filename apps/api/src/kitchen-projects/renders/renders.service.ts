@@ -1,10 +1,13 @@
 import type { Readable } from 'node:stream';
-import { HttpException, HttpStatus, Inject, Injectable, Logger, NotFoundException, ServiceUnavailableException } from '@nestjs/common';
+import { HttpException, HttpStatus, Inject, Injectable, Logger, NotFoundException, Optional, ServiceUnavailableException } from '@nestjs/common';
 import type { RenderErrorCode, RenderView } from '@bricomission/shared-types';
 import { IMAGE_ADAPTER } from '../../ai/ai.tokens.js';
 import type { ImageAdapter, ImageReference } from '../../ai/adapters/image-adapter.js';
 import { GpuJobFailedError } from '../../ai/jobs/gpu-job-broker.errors.js';
 import { GpuJobBrokerService } from '../../ai/jobs/gpu-job-broker.service.js';
+import { DIAGNOSTICS, type Diagnostics } from '../../diagnostics/diagnostics.types.js';
+import { renderEncoded } from '../../diagnostics/narrate/simulation.js';
+import { NULL_DIAGNOSTICS } from '../../diagnostics/null-diagnostics.js';
 import { OBJECT_STORAGE, ObjectNotFoundError, type ObjectStorage } from '../../storage/object-storage.js';
 import { draftError } from '../kitchen-draft.errors.js';
 import { type Clock, KITCHEN_CLOCK } from '../kitchen-projects.config.js';
@@ -53,6 +56,7 @@ export class RendersService {
     @Inject(RENDER_CONFIG) private readonly config: RenderConfig,
     @Inject(KITCHEN_CLOCK) private readonly clock: Clock,
     private readonly broker: GpuJobBrokerService,
+    @Optional() @Inject(DIAGNOSTICS) private readonly diagnostics: Diagnostics = NULL_DIAGNOSTICS,
   ) {}
 
   /**
@@ -144,6 +148,7 @@ export class RendersService {
     );
     const encoded = await encodeRender(result.image, { width: render.width, height: render.height });
     if (signal.aborted) return; // timed out meanwhile: the failure path owns the row
+    renderEncoded(this.diagnostics, { fullBytes: encoded.full.length, thumbBytes: encoded.thumb.length, width: render.width, height: render.height, keys: [keys.full, keys.thumb] });
     try {
       await this.storage.put(keys.full, encoded.full, 'image/jpeg');
       await this.storage.put(keys.thumb, encoded.thumb, 'image/jpeg');

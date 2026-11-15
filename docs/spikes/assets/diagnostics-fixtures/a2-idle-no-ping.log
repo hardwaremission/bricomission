@@ -1,0 +1,7 @@
+0s event: hello
+0s data: {"bootId":"cf98fdf9","newest":0}
+0s 
+0s retry: 500
+0s 
+301s curl: (18) transfer closed with outstanding read data remaining
+curl exit after 301s

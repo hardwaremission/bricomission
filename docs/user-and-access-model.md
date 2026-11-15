@@ -69,6 +69,12 @@ The API is default-deny. Every route needs a valid Keycloak access token unless 
 - No messaging channel exists between Homeowner and Professional.
 - Costly AI calls check the Daily Quota when the Quota Flag is on; Administrator overrides take precedence over global limits.
 
+## Diagnostics Access (feature diagnostics-dashboard, ADR 0006)
+
+- The diagnostics dashboard (`http://localhost:3200`, Compose profile `diagnostics`) has **no login and no role**. Its only access control is the binding to `127.0.0.1`. It shows the prompts and project metadata of every Account, so it is for the presenter's machine only. It cannot write to the app.
+- The API routes `/diagnostics/*` exist only with `DIAGNOSTICS_ENABLED=true` (otherwise 404). They are `@Public()` for the JWT guard and protected by `DiagnosticsTokenGuard`: header `X-Diagnostics-Token` (shared secret `DIAGNOSTICS_TOKEN`, at least 16 characters). A Keycloak token of any role, a query-string token or no token gives 401. The token is held by the API, the web BFF, the metrics agent and the dashboard server; it never reaches a browser.
+- Events never carry tokens, cookies, passwords, secrets, email codes or image bytes; emails are masked and the Account subject appears only as an 8-character hash.
+
 ## Revocation / Expiry
 
 - Administrator disables an Account: Keycloak sessions are revoked; open Bids of that Professional stay with the Company and can be reassigned by an Administrator.

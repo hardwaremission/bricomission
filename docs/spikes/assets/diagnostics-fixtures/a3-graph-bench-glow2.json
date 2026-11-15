@@ -1,0 +1,46 @@
+{
+ "active=25&dots=1&glow=2&churn=30": {
+  "nodes": 25,
+  "edges": 25,
+  "handles": 150,
+  "frames": 602,
+  "fps": 60.2,
+  "frameMs": {
+   "p50": 16.7,
+   "p95": 16.7,
+   "p99": 16.8,
+   "max": 16.8
+  },
+  "over20ms": 0,
+  "over33ms": 0,
+  "mainThreadBusyPct": 17.1,
+  "allProcessesCpuCores": 2.28,
+  "jsHeapMB": 6,
+  "hosts": [
+   "localhost:3201"
+  ],
+  "external": 0
+ },
+ "active=6&dots=1&glow=2&churn=10": {
+  "nodes": 25,
+  "edges": 25,
+  "handles": 150,
+  "frames": 602,
+  "fps": 60.2,
+  "frameMs": {
+   "p50": 16.7,
+   "p95": 16.8,
+   "p99": 16.8,
+   "max": 16.8
+  },
+  "over20ms": 0,
+  "over33ms": 0,
+  "mainThreadBusyPct": 8.4,
+  "allProcessesCpuCores": 0.95,
+  "jsHeapMB": 8.7,
+  "hosts": [
+   "localhost:3201"
+  ],
+  "external": 0
+ }
+}

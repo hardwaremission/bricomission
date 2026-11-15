@@ -1,0 +1,200 @@
+[
+ {
+  "Id": "4e8613320a41ec20949805f1aa49e38dcffe26d8567cb5dd41301862fb1f5165",
+  "Names": [
+   "/diag-probe-a1"
+  ],
+  "State": "running",
+  "Status": "Up Less than a second",
+  "Labels": {
+   "com.docker.compose.project": "hardwaremissionbricomission",
+   "com.docker.compose.service": "api",
+   "com.docker.compose.version": "5.7.1"
+  }
+ },
+ {
+  "Id": "c66b690523d14894e73041889fc6d03a6503565dacbb37506bdf44ae3c7bcdcb",
+  "Names": [
+   "/hardwaremissionbricomission-api-1"
+  ],
+  "State": "running",
+  "Status": "Up 4 minutes (healthy)",
+  "Labels": {
+   "com.docker.compose.config-hash": "abc4959cd3a33ae5a9572a080140d67757f4225b9e452d225c3f3f4f0588a1d5",
+   "com.docker.compose.container-number": "1",
+   "com.docker.compose.depends_on": "postgres:service_healthy:false",
+   "com.docker.compose.image": "sha256:69cbe265857306b5976537acc6f1538f011e8a8b79cf51b5e132a5a4bea680dc",
+   "com.docker.compose.oneoff": "False",
+   "com.docker.compose.project": "hardwaremissionbricomission",
+   "com.docker.compose.project.config_files": "/home/juanmi/Proyectos/hardwaremission.bricomission/compose.yaml",
+   "com.docker.compose.project.working_dir": "/home/juanmi/Proyectos/hardwaremission.bricomission",
+   "com.docker.compose.replace": "api-1",
+   "com.docker.compose.service": "api",
+   "com.docker.compose.version": "5.7.1"
+  }
+ },
+ {
+  "Id": "aabe7a45285810ddd80238c05fd49229e07f37612860a861224464d5446ea989",
+  "Names": [
+   "/hardwaremissionbricomission-web-1"
+  ],
+  "State": "running",
+  "Status": "Up 4 minutes (healthy)",
+  "Labels": {
+   "com.docker.compose.config-hash": "30a73591d2be01820c028ebb1b21c8195b4834a41f981678a9d28f836a4ac54d",
+   "com.docker.compose.container-number": "1",
+   "com.docker.compose.depends_on": "",
+   "com.docker.compose.image": "sha256:b0d79bc98906115a4d52962a94cfc2480048aecdb9252538a2f9df879077ae72",
+   "com.docker.compose.oneoff": "False",
+   "com.docker.compose.project": "hardwaremissionbricomission",
+   "com.docker.compose.project.config_files": "/home/juanmi/Proyectos/hardwaremission.bricomission/compose.yaml",
+   "com.docker.compose.project.working_dir": "/home/juanmi/Proyectos/hardwaremission.bricomission",
+   "com.docker.compose.replace": "web-1",
+   "com.docker.compose.service": "web",
+   "com.docker.compose.version": "5.7.1"
+  }
+ },
+ {
+  "Id": "8929cb1d5d519b60f6b3dd5773ae5f6a06a0e0ff297c9d829735455fbbf93602",
+  "Names": [
+   "/hardwaremissionbricomission-llama-server-1"
+  ],
+  "State": "running",
+  "Status": "Up 4 minutes (healthy)",
+  "Labels": {
+   "com.docker.compose.config-hash": "a7a4942628ec73adf6632f3bc46bda9ccfcb87345ea71c9b55fb1fa8207648b5",
+   "com.docker.compose.container-number": "1",
+   "com.docker.compose.depends_on": "",
+   "com.docker.compose.image": "sha256:f30c0ec05148f64fa60a4d518dc18eb5c2c277c3f765948135278e90f9408612",
+   "com.docker.compose.oneoff": "False",
+   "com.docker.compose.project": "hardwaremissionbricomission",
+   "com.docker.compose.project.config_files": "/home/juanmi/Proyectos/hardwaremission.bricomission/compose.yaml",
+   "com.docker.compose.project.working_dir": "/home/juanmi/Proyectos/hardwaremission.bricomission",
+   "com.docker.compose.replace": "llama-server-1",
+   "com.docker.compose.service": "llama-server",
+   "com.docker.compose.version": "5.7.1"
+  }
+ },
+ {
+  "Id": "c7525eb43099189168d998cc95431319f12efc12f43e2de9e06daef028974e80",
+  "Names": [
+   "/hardwaremissionbricomission-comfyui-1"
+  ],
+  "State": "running",
+  "Status": "Up 4 minutes (healthy)",
+  "Labels": {
+   "com.docker.compose.config-hash": "5c53fe2bfbd0d600b9ad5f07d38f8f8b367c9f212f0dd7e4053b60bb0efe7b0b",
+   "com.docker.compose.container-number": "1",
+   "com.docker.compose.depends_on": "",
+   "com.docker.compose.image": "sha256:f27e87e8ddb09462425af33bb35d7ce5101739242088912b57824b5595f1c104",
+   "com.docker.compose.oneoff": "False",
+   "com.docker.compose.project": "hardwaremissionbricomission",
+   "com.docker.compose.project.config_files": "/home/juanmi/Proyectos/hardwaremission.bricomission/compose.yaml",
+   "com.docker.compose.project.working_dir": "/home/juanmi/Proyectos/hardwaremission.bricomission",
+   "com.docker.compose.replace": "comfyui-1",
+   "com.docker.compose.service": "comfyui",
+   "com.docker.compose.version": "5.7.1"
+  }
+ },
+ {
+  "Id": "5493e965dd46d9f892e48a6b4a10ee658d704785e56f7a331c27d05441cceeed",
+  "Names": [
+   "/hardwaremissionbricomission-embedder-1"
+  ],
+  "State": "running",
+  "Status": "Up 4 minutes (healthy)",
+  "Labels": {
+   "com.docker.compose.config-hash": "398e22f4711febb58fd30993545ffce5ab8e4a67713f69cb7926a75407de3d87",
+   "com.docker.compose.container-number": "1",
+   "com.docker.compose.depends_on": "",
+   "com.docker.compose.image": "sha256:2a371435461d0ce320c7103960c673b1976e07b230f470d9714fd0bec5a31d4e",
+   "com.docker.compose.oneoff": "False",
+   "com.docker.compose.project": "hardwaremissionbricomission",
+   "com.docker.compose.project.config_files": "/home/juanmi/Proyectos/hardwaremission.bricomission/compose.yaml",
+   "com.docker.compose.project.working_dir": "/home/juanmi/Proyectos/hardwaremission.bricomission",
+   "com.docker.compose.service": "embedder",
+   "com.docker.compose.version": "5.7.1"
+  }
+ },
+ {
+  "Id": "40e273f59cbc099882ab97f2855372f886232e492365de507a860c22c8c85633",
+  "Names": [
+   "/hardwaremissionbricomission-keycloak-1"
+  ],
+  "State": "running",
+  "Status": "Up 4 minutes (healthy)",
+  "Labels": {
+   "com.docker.compose.config-hash": "89f718ac21130b9596e6433d86a3c3789e322aa190ece9ef2bcd21607bae77de",
+   "com.docker.compose.container-number": "1",
+   "com.docker.compose.depends_on": "mailpit:service_healthy:false",
+   "com.docker.compose.image": "sha256:6ed70d1f071a089f01b3f7a42a8badacdf7f1879600154df7c50cb03ab6690b2",
+   "com.docker.compose.oneoff": "False",
+   "com.docker.compose.project": "hardwaremissionbricomission",
+   "com.docker.compose.project.config_files": "/home/juanmi/Proyectos/hardwaremission.bricomission/compose.yaml",
+   "com.docker.compose.project.working_dir": "/home/juanmi/Proyectos/hardwaremission.bricomission",
+   "com.docker.compose.replace": "keycloak-1",
+   "com.docker.compose.service": "keycloak",
+   "com.docker.compose.version": "5.7.1"
+  }
+ },
+ {
+  "Id": "515258e01afd1391a654ffbd23f81eecb53d58caaff96b407771777d72e4c1cd",
+  "Names": [
+   "/hardwaremissionbricomission-postgres-1"
+  ],
+  "State": "running",
+  "Status": "Up 4 minutes (healthy)",
+  "Labels": {
+   "com.docker.compose.config-hash": "06dcac7f45facd131e7cabc686a9c01cdd885ae30357dcc26a811bc91e741ebd",
+   "com.docker.compose.container-number": "1",
+   "com.docker.compose.depends_on": "",
+   "com.docker.compose.image": "sha256:99a149d3c84cfb0f32d8da7d72737e4643468787220af2223418730f8e9e9cdc",
+   "com.docker.compose.oneoff": "False",
+   "com.docker.compose.project": "hardwaremissionbricomission",
+   "com.docker.compose.project.config_files": "/home/juanmi/Proyectos/hardwaremission.bricomission/compose.yaml",
+   "com.docker.compose.project.working_dir": "/home/juanmi/Proyectos/hardwaremission.bricomission",
+   "com.docker.compose.service": "postgres",
+   "com.docker.compose.version": "5.7.1"
+  }
+ },
+ {
+  "Id": "0b361d379e46b90628e0f3525e6fcd08690a299c67df18964ed0fd706f15296c",
+  "Names": [
+   "/hardwaremissionbricomission-minio-1"
+  ],
+  "State": "running",
+  "Status": "Up 4 minutes (healthy)",
+  "Labels": {
+   "com.docker.compose.config-hash": "7d30ac828e411710177cf731752990ff7352a8971fd014fe2c651398711bd2f5",
+   "com.docker.compose.container-number": "1",
+   "com.docker.compose.depends_on": "",
+   "com.docker.compose.image": "sha256:2b36182f3479c58b5cba920f20479738ee85ce218de0596a244f9a1368268db9",
+   "com.docker.compose.oneoff": "False",
+   "com.docker.compose.project": "hardwaremissionbricomission",
+   "com.docker.compose.project.config_files": "/home/juanmi/Proyectos/hardwaremission.bricomission/compose.yaml",
+   "com.docker.compose.project.working_dir": "/home/juanmi/Proyectos/hardwaremission.bricomission",
+   "com.docker.compose.service": "minio",
+   "com.docker.compose.version": "5.7.1"
+  }
+ },
+ {
+  "Id": "c6db47ed54c50fbaa97a2118fc56cc2b18e3efe9d98a4ebfecabb79073167182",
+  "Names": [
+   "/hardwaremissionbricomission-mailpit-1"
+  ],
+  "State": "running",
+  "Status": "Up 4 minutes (healthy)",
+  "Labels": {
+   "com.docker.compose.config-hash": "75790a7e7a224b2420dfe84a57dba07365680d699e7c693a647274dadedaad5f",
+   "com.docker.compose.container-number": "1",
+   "com.docker.compose.depends_on": "",
+   "com.docker.compose.image": "sha256:c95e8356f55b65520e8b7fd4d74d3e2d06e4a83513f639e316b1e592fbd52646",
+   "com.docker.compose.oneoff": "False",
+   "com.docker.compose.project": "hardwaremissionbricomission",
+   "com.docker.compose.project.config_files": "/home/juanmi/Proyectos/hardwaremission.bricomission/compose.yaml",
+   "com.docker.compose.project.working_dir": "/home/juanmi/Proyectos/hardwaremission.bricomission",
+   "com.docker.compose.service": "mailpit",
+   "com.docker.compose.version": "5.7.1"
+  }
+ }
+]

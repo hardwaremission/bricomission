@@ -1,5 +1,5 @@
 import { randomInt, randomUUID } from 'node:crypto';
-import { BadRequestException, HttpException, HttpStatus, Inject, Injectable, Logger, NotFoundException, ServiceUnavailableException } from '@nestjs/common';
+import { BadRequestException, HttpException, HttpStatus, Inject, Injectable, Logger, NotFoundException, Optional, ServiceUnavailableException } from '@nestjs/common';
 import type {
   CreateSimulationResponse,
   SelectSimulationResponse,
@@ -8,6 +8,9 @@ import type {
   SimulationView,
 } from '@bricomission/shared-types';
 import { GpuQueueFullError } from '../../ai/jobs/gpu-job-broker.errors.js';
+import { DIAGNOSTICS, type Diagnostics } from '../../diagnostics/diagnostics.types.js';
+import * as narrate from '../../diagnostics/narrate/simulation.js';
+import { NULL_DIAGNOSTICS } from '../../diagnostics/null-diagnostics.js';
 import { PlatformSettingsService } from '../../platform-settings/platform-settings.service.js';
 import { OBJECT_STORAGE, type ObjectStorage } from '../../storage/object-storage.js';
 import { StyleGalleryService } from '../../style-gallery/style-gallery.service.js';
@@ -57,6 +60,7 @@ export class SimulationsService {
     private readonly renders: RendersService,
     private readonly gallery: StyleGalleryService,
     private readonly settings: PlatformSettingsService,
+    @Optional() @Inject(DIAGNOSTICS) private readonly diagnostics: Diagnostics = NULL_DIAGNOSTICS,
   ) {}
 
   async create(project: KitchenProjectRecord, ownerSub: string): Promise<CreateSimulationResponse> {
@@ -68,6 +72,7 @@ export class SimulationsService {
     const styleSeed = randomInt(0, 2 ** 31);
     const isFirst = (await this.db(() => this.repo.countByProject(project.id))) === 0;
     const weights = calculateWeights(references.length, styleSeed, isFirst);
+    narrate.styleWeights(this.diagnostics, { blendMode, isFirst, entries: references.map((reference, index) => ({ ...reference, weight: weights[index] as number })) });
     const dominant = buildRenderPrompt(project.moodboard, this.gallery);
     const simulationId = randomUUID();
     const createdAt = this.clock();
@@ -81,6 +86,7 @@ export class SimulationsService {
         const id = randomUUID();
         const keys = renderKeys(project.id, id);
         const before = await cropBefore(await this.readObject(photo.fullKey), size);
+        narrate.beforeCrop(this.diagnostics, { index: photo.position + 1, total: photos.length, width: size.width, height: size.height, bytes: before.length, key: keys.before });
         await this.storage.put(keys.before, before, 'image/jpeg');
         stored.push(keys.before);
         newRenders.push({

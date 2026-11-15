@@ -16,12 +16,28 @@ export default defineConfig({
   projects: [
     {
       name: 'mobile-390',
+      // The diagnostics dashboard is a desktop web: its spec runs only in desktop-1920.
+      testIgnore: '**/diagnostics.spec.ts',
       use: {
         browserName: 'chromium',
         viewport: { width: 390, height: 844 },
         isMobile: true,
         hasTouch: true,
         deviceScaleFactor: 2,
+      },
+    },
+    {
+      // Feature diagnostics-dashboard: the dashboard (compose profile "diagnostics") at 1920x1080. Its
+      // spec skips itself with a message when the dashboard is not running, so a plain `pnpm test:e2e`
+      // on the default stack stays green. Full run: `pnpm test:e2e:diagnostics`.
+      name: 'desktop-1920',
+      testMatch: '**/diagnostics.spec.ts',
+      use: {
+        browserName: 'chromium',
+        viewport: { width: 1920, height: 1080 },
+        isMobile: false,
+        hasTouch: false,
+        deviceScaleFactor: 1,
       },
     },
   ],

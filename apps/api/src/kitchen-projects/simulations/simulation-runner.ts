@@ -1,11 +1,14 @@
 import { createHash } from 'node:crypto';
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger, Optional } from '@nestjs/common';
 import sharp from 'sharp';
 import type { ImageReference } from '../../ai/adapters/image-adapter.js';
 import type { LlmAdapter } from '../../ai/adapters/llm-adapter.js';
 import { LLM_ADAPTER } from '../../ai/ai.tokens.js';
 import { GpuQueueFullError } from '../../ai/jobs/gpu-job-broker.errors.js';
 import { GpuJobBrokerService } from '../../ai/jobs/gpu-job-broker.service.js';
+import { DIAGNOSTICS, type Diagnostics } from '../../diagnostics/diagnostics.types.js';
+import * as narrate from '../../diagnostics/narrate/simulation.js';
+import { NULL_DIAGNOSTICS } from '../../diagnostics/null-diagnostics.js';
 import { OBJECT_STORAGE, type ObjectStorage } from '../../storage/object-storage.js';
 import { StyleGalleryService } from '../../style-gallery/style-gallery.service.js';
 import type { KitchenProjectRecord } from '../kitchen-drafts.repository.js';
@@ -33,6 +36,7 @@ export interface RunContext {
 }
 
 interface LoadedReference {
+  kind: 'gallery' | 'upload';
   weight: number;
   image: Buffer;
   hash: string;
@@ -99,6 +103,7 @@ export class SimulationRunner {
     private readonly broker: GpuJobBrokerService,
     private readonly renders: RendersService,
     private readonly gallery: StyleGalleryService,
+    @Optional() @Inject(DIAGNOSTICS) private readonly diagnostics: Diagnostics = NULL_DIAGNOSTICS,
   ) {}
 
   /** Runs a new Simulation. Rejects with `GpuQueueFullError` when its first job could not be queued (nothing ran). */
@@ -117,6 +122,7 @@ export class SimulationRunner {
     void (async () => {
       try {
         const render = simulation.renders.find((candidate) => candidate.id === renderId);
+        if (render) narrate.runnerStep(this.diagnostics, `retry render ${render.photoPosition + 1} (attempt ${render.attempts})`, { attempts: render.attempts });
         if (render) await this.renderAll(simulation, [render], ctx, await this.loadReferences(simulation, ctx.project), first);
         else first.ok();
       } catch (error) {
@@ -132,6 +138,7 @@ export class SimulationRunner {
   private async execute(simulation: SimulationAggregate, ctx: RunContext, first: FirstSubmit): Promise<void> {
     try {
       const references = await this.loadReferences(simulation, ctx.project);
+      if (this.diagnostics.enabled) await narrate.referencesLoaded(this.diagnostics, simulation.blendMode, references);
       const style = await this.resolveStyle(simulation, ctx, references, first);
       await this.sims.setStyle(simulation.id, style, this.clock());
       await this.sims.setStage(simulation.id, 'rendering', this.clock());
@@ -147,9 +154,18 @@ export class SimulationRunner {
     try {
       for (const render of simulation.renders) await this.renderRepo.markFailed(render.id, 'adapter_error', this.clock());
       await this.sims.setStage(simulation.id, 'finished', this.clock());
+      if (this.diagnostics.enabled) await this.reportFinished(simulation);
     } catch (error) {
       this.logger.warn(`Simulation stage not stored (${error instanceof Error ? error.name : 'unknown'})`);
     }
+  }
+
+  private async reportFinished(simulation: SimulationAggregate): Promise<void> {
+    const fresh = await this.sims.find(simulation.kitchenProjectId, simulation.id);
+    const renders = fresh?.renders ?? simulation.renders;
+    const succeeded = renders.filter((render) => render.status === 'succeeded').length;
+    const outcome = succeeded === renders.length ? 'succeeded' : succeeded === 0 ? 'failed' : 'partial';
+    narrate.runnerStep(this.diagnostics, `finished: ${outcome} (${succeeded} of ${renders.length} Renders)`, { outcome, succeeded, total: renders.length }, outcome !== 'failed');
   }
 
   /** The style of the Simulation for its blend mode (Decision 2 and 3); never throws on vision failures. */
@@ -160,15 +176,22 @@ export class SimulationRunner {
       styleDegraded: false,
       prompt: composeRenderPositive(ctx.dominant.text),
     };
-    if (simulation.blendMode === 'ip_adapter') return dominant;
+    if (simulation.blendMode === 'ip_adapter') {
+      narrate.mergedStyle(this.diagnostics, { text: dominant.styleText, keywords: dominant.styleKeywords, degraded: false, blendMode: simulation.blendMode });
+      return dominant;
+    }
     const degraded: StyleResult = { ...dominant, styleKeywords: [], styleDegraded: true };
-    if (references.length === 0) return degraded;
+    if (references.length === 0) {
+      narrate.mergedStyle(this.diagnostics, { text: degraded.styleText, keywords: [], degraded: true, blendMode: simulation.blendMode });
+      return degraded;
+    }
     let described: Map<string, StyleTraits>;
     try {
       described = await this.describe(references, ctx.ownerSub, first);
     } catch (error) {
       if (error instanceof GpuQueueFullError && !first.isSettled) throw error; // the caller answers 429
       this.logger.warn(`Style description failed (${error instanceof Error ? error.name : 'unknown'})`);
+      narrate.mergedStyle(this.diagnostics, { text: degraded.styleText, keywords: [], degraded: true, blendMode: simulation.blendMode });
       return degraded;
     }
     const entries = references.flatMap((reference) => {
@@ -178,6 +201,7 @@ export class SimulationRunner {
     if (entries.length === 0) return degraded;
     const merged = mergeTraits(entries, simulation.styleSeed);
     if (merged.text === '') return degraded;
+    narrate.mergedStyle(this.diagnostics, { text: merged.text, keywords: merged.keywords, degraded: false, blendMode: simulation.blendMode });
     return { styleText: merged.text, styleKeywords: merged.keywords, styleDegraded: false, prompt: composeRenderPositive(merged.text) };
   }
 
@@ -192,7 +216,9 @@ export class SimulationRunner {
       if (traits) result.set(hash, traits);
     }
     const missing = hashes.filter((hash) => !result.has(hash)).map((hash) => references.find((reference) => reference.hash === hash) as LoadedReference);
+    narrate.runnerStep(this.diagnostics, `describing (${hashes.length} reference${hashes.length === 1 ? '' : 's'}, ${missing.length} not cached)`, { references: hashes.length, cached: hashes.length - missing.length });
     if (missing.length === 0) return result;
+    narrate.submitJob(this.diagnostics, `submit llm job (describe ${missing.length} reference${missing.length === 1 ? '' : 's'})`, { kind: 'llm', references: missing.length });
     const handle = this.broker.submit(
       'llm',
       async ({ signal }) => {
@@ -217,6 +243,8 @@ export class SimulationRunner {
   private async renderAll(simulation: SimulationAggregate, renders: RenderRecord[], ctx: RunContext, references: LoadedReference[], first: FirstSubmit): Promise<void> {
     const input = { negativePrompt: ctx.negativePrompt, references: this.imageReferences(simulation, references), ownerSub: ctx.ownerSub };
     for (const render of renders) {
+      narrate.runnerStep(this.diagnostics, `rendering ${simulation.renders.findIndex((r) => r.id === render.id) + 1} of ${simulation.renders.length}`, { photoPosition: render.photoPosition });
+      narrate.submitJob(this.diagnostics, `submit image job ${simulation.renders.findIndex((r) => r.id === render.id) + 1} of ${simulation.renders.length}`, { kind: 'image', width: render.width, height: render.height });
       let job: { done: Promise<void> } | null = null;
       for (let attempt = 1; job === null; attempt++) {
         try {
@@ -253,7 +281,7 @@ export class SimulationRunner {
         const source = entry.kind === 'gallery' ? await this.gallery.content(entry.refId, 'full') : await this.readUpload(project, entry.refId);
         if (!source) continue;
         const image = await scaleReference(source);
-        loaded.push({ weight: entry.weight, image, hash: createHash('sha256').update(image).digest('hex') });
+        loaded.push({ kind: entry.kind, weight: entry.weight, image, hash: createHash('sha256').update(image).digest('hex') });
       } catch (error) {
         this.logger.warn(`Style reference skipped (${error instanceof Error ? error.name : 'unknown'})`);
       }

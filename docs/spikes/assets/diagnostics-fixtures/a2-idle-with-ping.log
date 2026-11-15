@@ -1,0 +1,63 @@
+0s event: hello
+0s data: {"bootId":"cd62b000","newest":0}
+0s 
+0s retry: 500
+0s 
+15s : ping
+15s 
+30s : ping
+30s 
+45s : ping
+45s 
+60s : ping
+60s 
+75s : ping
+75s 
+90s : ping
+90s 
+105s : ping
+105s 
+120s : ping
+120s 
+135s : ping
+135s 
+150s : ping
+150s 
+165s : ping
+165s 
+180s : ping
+180s 
+195s : ping
+195s 
+210s : ping
+210s 
+225s : ping
+225s 
+240s : ping
+240s 
+255s : ping
+255s 
+270s : ping
+270s 
+285s : ping
+285s 
+300s : ping
+300s 
+315s : ping
+315s 
+316s id: 1
+316s event: tick
+316s data: {"id":1,"ts":1794701204119,"pad":"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"}
+316s 
+330s : ping
+330s 
+345s : ping
+345s 
+360s : ping
+360s 
+375s : ping
+375s 
+390s : ping
+390s 
+400s curl: (28) Operation timed out after 400004 milliseconds with 535 bytes received
+curl exit after 400s

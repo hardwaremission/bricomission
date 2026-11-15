@@ -4,6 +4,8 @@ import { createSchemaGuard } from './db/migrations';
 import { getPool } from './db/pool';
 import { createPgSessionRepository, type SessionRepository } from './db/session-repository';
 import { createAuthHandlers, type AuthHandlers } from './handlers';
+import { instrumentOidc } from '../diagnostics/oidc';
+import { sharedDiagnostics } from '../diagnostics/emitter';
 import { createOidcClient, type OidcClient } from './oidc';
 import { createSessionService, type SessionService } from './session';
 
@@ -38,7 +40,7 @@ function build(): AuthRuntime {
     }
     return repository;
   };
-  const oidc = () => (oidcClient ??= createOidcClient(getConfig()));
+  const oidc = () => (oidcClient ??= instrumentOidc(createOidcClient(getConfig()), sharedDiagnostics()));
   const sessions = createSessionService({ repo, oidc });
   return { config: getConfig, sessions, handlers: createAuthHandlers({ config: getConfig, repo, oidc, sessions }) };
 }
