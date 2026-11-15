@@ -127,7 +127,8 @@ docker compose up -d --build --wait
 
 step "Catalog search (CPU embedder) and the sample Catalog"
 docker compose --profile rag up -d --wait embedder
-./scripts/catalog/ingest.sh infra/catalog/samples
+# Sample Catalog ingest disabled: the developer is testing with their own Catalog data.
+# ./scripts/catalog/ingest.sh infra/catalog/samples
 
 if [ "$MODE" = local ]; then
   step "AI services on the GPU (llama-server, ComfyUI)"

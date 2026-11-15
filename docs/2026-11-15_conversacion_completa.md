@@ -1,6 +1,6 @@
 # Registro de conversación con Claude Code · 2026-11-15
 
-_Actualizado: 2026-11-15 16:40_
+_Actualizado: 2026-11-16 00:11_
 
 
 ---
@@ -2829,3 +2829,199 @@ Token: busqué el valor exacto de `BRICOMISSION_GITHUB_PAT` en todos los archivo
 Decisiones tuyas:
 1. ¿Hago push de la rama y abro el PR con `Closes #31`?
 2. `CLAUDE.md` tiene dos líneas obsoletas: "planned, not built yet" y "`bricomission_diagnostics.fig`, to be created". ¿Las actualizo?
+
+
+### 🧑 **Juan Miguel** · 2026-11-15 16:40:07
+
+Hazlo
+
+
+### 🤖 **Claude** · 2026-11-15 16:40:10
+
+> 🔧 **Bash**: `{"command": "grep -n 'planned, not built yet\\|to be created' CLAUDE.md", "description": "Locate the two stale lines in CLAUDE.md"}`
+
+
+### 🤖 **Claude** · 2026-11-15 16:40:11
+
+> 🔧 **Read**: `{"file_path": "/home/juanmi/Proyectos/hardwaremission.bricomission/CLAUDE.md"}`
+
+
+### 🤖 **Claude** · 2026-11-15 16:40:15
+
+> 🔧 **Edit**: `{"replace_all": false, "file_path": "/home/juanmi/Proyectos/hardwaremission.bricomission/CLAUDE.md", "old_string": "`bricomission_diagnostics.fig`, to be created)", "new_string": "`bricomission_diagnostics.fig`)"}`
+
+
+### 🤖 **Claude** · 2026-11-15 16:40:16
+
+> 🔧 **Edit**: `{"replace_all": false, "file_path": "/home/juanmi/Proyectos/hardwaremission.bricomission/CLAUDE.md", "old_string": "(MVP, closes it; planned, not built yet): separate localhost-only desktop web on its own port and Compose profile, no login,", "new_string": "(MVP, closes it; built and `accepted` 2026`
+
+
+### 🤖 **Claude** · 2026-11-15 16:40:20
+
+> 🔧 **Bash**: `{"command": "if [ -n \"${BRICOMISSION_GITHUB_PAT:-}\" ]; then git ls-files -m -z | xargs -0 grep -lIF -- \"$BRICOMISSION_GITHUB_PAT\" 2>/dev/null; fi; git ls-files -m -z | xargs -0 grep -lIE 'github_pat_[A-Za-z0-9_]{20,}|ghp_[A-Za-z0-9]{30,}' 2>/dev/null; git add -A && git commit -q -m \"docs: mark `
+
+
+### 🤖 **Claude** · 2026-11-15 16:40:21
+
+> 🔧 **mcp__github__list_pull_requests**: `{"owner": "hardwaremission", "repo": "bricomission", "head": "hardwaremission:feature/diagnostics-dashboard", "state": "open", "fields": ["number", "title", "html_url"]}`
+
+
+### 🤖 **Claude** · 2026-11-15 16:40:40
+
+> 🔧 **mcp__github__create_pull_request**: `{"owner": "hardwaremission", "repo": "bricomission", "title": "[diagnostics-dashboard] Live blueprint-style diagnostics dashboard of the whole architecture", "head": "feature/diagnostics-dashboard", "base": "main", "body": "Closes #31\n\n## Summary\n\nCloses the MVP. A separate localhost-only deskto`
+
+
+### 🤖 **Claude** · 2026-11-15 16:40:46
+
+Hecho.
+
+- `CLAUDE.md` actualizado (commit `0ed9d61`).
+- Rama `feature/diagnostics-dashboard` subida.
+- PR abierto: https://github.com/hardwaremission/bricomission/pull/32 (`Closes #31`).
+
+El merge es tuyo. Cuando lo confirmes: vuelvo a `main`, `git pull --ff-only` y borro la rama local y remota.
+
+
+### 🧑 **Juan Miguel** · 2026-11-15 16:41:52
+
+confirmado
+
+
+### 🤖 **Claude** · 2026-11-15 16:41:56
+
+> 🔧 **mcp__github__pull_request_read**: `{"method": "get", "owner": "hardwaremission", "repo": "bricomission", "pullNumber": 32}`
+
+
+### 🤖 **Claude** · 2026-11-15 16:42:02
+
+> 🔧 **Bash**: `{"command": "git status --short | head; git stash -q 2>/dev/null; git checkout -q main && GIT_TERMINAL_PROMPT=0 git pull --ff-only 2>&1 | tail -2 && git stash drop -q 2>/dev/null; git log --oneline -3 && git branch --merged main | grep -q 'feature/diagnostics-dashboard' && git branch -d feature/diag`
+
+
+### 🤖 **Claude** · 2026-11-15 16:42:10
+
+PR #32 mergeado. Estoy en `main` actualizado (`25a1496`); rama `feature/diagnostics-dashboard` borrada en local y remoto.
+
+MVP completo: 17 features `accepted`. Siguiente paso del plan: vídeo demo (empieza por mi propuesta de guion).
+
+Pendiente tuyo: rotar `BRICOMISSION_GITHUB_PAT`.
+
+
+### 🧑 **Juan Miguel** · 2026-11-15 16:44:14
+
+dame:
+El comando para vaciar todos los usuarios de keycloak para empezar la demo con mi login
+El comnado para vaciar completamente el RAG, quiero hacer una prueba con otros datos que no sean los de demo
+
+
+### 🤖 **Claude** · 2026-11-15 16:44:21
+
+> 🔧 **Bash**: `{"command": "grep -n '^name:' compose.yaml; docker volume ls --format '{{.Name}}' | grep -i -E 'keycloak|postgres'; docker compose ps --format '{{.Name}}' | head -3; grep -n -i 'catalog' apps/api/prisma/schema.prisma | head -20; grep -n 'POSTGRES_USER\\|POSTGRES_DB' .env.example compose.yaml | head `
+
+
+### 🤖 **Claude** · 2026-11-15 16:44:30
+
+**Keycloak (borra todas las cuentas creadas; es irreversible):**
+
+```bash
+docker compose rm -sf keycloak && docker volume rm hardwaremissionbricomission_keycloak-data && docker compose up -d --build --wait
+```
+
+Esto reimporta el realm. Vuelven las tres cuentas sembradas (`bm-admin`, `bm-homeowner`, `bm-professional`); luego creas la tuya con "Create account". Los proyectos ya reclamados quedan en la base de datos sin dueño válido, y las sesiones web abiertas dejan de servir.
+
+**RAG (borra todos los Catálogos y sus chunks; es irreversible):**
+
+```bash
+docker compose exec -T postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "TRUNCATE catalog_document CASCADE;"'
+```
+
+Después ingesta tus datos:
+
+```bash
+docker compose --profile rag up -d --wait embedder
+./scripts/catalog/ingest.sh <tu-directorio-de-PDFs>
+```
+
+Ojo: `./launch-demo.sh` ejecuta siempre `./scripts/catalog/ingest.sh infra/catalog/samples`, así que volvería a meter los datos de demo. Para tu prueba, levanta el stack sin ese script o comenta esa línea.
+
+No he ejecutado ninguno de los dos comandos.
+
+
+### 🧑 **Juan Miguel** · 2026-11-15 16:46:11
+
+comenta la línea de la ingesta en launch-demo.sh
+
+
+### 🤖 **Claude** · 2026-11-15 16:46:15
+
+> 🔧 **Bash**: `{"command": "grep -n 'ingest' launch-demo.sh", "description": "Find the ingest line in the demo launcher"}`
+
+
+### 🤖 **Claude** · 2026-11-15 16:46:19
+
+> 🔧 **Read**: `{"file_path": "/home/juanmi/Proyectos/hardwaremission.bricomission/launch-demo.sh", "offset": 124, "limit": 10}`
+
+
+### 🤖 **Claude** · 2026-11-15 16:46:23
+
+> 🔧 **Edit**: `{"replace_all": false, "file_path": "/home/juanmi/Proyectos/hardwaremission.bricomission/launch-demo.sh", "old_string": "./scripts/catalog/ingest.sh infra/catalog/samples\n", "new_string": "# Sample Catalog ingest disabled: the developer is testing with their own Catalog data.\n# ./scripts/catalog/i`
+
+
+### 🤖 **Claude** · 2026-11-15 16:46:26
+
+Línea comentada en `launch-demo.sh:131`. Sin commit.
+
+Con el índice vacío, pedir un Budget da 409 `catalog_empty` hasta que ingestes tus PDFs.
+
+
+---
+
+## Sesión `afe850ad-23d2-49dd-ab19-52525b9b092c`
+
+
+### 🧑 **Juan Miguel** · 2026-11-15 23:41:05
+
+agrega los nuevos archivos de /presentation, haz commit y push
+
+
+### 🤖 **Claude** · 2026-11-15 23:41:07
+
+> 🔧 **Bash**: `{"command": "git status --short && git status --short --ignored presentation | head -50 && find presentation -type f -not -path '*/node_modules/*' | head -100 && du -sh presentation && cat .gitignore | grep -n -i -E 'presentation|out' ; git diff --stat", "description": "Inspect presentation files, i`
+
+
+### 🤖 **Claude** · 2026-11-15 23:41:10
+
+> 🔧 **Bash**: `{"command": "ls -la presentation presentation/sources; git lfs version 2>&1 | head -1; cat .gitattributes 2>/dev/null; git diff launch-demo.sh", "description": "Check video file sizes, LFS availability and launch-demo diff"}`
+
+
+### 🤖 **Claude** · 2026-11-15 23:41:19
+
+> 🔧 **AskUserQuestion**: `{"questions": [{"question": "En presentation/ hay dos vídeos que superan el límite de 100 MB por archivo de GitHub (el final de 342 MB y la fuente \"17-34-38.mp4\" de 137 MB), así que el push sería rechazado, y git-lfs no está instalado. ¿Cómo quieres subirlos?", "header": "Vídeos >100MB", "multiSel`
+
+
+### 🧑 **Juan Miguel** · 2026-11-15 23:41:54
+
+[Request interrupted by user for tool use]
+
+
+### 🧑 **Juan Miguel** · 2026-11-15 23:42:27
+
+¿Puedo eliminar ese límite de tamaño? me gustaría que esté todo en el repo
+
+
+### 🤖 **Claude** · 2026-11-15 23:42:32
+
+No. Límite de 100 MB por archivo es fijo en GitHub, no configurable en ningún plan.
+
+Única vía para tener todo en el repo: Git LFS (hasta 2 GB por archivo en plan Free). Los vídeos quedan versionados en el repo; GitHub guarda el binario en almacenamiento LFS.
+
+Dos archivos afectados: vídeo final (342 MB) y `sources/2026-11-15 17-34-38.mp4` (137 MB). Total `presentation/`: 518 MB, cabe en la cuota LFS gratuita.
+
+Falta git-lfs en el host. Instálalo tú (usa sudo):
+
+```
+! sudo pacman -S git-lfs
+```
+
+Después yo hago: `git lfs install --local`, seguimiento de `presentation/**/*.mp4`, commit y push.
+
+Aviso: el PAT fine-grained necesita permiso Contents de escritura para subir LFS; ya lo tiene, debería funcionar.
