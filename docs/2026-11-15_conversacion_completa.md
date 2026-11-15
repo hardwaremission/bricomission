@@ -1,6 +1,6 @@
 # Registro de conversación con Claude Code · 2026-11-15
 
-_Actualizado: 2026-11-15 16:37_
+_Actualizado: 2026-11-15 16:40_
 
 
 ---
@@ -2781,3 +2781,51 @@ Corrección aplicada. Relanzo el validador sobre los puntos reparados.
 ### 🤖 **Claude** · 2026-11-15 16:33:03
 
 Corrección ya reportada; la revalidación sigue en marcha. Espero el veredicto.
+
+
+### 🤖 **Claude** · 2026-11-15 16:37:40
+
+> 🔧 **Bash**: `{"command": "git branch --show-current && git status --porcelain | head -80 && git status --porcelain | wc -l && echo --- && grep -n '\"id\": \"diagnostics-dashboard\"' -A6 feature_list.json | head -20 && echo --- secret scan && (git ls-files -m -o --exclude-standard -z | xargs -0 grep -lIE 'github_`
+
+
+### 🤖 **Claude** · 2026-11-15 16:37:47
+
+> 🔧 **Bash**: `{"command": "if [ -n \"${BRICOMISSION_GITHUB_PAT:-}\" ]; then git ls-files -c -m -o --exclude-standard -z | xargs -0 grep -lIF -- \"$BRICOMISSION_GITHUB_PAT\" 2>/dev/null; echo \"exact-value scan done\"; else echo \"env var not set in this shell\"; fi; echo ---; grep -n '\"status\": \"accepted\"' fe`
+
+
+### 🤖 **Claude** · 2026-11-15 16:37:54
+
+> 🔧 **Bash**: `{"command": "python3 - <<'EOF'\nimport re,io\np='feature_list.json'; s=open(p,encoding='utf-8').read()\ni=s.index('\"id\": \"diagnostics-dashboard\"'); j=s.index('\"status\": \"passing\"',i)\ns=s[:j]+'\"status\": \"accepted\"'+s[j+len('\"status\": \"passing\"'):]\nopen(p,'w',encoding='utf-8').write(`
+
+
+### 🤖 **Claude** · 2026-11-15 16:38:04
+
+> 🔧 **Bash**: `{"command": "cat >> PROGRESS.md <<'EOF'\n\n### Session: diagnostics-dashboard acceptance (2026-11-15)\n\n- Goal: independent validation and acceptance of `diagnostics-dashboard` (issue #31).\n- Validator round 1: `revise` (widget labels over values at 1440x1080 and 1366x768; filter menu unreachable `
+
+
+### 🤖 **Claude** · 2026-11-15 16:38:15
+
+> 🔧 **Bash**: `{"command": "git diff --cached --name-only | grep -cE 'node_modules|/\\.next/|/dist/' ; git diff --cached --stat=200 | sort -t'|' -k2 -n -r | head -8; git commit -q -F - <<'EOF'\nfeat: complete diagnostics-dashboard\n\nSeparate localhost-only desktop web (profile `diagnostics`, port 3200, no\nlogin)`
+
+
+### 🤖 **Claude** · 2026-11-15 16:38:23
+
+`diagnostics-dashboard` aceptada y commiteada en local (`ce50b2c`, rama `feature/diagnostics-dashboard`). Sin push.
+
+Validador: primero `revise` (etiquetas de widgets pisaban valores a 1440 y 1366; menú de filtros inalcanzable a 1366), luego `accept` tras la corrección. `pnpm -r lint`, `pnpm -r test` y `pnpm test:e2e:diagnostics` pasan; `pnpm test:e2e` completo (176 pasan) e `./init.sh` pasaron en la primera ronda y no se repitieron tras la corrección.
+
+No probado en vivo:
+- Arista roja de error y fila `FAILED` (solo tests unitarios).
+- `./launch-demo.sh` en modo modelos reales y `--no-diagnostics`.
+- Etiqueta APPROX por debajo de zoom 1 con GPU real (solo con muestra inyectada).
+
+Desviaciones del diseño aprobado que debes dar por buenas o rechazar:
+- Rutas de aristas: polilíneas de referencia directas, sin elkjs. ELK movía los 23 nodos y no reproducía ninguna ruta.
+- Botón de filtros dice `+9` (el diseño decía `+7`, pero hay 9 tipos ocultos).
+- Pin violeta en `residency-hook > llama-server` (el diseño lo dibujaba azul).
+
+Token: busqué el valor exacto de `BRICOMISSION_GITHUB_PAT` en todos los archivos versionados y nuevos antes del commit; no aparece. Sigo recomendando rotarlo por la fuga de la fase A.
+
+Decisiones tuyas:
+1. ¿Hago push de la rama y abro el PR con `Closes #31`?
+2. `CLAUDE.md` tiene dos líneas obsoletas: "planned, not built yet" y "`bricomission_diagnostics.fig`, to be created". ¿Las actualizo?
